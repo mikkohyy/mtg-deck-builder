@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  dev-postgres:
+    image: postgres:14.5-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=dev-db
+    ports:
+      - '5455:5432'
+    volumes:
+      - ./dev-db:/var/lib/postgresql/data
