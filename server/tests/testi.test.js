@@ -24,7 +24,7 @@ test('stuff works', async () => {
     username: 'toka'
   }])
 
-  const response = await api.get('/')
+  const response = await api.get('/api')
 
   expect(response.body.length).toBe(2)
   expect(response.body[1]).toEqual({ user_id: 2, username: 'toka' })
