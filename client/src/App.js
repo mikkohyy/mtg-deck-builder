@@ -16,7 +16,7 @@ const App = () => {
 
   return(
     <div>
-      <p>Hello world</p>
+      <p>Hello world!</p>
       <Component text={'hello'}/>
       <button onClick={fetchFromDb}>Press me</button>
       {testThings.map(testThing =>
