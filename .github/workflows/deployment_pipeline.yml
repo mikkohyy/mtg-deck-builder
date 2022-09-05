@@ -1,0 +1,56 @@
+name: Deployment pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deployment_pipeline:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: npm install server
+        working-directory: ./server
+        run: npm install
+      - name: lint server code
+        working-directory: ./server
+        run: npm run lint
+      - name: run server tests
+        env: 
+          NODE_ENV: "test"
+          TEST_DB: ${{ secrets.TEST_DB }}
+        working-directory: ./server
+        run: npm run test
+      - name: npm install client
+        working-directory: ./client
+        run: npm install
+      - name: lint client code
+        working-directory: ./client
+        run: npm run lint
+      - name: run component tests
+        working-directory: ./client
+        run: npm run test:component
+      - name: build frontend and copy to server
+        working-directory: ./client
+        run: npm run build:copy-to-server
+      - name: e2e tests
+        env:
+          NODE_ENV: "test"
+          TEST_DB: ${{ secrets.TEST_DB }}
+          PORT: ${{ secrets.PORT }}
+        uses: cypress-io/github-action@v4
+        with:
+          working-directory: ./server
+          command: npm run test:e2e
+          start: npm run start:test
+          wait-on: http://localhost:${{ secrets.PORT }}
+      - if: ${{ !contains(join(github.event.commits.*.message, ' '), '#skip-deployment') }}
+        name: deploy app to fly.io
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: (cd server && flyctl deploy --remote-only)

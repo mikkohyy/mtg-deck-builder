@@ -13,11 +13,10 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test:component": "react-scripts test",
     "eject": "react-scripts eject",
-    "cypress:open": "cypress open",
     "lint": "eslint .",
-    "test:e2e": "cypress run"
+    "build:copy-to-server": "rm -rf ../server/build && npm run build && cp -r build/ ../server"
   },
   "eslintConfig": {
     "extends": [
@@ -40,9 +39,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
-    "cypress": "^10.7.0",
     "eslint": "^8.23.0",
-    "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-react": "^7.31.1",
     "http-proxy-middleware": "^2.0.6"
   }
