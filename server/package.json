@@ -10,7 +10,9 @@
     "test:server": "NODE_ENV=test jest --verbose --runInBand",
     "lint": "eslint .",
     "cypress:open": "cypress open",
-    "test:e2e": "NODE_ENV=test cypress run"
+    "test:e2e": "NODE_ENV=test cypress run",
+    "dev:migration:down": "NODE_ENV=development node utils/db_rollback.js",
+    "dev:filldatabase": "NODE_ENV=development node utils/fill_database.js"
   },
   "author": "Mikko Hyyryläinen",
   "license": "ISC",
@@ -19,7 +21,8 @@
     "dotenv": "^16.0.2",
     "express": "^4.18.1",
     "pg": "^8.8.0",
-    "sequelize": "^6.21.4"
+    "sequelize": "^6.21.4",
+    "umzug": "^3.2.1"
   },
   "devDependencies": {
     "cypress": "^10.7.0",

@@ -1,23 +1,49 @@
 const { POSTGRES_URI } = require('./config')
+const { Umzug, SequelizeStorage } = require('umzug')
 const Sequelize = require('sequelize')
 
 const sequelize = new Sequelize(POSTGRES_URI, {
   dialect: 'postgres'
 })
 
+const migrationConfig = {
+  migrations: {
+    glob: 'migrations/*.js'
+  },
+  storage: new SequelizeStorage({ sequelize, tableName: 'migrations' }),
+  context: sequelize.getQueryInterface(),
+  logger: console
+}
+
+const runMigrations = async () => {
+  const migrator = new Umzug(migrationConfig)
+
+  const migrations = await migrator.up()
+  console.log('Migrations up to date', {
+    files: migrations.map((mig) => mig.name)
+  })
+}
+
+const rollbackMigration = async () => {
+  await sequelize.authenticate()
+  const migrator = new Umzug(migrationConfig)
+  await migrator.down()
+}
+
 const connectToDatabase = async () => {
   try {
     await sequelize.authenticate()
+    await runMigrations()
     console.log('Connected to database')
   } catch (error) {
     console.log(`Connection to database failed: ${error}`)
     return process.exit(1)
   }
-
   return null
 }
 
 module.exports =  {
   sequelize,
-  connectToDatabase
+  connectToDatabase,
+  rollbackMigration
 }

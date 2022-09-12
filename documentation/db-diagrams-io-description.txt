@@ -1,0 +1,42 @@
+Table users {
+  id int [PK]
+  username varchar
+  password varchar
+}
+
+Table decks {
+  id int [PK]
+  user_id int
+  name varchar
+  notes text
+}
+
+Table cards {
+  id int [PK]
+  card_set_id varchar
+  name varchar
+  card_number int
+  mana_cost varchar
+  price float
+  rules_text text
+  rarity varchar
+}
+
+Table deck_cards {
+  deck_id int
+  card_id int
+  n_in_deck int
+  sideboard boolean
+}
+
+Table card_sets {
+  id int [PK]
+  name varchar
+  description text
+  date date
+}
+
+Ref: users.id < decks.user_id
+Ref: decks.id < deck_cards.deck_id
+Ref: cards.id < deck_cards.card_id
+Ref: card_sets.id < cards.card_set_id
