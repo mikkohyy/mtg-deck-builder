@@ -6,4 +6,18 @@ cardSetsRouter.get('/', async (request, response) => {
   response.json(foundSets)
 })
 
+cardSetsRouter.post('/', async (request, response, next) => {
+  try {
+    const newSet = { ...request.body, date: new Date() }
+    const addedSet = await CardSet.create(newSet)
+    response.status(201).json(addedSet)
+  } catch(error) {
+    next(error)
+  }
+})
+
+cardSetsRouter.delete('/:id', async (request, reponse, next) => {
+  
+})
+
 module.exports = cardSetsRouter

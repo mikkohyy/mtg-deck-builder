@@ -19,6 +19,28 @@ const testCardSets = [
   }
 ]
 
+const cardSets = [
+  {
+    name: 'Crimson Vow',
+    description: 'Set of cards from Crimson Vow'
+  },
+
+  {
+    name: 'Midnight Hunt',
+    description: 'Set of cards from MidnightHunt'
+  },
+  {
+    name: 'Ice Age',
+    description: 'An oldschool set of cards'
+  }
+]
+
+const invalidCardSet = {
+  'description': 'An invalid set'
+}
+
 module.exports = {
-  testCardSets
+  testCardSets,
+  cardSets,
+  invalidCardSet
 }

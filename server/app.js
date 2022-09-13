@@ -6,6 +6,7 @@ const { User, Deck } = require('./models')
 const { QueryTypes, DataTypes } = require('sequelize')
 const { sequelize, connectToDatabase } = require('./utils/db')
 const queryInterface = sequelize.getQueryInterface()
+const { errorHandler } = require('./utils/middleware')
 
 connectToDatabase()
 
@@ -52,5 +53,7 @@ app.get('/api/users', async (req, res) => {
   Deck.findAll()
   res.status(200).end()
 })
+
+app.use(errorHandler)
 
 module.exports = app
