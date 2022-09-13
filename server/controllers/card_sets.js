@@ -16,4 +16,15 @@ cardSetsRouter.post('/', async (request, response, next) => {
   }
 })
 
+cardSetsRouter.delete('/:id', async (request, response, next) => {
+  try {
+    const cardSetId = request.params.id
+    const rowsDestroyed = await CardSet.destroy({ where: { id: cardSetId } })
+
+    rowsDestroyed ? response.status(204).end() : response.send(404).end()
+  } catch(error) {
+    next(error)
+  }
+})
+
 module.exports = cardSetsRouter
