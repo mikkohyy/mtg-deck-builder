@@ -16,8 +16,4 @@ cardSetsRouter.post('/', async (request, response, next) => {
   }
 })
 
-cardSetsRouter.delete('/:id', async (request, reponse, next) => {
-  
-})
-
 module.exports = cardSetsRouter
