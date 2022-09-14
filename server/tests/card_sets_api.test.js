@@ -5,7 +5,7 @@ const api = supertest(app)
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
-const getAllCardSetsQueryString = 'SELECT * FROM card_sets'
+const getAllCardSetsQueryString = 'SELECT id, name, description, date FROM card_sets'
 
 afterAll(async () => {
   sequelize.close()
@@ -79,7 +79,7 @@ describe('When user adds a new card set to the server', () => {
     await queryInterface.bulkInsert('card_sets', testCardSets)
   })
 
-  describe('the server responds', () => {
+  describe('server responds', () => {
     test('with json', async () => {
       await api.post('/api/card_sets')
         .send(cardSets[0])
@@ -194,7 +194,7 @@ describe('When user deletes a card set from the server', () => {
     expect(cardSets[0]).not.toContainEqual(testCardSets[1])
   })
 
-  describe('the server responds', () => {
+  describe('server responds', () => {
     test('with 204 when existing id', async () => {
       await api.delete('/api/card_sets/3')
     })
@@ -226,7 +226,7 @@ describe('When user deletes a card set from the server', () => {
       expect(cardSetsAfterDelete.length).toBe(cardSetsBeforeDelete.length - 1)
     })
 
-    test('decreases by threewhen three card sets are deleted', async () => {
+    test('decreases by three when three card sets are deleted', async () => {
       const beforeDelete = await sequelize.query(getAllCardSetsQueryString)
       const cardSetsBeforeDelete = beforeDelete[0]
 
@@ -252,4 +252,108 @@ describe('When user deletes a card set from the server', () => {
       expect(cardSetsAfterDelete.length).toBe(cardSetsBeforeDelete.length)
     })
   })
+})
+
+describe('When user updates a card set', () => {
+  beforeEach(async () => {
+    await queryInterface.bulkDelete('card_sets')
+    await queryInterface.bulkInsert('card_sets', testCardSets)
+  })
+
+  describe('server responds', () => {
+    test('with json', async () => {
+      const updated = { ...testCardSets[1], description: 'updated description' }
+
+      await api
+        .put('/api/card_sets/2')
+        .send(updated)
+        .expect('Content-Type', /application\/json/)
+    })
+
+    test('with 200 when successful', async () => {
+      const updated = { ...testCardSets[1], description: 'updated description' }
+
+      await api.put('/api/card_sets/2')
+        .send(updated)
+        .expect(200)
+    })
+
+    test('with 404 when id does not exist', async () => {
+      const updated = { ...testCardSets[1], description: 'updated description' }
+
+      await api.put('/api/card_sets/8')
+        .send(updated)
+        .expect(404)
+    })
+
+    test('with 400 when id is not a valid id', async () => {
+      const updated = { ...testCardSets[1], description: 'updated description' }
+
+      await api.put('/api/card_sets/a4bb')
+        .send(updated)
+        .expect(400)
+    })
+  })
+
+  describe('the returned object', () => {
+    test('has the right number of properties', async () => {
+      const updated = {
+        ...testCardSets[1],
+        description: 'updated description',
+        name: 'Visions'
+      }
+
+      const { body } = await api.put('/api/card_sets/2')
+        .send(updated)
+
+      const properties = Object.keys(body)
+
+      expect(properties.length).toBe(4)
+    })
+
+    test('as the right properties', async () => {
+      const updated = {
+        ...testCardSets[1],
+        description: 'updated description',
+        name: 'Visions'
+      }
+
+      const { body } = await api.put('/api/card_sets/2')
+        .send(updated)
+
+      expect(body).toHaveProperty('id')
+      expect(body).toHaveProperty('name')
+      expect(body).toHaveProperty('description')
+      expect(body).toHaveProperty('date')
+    })
+
+    test('has changed when one value was updated', async () => {
+      const updated = { ...testCardSets[1], description: 'updated description' }
+
+      const { body } = await api.put('/api/card_sets/2')
+        .send(updated)
+
+      expect(body.id).toBe(testCardSets[1].id)
+      expect(body.name).toBe(testCardSets[1].name)
+      expect(body.description).not.toBe(testCardSets[1].description)
+      expect(body.date).toBe(testCardSets[1].date.toISOString())
+    })
+
+    test('has changed when two values were updated', async () => {
+      const updated = {
+        ...testCardSets[1],
+        description: 'updated description',
+        name: 'Visions'
+      }
+
+      const { body } = await api.put('/api/card_sets/2')
+        .send(updated)
+
+      expect(body.id).toBe(testCardSets[1].id)
+      expect(body.name).not.toBe(testCardSets[1].name)
+      expect(body.description).not.toBe(testCardSets[1].description)
+      expect(body.date).toBe(testCardSets[1].date.toISOString())
+    })
+  })
+
 })
