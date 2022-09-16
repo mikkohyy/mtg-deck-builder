@@ -1,10 +1,26 @@
 const cardSetsRouter = require('express').Router()
-const { CardSet } = require('../models')
+const { CardSet, Card } = require('../models')
 const { getPlain } = require('../utils/query_handling')
 
 cardSetsRouter.get('/', async (request, response) => {
   const foundSets = await CardSet.findAll()
   response.json(foundSets)
+})
+
+cardSetsRouter.get('/:id', async (request, response, next) => {
+  const setId = request.params.id
+  try {
+    const foundSet = await CardSet.findOne({
+      where: { id: setId },
+      include: {
+        model: Card
+      }
+    })
+
+    foundSet ? response.json(foundSet) : response.send(404).end()
+  } catch(error) {
+    next(error)
+  }
 })
 
 cardSetsRouter.post('/', async (request, response, next) => {
