@@ -2,7 +2,8 @@ const {
   testCardSetsWithId,
   testCardSets,
   invalidCardSet,
-  testCardsWithId
+  testCardsWithId,
+  testCards
 } = require('./test_data')
 
 const supertest = require('supertest')
@@ -12,6 +13,9 @@ const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
 const getAllCardSetsQueryString = 'SELECT id, name, description, date FROM card_sets'
+const cardSetWithCards = { ...testCardSets[0], cards: testCards }
+
+const invalidCardSetWithCards = { ...invalidCardSet, cards: testCards }
 
 afterAll(async () => {
   sequelize.close()
@@ -80,23 +84,43 @@ describe('When user adds a new card set to the server', () => {
   describe('server responds', () => {
     test('with json', async () => {
       await api.post('/api/card_sets')
-        .send(testCardSets[0])
+        .send(cardSetWithCards)
         .expect('Content-Type', /application\/json/)
     })
 
     test('with status 201 when successful', async () => {
       await api.post('/api/card_sets')
-        .send(testCardSets[0])
+        .send(cardSetWithCards)
         .expect(201)
     })
 
     test('with status 400 when name is missing', async () => {
-      await api.post('/api/card_sets').send(invalidCardSet).expect(400)
+      await api.post('/api/card_sets').send(invalidCardSetWithCards).expect(400)
+    })
+
+    test('with status 400 when cards property is missing', async () => {
+      await api.post('/api/card_sets').send(testCardSets[0]).expect(400)
     })
 
     test('with proper error message when the name is missing', async() => {
-      const { body } = await api.post('/api/card_sets').send(invalidCardSet)
-      expect(body.error).toMatch(/cardSet.name cannot be null/)
+      const { body } = await api.post('/api/card_sets').send(invalidCardSetWithCards)
+      expect(body.error).toMatch(/Invalid or missing data/)
+    })
+
+    test('with proper error message when cards property is missing', async () => {
+      const { body } = await api.post('/api/card_sets').send(testCardSets[0])
+      expect(body.error).toMatch(/Invalid or missing data/)
+    })
+
+    test('with proper info on which field is missing', async() => {
+      const { body } = await api.post('/api/card_sets').send(invalidCardSetWithCards)
+
+      const invalidPropertyNames = Object.keys(body.invalidProperties)
+
+      expect(invalidPropertyNames).toHaveLength(1)
+      expect(body.invalidProperties).toHaveProperty('name')
+      expect(body.invalidProperties).not.toHaveProperty('description')
+      expect(body.invalidProperties).not.toHaveProperty('cards')
     })
   })
 
@@ -105,7 +129,7 @@ describe('When user adds a new card set to the server', () => {
       const beforePost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsBeforePost = beforePost[0]
 
-      await api.post('/api/card_sets').send(testCardSets[0])
+      await api.post('/api/card_sets').send(cardSetWithCards)
 
       const afterPost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsAfterPost = afterPost[0]
@@ -117,9 +141,17 @@ describe('When user adds a new card set to the server', () => {
       const beforePost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsBeforePost = beforePost[0]
 
-      await api.post('/api/card_sets').send(testCardSets[0])
-      await api.post('/api/card_sets').send(testCardSets[1])
-      await api.post('/api/card_sets').send(testCardSets[2])
+      await api
+        .post('/api/card_sets')
+        .send({ ...testCardSets[0], cards: [0,1,2].map(i => testCards[i]) })
+
+      await api
+        .post('/api/card_sets')
+        .send({ ...testCardSets[1], cards: [3,4,5].map(i => testCards[i]) })
+
+      await api
+        .post('/api/card_sets')
+        .send({ ...testCardSets[2], cards: [6,7,8].map(i => testCards[i]) })
 
       const afterPost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsAfterPost = afterPost[0]
@@ -131,7 +163,7 @@ describe('When user adds a new card set to the server', () => {
       const beforePost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsBeforePost = beforePost[0]
 
-      await api.post('/api/card_sets').send(invalidCardSet)
+      await api.post('/api/card_sets').send(invalidCardSetWithCards)
 
       const afterPost = await sequelize.query(getAllCardSetsQueryString)
       const testCardSetsAfterPost = afterPost[0]
@@ -142,26 +174,68 @@ describe('When user adds a new card set to the server', () => {
 
   describe('the returned added card set', () => {
     test('has the right number of properties', async () => {
-      const { body } = await api.post('/api/card_sets').send(testCardSets[0])
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
       const keys = Object.keys(body)
-      expect(keys).toHaveLength(4)
+      expect(keys).toHaveLength(5)
     })
 
     test('has the expected properties', async () => {
-      const { body } = await api.post('/api/card_sets').send(testCardSets[0])
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
 
       expect(body).toHaveProperty('id')
       expect(body).toHaveProperty('name')
       expect(body).toHaveProperty('description')
       expect(body).toHaveProperty('date')
+      expect(body).toHaveProperty('cards')
     })
 
     test('has the expected values', async () => {
-      const { body } = await api.post('/api/card_sets').send(testCardSets[0])
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
 
       expect(body.id).toBe(4)
       expect(body.name).toBe(testCardSets[0].name)
       expect(body.description).toBe(testCardSets[0].description)
+    })
+
+    test('has the right number of cards', async () => {
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
+      expect(body.cards).toHaveLength(10)
+    })
+
+    test('the first card has expected number of properties', async () => {
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
+      const addedCard = body.cards[0]
+      const cardObjectKeys = Object.keys(addedCard)
+
+      expect(cardObjectKeys).toHaveLength(8)
+    })
+
+    test('the first card has expected properties', async () => {
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
+      const addedCard = body.cards[0]
+
+      expect(addedCard).toHaveProperty('id')
+      expect(addedCard).toHaveProperty('name')
+      expect(addedCard).toHaveProperty('cardNumber')
+      expect(addedCard).toHaveProperty('manaCost')
+      expect(addedCard).toHaveProperty('price')
+      expect(addedCard).toHaveProperty('rulesText')
+      expect(addedCard).toHaveProperty('rarity')
+      expect(addedCard).toHaveProperty('cardSetId')
+    })
+
+    test('the first card has the expected values', async () => {
+      const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
+      const originalCard = cardSetWithCards.cards[0]
+      const addedCard = body.cards[0]
+
+      expect(addedCard.name).toEqual(originalCard.name)
+      expect(addedCard.cardNumber).toEqual(originalCard.cardNumber)
+      expect(addedCard.manaCost).toEqual(originalCard.manaCost)
+      expect(addedCard.price).toEqual(originalCard.price)
+      expect(addedCard.rulesText).toEqual(originalCard.rulesText)
+      expect(addedCard.rarity).toEqual(originalCard.rarity)
+      expect(addedCard.cardSet).toEqual()
     })
   })
 })
@@ -237,6 +311,7 @@ describe('When user deletes a card set from the server', () => {
       expect(testCardSetsAfterDelete).toHaveLength(testCardSetsBeforeDelete.length)
     })
   })
+
 })
 
 describe('When user updates a card set', () => {

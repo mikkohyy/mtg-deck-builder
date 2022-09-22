@@ -24,8 +24,6 @@ const addDataToDatabase = async () => {
     }
   })
 
-  console.log(formattedCardData)
-
   await Card.bulkCreate(formattedCardData, { validate: true })
 
   await User.bulkCreate([

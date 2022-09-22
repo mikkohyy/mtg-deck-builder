@@ -1,6 +1,7 @@
 const cardSetsRouter = require('express').Router()
 const { CardSet, Card } = require('../models')
 const { getPlain } = require('../utils/query_handling')
+const { validateSetCardsObject } = require('../utils/middleware')
 
 cardSetsRouter.get('/', async (request, response) => {
   const foundSets = await CardSet.findAll()
@@ -23,11 +24,26 @@ cardSetsRouter.get('/:id', async (request, response, next) => {
   }
 })
 
-cardSetsRouter.post('/', async (request, response, next) => {
+cardSetsRouter.post('/', validateSetCardsObject, async (request, response, next) => {
   try {
-    const newSet = { ...request.body, date: new Date() }
-    const addedSet = await CardSet.create(newSet)
-    response.status(201).json(addedSet)
+    const { cards, ...userInfo } = request.body
+    const newCardSet = { ...userInfo, date: new Date() }
+    const addedCardSet = await CardSet.create(newCardSet)
+
+    let addedCards = []
+
+    if (cards.length !== 0) {
+      const cardsWithCardSetId = cards.map(card => ({ ...card, cardSetId: addedCardSet.id }))
+      const returnedCards = await Card.bulkCreate(cardsWithCardSetId, { validate: true })
+      addedCards = returnedCards.map(card => card.dataValues)
+    }
+
+    const addedCardSetWithCards =  {
+      ...addedCardSet.dataValues,
+      cards: addedCards
+    }
+
+    response.status(201).json(addedCardSetWithCards)
   } catch(error) {
     next(error)
   }
