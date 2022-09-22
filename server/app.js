@@ -11,12 +11,14 @@ const { errorHandler } = require('./utils/middleware')
 connectToDatabase()
 
 const cardSetsRouter = require('./controllers/card_sets')
+const cardsRouter = require('./controllers/cards')
 
 app.use(cors())
 app.use(express.static('build'))
 app.use(express.json())
 
 app.use('/api/card_sets', cardSetsRouter)
+app.use('/api/cards', cardsRouter)
 
 if (process.env.NODE_ENV === 'test') {
   app.post('/api/initialize-e2e', async (req, res) => {

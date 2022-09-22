@@ -1,4 +1,4 @@
-const { InvalidDataError } = require('./errors')
+const { InvalidDataError, InvalidResourceId } = require('./errors')
 const Validator = require('./validator')
 
 const NAMES_OF_CARD_SET_PROPERTIES = ['cards', 'name', 'description']
@@ -21,6 +21,11 @@ const errorHandler = (error, request, response, next) => {
     }
 
     return response.status(400).json(errorInfo)
+  } else if (error.name === 'InvalidResourceId') {
+    return response.status(400).json({
+      error: error.message,
+      expectedType: error.expectedType
+    })
   }
 
   next(error)
@@ -55,6 +60,14 @@ const validateSetCardsObject = (request, response, next) => {
   }
 }
 
+const validateIdWhichIsInteger = (request, response, next) => {
+  if (!Validator.checkIfInteger(request.params.id)) {
+    throw new InvalidResourceId('Invalid id type', 'INTEGER')
+  } else {
+    next()
+  }
+}
+
 const checkIfInvalidCards = (invalidCards, cards) => {
   for (const [i, card] of Object.entries(cards)) {
     const invalidProperties = Validator.checkIfCardIsValid(card)
@@ -83,5 +96,6 @@ const getMissingOrInvalid = (data) => {
 
 module.exports = {
   errorHandler,
-  validateSetCardsObject
+  validateSetCardsObject,
+  validateIdWhichIsInteger
 }

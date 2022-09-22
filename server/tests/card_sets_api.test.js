@@ -78,6 +78,7 @@ describe('When user adds a new card set to the server', () => {
   beforeEach(async () => {
     await queryInterface.bulkDelete('card_sets')
     await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 4')
+    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 1')
     await queryInterface.bulkInsert('card_sets', testCardSetsWithId)
   })
 
@@ -197,7 +198,7 @@ describe('When user adds a new card set to the server', () => {
       expect(body.description).toBe(testCardSets[0].description)
     })
 
-    test('has the right number of cards', async () => {
+    it('has the right number of cards', async () => {
       const { body } = await api.post('/api/card_sets').send(cardSetWithCards)
       expect(body.cards).toHaveLength(10)
     })
@@ -347,6 +348,7 @@ describe('When user updates a card set', () => {
     })
 
     test('with 400 when id is not a valid id', async () => {
+
       const updated = { ...testCardSetsWithId[1], description: 'updated description' }
 
       await api.put('/api/card_sets/a4bb')

@@ -1,6 +1,6 @@
 const cardSetsRouter = require('express').Router()
 const { CardSet, Card } = require('../models')
-const { getPlain } = require('../utils/query_handling')
+const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 const { validateSetCardsObject } = require('../utils/middleware')
 
 cardSetsRouter.get('/', async (request, response) => {
@@ -81,7 +81,7 @@ cardSetsRouter.put('/:id', async (request, response, next) => {
     const updatedRows = updatedInfo[0]
 
     if (updatedRows) {
-      updatedObject = getPlain(updatedInfo)
+      updatedObject = extractInformationOnUpdatedObject(updatedInfo)
     }
 
     updatedRows ? response.status(200).json(updatedObject) : response.status(404).end()
