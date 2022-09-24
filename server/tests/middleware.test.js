@@ -1,5 +1,10 @@
-const { errorHandler, validateSetCardsObject } = require('../utils/middleware')
-const { testCardSets, testCards } = require('./test_data')
+const {
+  errorHandler,
+  validateNewSetCardsObject,
+  validateExistingCardObject
+} = require('../utils/middleware')
+const { testCardSets, testCards, testCardsWithId } = require('./test_data')
+const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
 
 const validCardSetWithCards = {
   ...testCardSets[0],
@@ -38,8 +43,8 @@ class MockResponse {
 }
 
 class MockRequest {
-  constructor(payload) {
-    this.body = payload
+  constructor(data) {
+    this.body = data
   }
 }
 
@@ -106,7 +111,7 @@ describe('Set cards validator', () => {
     const mockNext = jest.fn()
     const mockRequest = new MockRequest(validCardSetWithCards)
 
-    validateSetCardsObject(mockRequest, null, mockNext)
+    validateNewSetCardsObject(mockRequest, null, mockNext)
 
     expect(mockNext).toHaveBeenCalledTimes(1)
   })
@@ -118,7 +123,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         // not doing anything because we testing if next is called
       }
@@ -138,7 +143,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -155,7 +160,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -172,7 +177,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -191,7 +196,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -212,7 +217,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -229,7 +234,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -246,7 +251,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -265,7 +270,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -286,7 +291,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -303,7 +308,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -320,7 +325,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -339,7 +344,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -364,7 +369,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -383,7 +388,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -405,7 +410,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -429,7 +434,7 @@ describe('Set cards validator', () => {
       const mockResponse = new MockResponse()
 
       try {
-        validateSetCardsObject(mockRequest, mockResponse, mockNext)
+        validateNewSetCardsObject(mockRequest, mockResponse, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -451,7 +456,7 @@ describe('Set cards validator', () => {
       const mockRequest = new MockRequest(cardSet)
 
       try {
-        validateSetCardsObject(mockRequest, null, mockNext)
+        validateNewSetCardsObject(mockRequest, null, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -470,7 +475,7 @@ describe('Set cards validator', () => {
       const mockRequest = new MockRequest(cardSet)
 
       try {
-        validateSetCardsObject(mockRequest, null, mockNext)
+        validateNewSetCardsObject(mockRequest, null, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -494,7 +499,7 @@ describe('Set cards validator', () => {
       const mockRequest = new MockRequest(cardSet)
 
       try {
-        validateSetCardsObject(mockRequest, null, mockNext)
+        validateNewSetCardsObject(mockRequest, null, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -502,14 +507,16 @@ describe('Set cards validator', () => {
       expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
       expect(thrownError.invalidProperties).toHaveProperty('description', 'INVALID')
       expect(thrownError.invalidProperties).toHaveProperty('name', 'MISSING')
-      expect(thrownError.invalidProperties).toHaveProperty('cardObjects', 'INVALID')
+      expect(thrownError.invalidProperties).toHaveProperty('cardObjects')
 
-      expect(thrownError.invalidCards[0]).toHaveProperty('index', '3')
-      expect(thrownError.invalidCards[0]).toHaveProperty('rulesText', 'MISSING')
-      expect(thrownError.invalidCards[0]).toHaveProperty('cardNumber', 'INVALID')
+      const cardObjects = thrownError.invalidProperties.cardObjects
 
-      expect(thrownError.invalidCards[1]).toHaveProperty('index', '4')
-      expect(thrownError.invalidCards[1]).toHaveProperty('extra', 'UNEXPECTED')
+      expect(cardObjects[0]).toHaveProperty('index', '3')
+      expect(cardObjects[0]).toHaveProperty('rulesText', 'MISSING')
+      expect(cardObjects[0]).toHaveProperty('cardNumber', 'INVALID')
+
+      expect(cardObjects[1]).toHaveProperty('index', '4')
+      expect(cardObjects[1]).toHaveProperty('extra', 'UNEXPECTED')
     })
   })
 
@@ -524,7 +531,7 @@ describe('Set cards validator', () => {
       const mockRequest = new MockRequest(cardSet)
 
       try {
-        validateSetCardsObject(mockRequest, null, mockNext)
+        validateNewSetCardsObject(mockRequest, null, mockNext)
       } catch(error) {
         thrownError = error
       }
@@ -543,18 +550,59 @@ describe('Set cards validator', () => {
       const mockRequest = new MockRequest(cardSet)
 
       try {
-        validateSetCardsObject(mockRequest, null, mockNext)
+        validateNewSetCardsObject(mockRequest, null, mockNext)
       } catch(error) {
         thrownError = error
       }
 
-      const { invalidProperties, invalidCards } = thrownError
-      const invalidCardInfo = invalidCards[0]
+      expect(thrownError.invalidProperties).toHaveProperty('cardObjects')
 
-      expect(invalidProperties).toHaveProperty('cardObjects', 'INVALID')
+      const invalidCards = thrownError.invalidProperties.cardObjects
+      const invalidCardInfo = invalidCards[0]
 
       expect(invalidCardInfo).toHaveProperty('index', '0')
       expect(invalidCardInfo).toHaveProperty('name', 'MISSING')
+    })
+  })
+})
+
+describe('Received card validator', () => {
+  describe('when card is in the form of existing card', () => {
+    test('does not raise an error when card is valid', () => {
+      const existingCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(existingCard)
+
+      try {
+        validateExistingCardObject(mockRequest, null, mockNext)
+      } catch(error) {
+        // intentionally left empty
+      }
+
+      expect(mockNext).toBeCalledTimes(1)
+    })
+
+    test('raises expected error when card is invalid', () => {
+      let thrownError
+      const existingCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      existingCard.name = []
+      delete existingCard.rulesText
+      existingCard.extra = 'this is extra'
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(existingCard)
+
+      try {
+        validateExistingCardObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      expect(thrownError.name).toBe('InvalidDataError')
+      expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
+      expect(thrownError.invalidProperties).toHaveProperty('rulesText', 'MISSING')
+      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
     })
   })
 })

@@ -1,9 +1,8 @@
 class InvalidDataError extends Error {
-  constructor(message, invalidProperties, invalidCards) {
+  constructor(message, invalidProperties) {
     super(message)
     this.name = 'InvalidDataError'
     this.invalidProperties = invalidProperties
-    this.invalidCards = invalidCards
   }
 }
 

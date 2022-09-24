@@ -8,6 +8,7 @@ const app = require('../app')
 const api = supertest(app)
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
+const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
 
 const firstTestCardSetWithId = [testCardSetsWithId[0]]
 const firstTenCardsWithId = testCardsWithId.slice(0, 10)
@@ -16,7 +17,7 @@ afterAll(async () => {
   sequelize.close()
 })
 
-describe('When user asks for a card', () => {
+describe('When user asks for individual card the server', () => {
   beforeEach(async () => {
     await queryInterface.bulkDelete('card_sets')
     await queryInterface.bulkDelete('cards')
@@ -71,6 +72,196 @@ describe('When user asks for a card', () => {
   })
 
   test('returns 404 when id does not exist', async () => {
-    await api.get('/api/cards/12345').expect(404)
+    await api
+      .get('/api/cards/12345')
+      .expect(404)
+  })
+})
+
+describe('When user updates a card the server', () => {
+  beforeEach(async() => {
+    await queryInterface.bulkDelete('card_sets')
+    await queryInterface.bulkDelete('cards')
+    await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 11')
+    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
+    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
+  })
+
+  test('responds with 200', async () => {
+    const updatedCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    updatedCard.price = 24.5
+
+    await api
+      .put('/api/cards/1')
+      .send(updatedCard)
+      .expect(200)
+  })
+
+  test('returned card has the right number of properties', async () => {
+    const updatedCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    updatedCard.price = 24.5
+
+    const receivedData = await api
+      .put('/api/cards/1')
+      .send(updatedCard)
+      .expect(200)
+
+    const { body } = receivedData
+    const propertyNames = Object.keys(body)
+
+    expect(propertyNames).toHaveLength(8)
+  })
+
+  test('expected card is returned', async () => {
+    const originalCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    const updatedCard = { ...originalCard, price: 24.5 }
+
+    const response = await api
+      .put('/api/cards/1')
+      .send(updatedCard)
+      .expect(200)
+
+    const receivedData = response.body
+
+    expect(receivedData).toHaveProperty('id', originalCard.id)
+    expect(receivedData).toHaveProperty('cardSetId', originalCard.cardSetId)
+    expect(receivedData).toHaveProperty('name', originalCard.name)
+    expect(receivedData).toHaveProperty('cardNumber', originalCard.cardNumber)
+    expect(receivedData).toHaveProperty('manaCost', originalCard.manaCost)
+    expect(receivedData).toHaveProperty('price')
+    expect(receivedData.price).not.toBe(0.09)
+    expect(receivedData.price).toBe(24.5)
+    expect(receivedData).toHaveProperty('rulesText', originalCard.rulesText)
+    expect(receivedData).toHaveProperty('rarity', originalCard.rarity)
+  })
+
+  test('card in the database is updated', async () => {
+    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    const updatedCard = { ...cardInCamelCase, price: 24.5 }
+
+    const response = await api
+      .put('/api/cards/1')
+      .send(updatedCard)
+
+    const receivedData = response.body
+
+    const dataFromDatabase = await sequelize
+      .query(`SELECT * FROM "cards" WHERE id = ${receivedData.id}`)
+
+    const cardInDatabase = dataFromDatabase[0][0]
+
+    expect(cardInDatabase).toHaveProperty('id', updatedCard.id)
+    expect(cardInDatabase).toHaveProperty('card_set_id', updatedCard.cardSetId)
+    expect(cardInDatabase).toHaveProperty('name', updatedCard.name)
+    expect(cardInDatabase).toHaveProperty('card_number', updatedCard.cardNumber)
+    expect(cardInDatabase).toHaveProperty('mana_cost', updatedCard.manaCost)
+    expect(cardInDatabase).toHaveProperty('price', updatedCard.price)
+    expect(cardInDatabase).toHaveProperty('rules_text', updatedCard.rulesText)
+    expect(cardInDatabase).toHaveProperty('rarity', updatedCard.rarity)
+  })
+
+  test('returns 400 when invalid id', async () => {
+    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    const updatedCard = { ...cardInCamelCase, price: 24.5 }
+
+    await api
+      .put('/api/cards/3_not_valid_id')
+      .send(updatedCard)
+      .expect(400)
+  })
+
+  test('returns expected error message when invalid id', async () => {
+    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    const updatedCard = { ...cardInCamelCase, price: 24.5 }
+
+    const response = await api
+      .put('/api/cards/3_not_valid_id')
+      .send(updatedCard)
+
+    const receivedData = response.body
+
+    expect(receivedData.error).toMatch(/Invalid id type/)
+    expect(receivedData.expectedType).toBe('INTEGER')
+  })
+
+  test('returns 404 when id does not exist', async () => {
+    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    const updatedCard = { ...cardInCamelCase, price: 24.5 }
+
+    await api
+      .put('/api/cards/12345')
+      .send(updatedCard)
+      .expect(404)
+  })
+
+  test('returns 400 when updated card is invalid', async () => {
+    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+    cardInCamelCase.name = [1, 2, 3]
+
+    await api
+      .put('/api/cards/4')
+      .send(cardInCamelCase)
+      .expect(400)
+  })
+})
+
+describe.only('When user deletes a card from the server', () => {
+  beforeEach(async() => {
+    await queryInterface.bulkDelete('card_sets')
+    await queryInterface.bulkDelete('cards')
+    await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 11')
+    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
+    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
+  })
+
+  test('when successful responds with 204', async () => {
+    await api
+      .delete('/api/cards/3')
+      .expect(204)
+  })
+
+  test('when invalid id responds with 400', async () => {
+    await api
+      .delete('/api/cards/3_not_valid')
+      .expect(400)
+  })
+
+  test('when non existing id responds with 404', async () => {
+    await api
+      .delete('/api/cards/12345')
+      .expect(404)
+  })
+
+  test('the card is deleted', async () => {
+    const databaseBeforeDelete = await sequelize.query('SELECT * FROM "cards"')
+    const cardsBeforeDelete = databaseBeforeDelete[0]
+
+    await api
+      .delete('/api/cards/1')
+
+    const databaseAfterDelete = await sequelize.query('SELECT * FROM "cards"')
+    const cardsAfterDelete = databaseAfterDelete[0]
+
+    const cardIdsAfterDelete = cardsAfterDelete.map(card => card.id)
+
+    expect(cardsAfterDelete).not.toHaveLength(cardsBeforeDelete.length)
+    expect(cardIdsAfterDelete).not.toContain(1)
+  })
+
+  test('nothing changes in the database when non-existing id', async () => {
+    const databaseBeforeDelete = await sequelize.query('SELECT * FROM "cards"')
+    const cardsBeforeDelete = databaseBeforeDelete[0]
+
+    await api
+      .delete('/api/cards/123')
+
+    const databaseAfterDelete = await sequelize.query('SELECT * FROM "cards"')
+    const cardsAfterDelete = databaseAfterDelete[0]
+
+    expect(cardsAfterDelete).toHaveLength(cardsBeforeDelete.length)
+
+    for (const card of cardsAfterDelete) {
+      expect(cardsBeforeDelete).toContainEqual(card)
+    }
   })
 })

@@ -16,10 +16,6 @@ const errorHandler = (error, request, response, next) => {
       invalidProperties: error.invalidProperties
     }
 
-    if (error.invalidCards.length !== 0) {
-      errorInfo.invalidCards = error.invalidCards
-    }
-
     return response.status(400).json(errorInfo)
   } else if (error.name === 'InvalidResourceId') {
     return response.status(400).json({
@@ -31,7 +27,7 @@ const errorHandler = (error, request, response, next) => {
   next(error)
 }
 
-const validateSetCardsObject = (request, response, next) => {
+const validateNewSetCardsObject = (request, response, next) => {
   const { body } = request
   let invalidProperties = {}
   let invalidCards = []
@@ -40,7 +36,7 @@ const validateSetCardsObject = (request, response, next) => {
     invalidProperties['cards'] = getMissingOrInvalid(body.cards)
   } else {
     invalidCards = checkIfInvalidCards(invalidCards, body.cards)
-    invalidCards.length !== 0 && (invalidProperties['cardObjects'] = 'INVALID')
+    invalidCards.length !== 0 && (invalidProperties['cardObjects'] = invalidCards)
   }
 
   if (!Validator.checkIfString(body.name)) {
@@ -54,7 +50,7 @@ const validateSetCardsObject = (request, response, next) => {
   invalidProperties = checkIfUnnecessaryProperties(invalidProperties, body)
 
   if (Object.keys(invalidProperties).length !== 0) {
-    throw new InvalidDataError('Invalid or missing data', invalidProperties, invalidCards)
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
   } else {
     next()
   }
@@ -68,9 +64,21 @@ const validateIdWhichIsInteger = (request, response, next) => {
   }
 }
 
+const validateExistingCardObject = (request, response, next) => {
+  const card = request.body
+
+  const invalidProperties = Validator.checkIfCardIsValid(card, 'existing')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
 const checkIfInvalidCards = (invalidCards, cards) => {
   for (const [i, card] of Object.entries(cards)) {
-    const invalidProperties = Validator.checkIfCardIsValid(card)
+    const invalidProperties = Validator.checkIfCardIsValid(card, 'new')
 
     if (Object.keys(invalidProperties).length !== 0) {
       invalidCards.push({ ...invalidProperties, index: i })
@@ -96,6 +104,7 @@ const getMissingOrInvalid = (data) => {
 
 module.exports = {
   errorHandler,
-  validateSetCardsObject,
-  validateIdWhichIsInteger
+  validateNewSetCardsObject,
+  validateIdWhichIsInteger,
+  validateExistingCardObject
 }

@@ -176,11 +176,11 @@ describe('Data validations', () => {
 
 describe('Object validations', () => {
   describe('Card', () => {
-    describe('returns expected info on what is invalid about a card', () => {
+    describe('returns expected info on what is invalid about a new card', () => {
       test('when one property is missing', () => {
         const data = { ...testCards[0] }
         delete data.name
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
 
         expect(whatIsWrongAboutThisCard).toEqual({ name: 'MISSING' })
       })
@@ -188,7 +188,7 @@ describe('Object validations', () => {
       test('when one property is invalid', () => {
         const data = { ...testCards[0] }
         data.cardNumber = 0.3
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
 
         expect(whatIsWrongAboutThisCard).toEqual({ cardNumber: 'INVALID' })
       })
@@ -199,7 +199,7 @@ describe('Object validations', () => {
         data.price = 'this is a string'
         delete data.name
         delete data.manaCost
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
         const properties = Object.keys(whatIsWrongAboutThisCard)
 
         expect(properties.length).toBe(4)
@@ -211,7 +211,7 @@ describe('Object validations', () => {
         data.price = 'this is a string'
         delete data.name
         delete data.manaCost
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
 
         expect(whatIsWrongAboutThisCard).toHaveProperty('rarity', 'INVALID')
         expect(whatIsWrongAboutThisCard).toHaveProperty('price', 'INVALID')
@@ -223,13 +223,13 @@ describe('Object validations', () => {
         const data = { ...testCards[0] }
         data.extra = 'this is extra'
 
-        expect(() => Validator.checkIfCardIsValid(data)).not.toThrowError()
+        expect(() => Validator.checkIfCardIsValid(data, 'new')).not.toThrowError()
       })
 
       test('returns expected info if unexpected property', () => {
         const data = { ...testCards[0] }
         data.extra = 'this is extra'
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
 
         expect(whatIsWrongAboutThisCard).toHaveProperty('extra', 'UNEXPECTED')
       })
@@ -239,7 +239,7 @@ describe('Object validations', () => {
         data.extra = 'this is extra'
         delete data.rulesText
         data.manaCost = 0.4
-        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data)
+        const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(data, 'new')
 
         const numberOfProperties = Object.keys(whatIsWrongAboutThisCard)
 
