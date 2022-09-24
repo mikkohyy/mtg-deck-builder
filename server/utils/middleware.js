@@ -76,6 +76,18 @@ const validateExistingCardObject = (request, response, next) => {
   }
 }
 
+const validateCardObjectAddedToCardSet = (request, response, next) => {
+  const card = request.body
+
+  const invalidProperties = Validator.checkIfCardIsValid(card, 'addedToCardSet')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
 const checkIfInvalidCards = (invalidCards, cards) => {
   for (const [i, card] of Object.entries(cards)) {
     const invalidProperties = Validator.checkIfCardIsValid(card, 'new')
@@ -106,5 +118,6 @@ module.exports = {
   errorHandler,
   validateNewSetCardsObject,
   validateIdWhichIsInteger,
-  validateExistingCardObject
+  validateExistingCardObject,
+  validateCardObjectAddedToCardSet
 }

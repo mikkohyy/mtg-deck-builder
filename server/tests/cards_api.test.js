@@ -1,6 +1,7 @@
 const {
   testCardSetsWithId,
   testCardsWithId,
+  testCards
 } = require('./test_data')
 
 const supertest = require('supertest')
@@ -13,6 +14,8 @@ const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
 const firstTestCardSetWithId = [testCardSetsWithId[0]]
 const firstTenCardsWithId = testCardsWithId.slice(0, 10)
 
+const testCardWithCardSetId = { ...testCards[0], cardSetId: 1 }
+
 afterAll(async () => {
   sequelize.close()
 })
@@ -21,7 +24,7 @@ describe('When user asks for individual card the server', () => {
   beforeEach(async () => {
     await queryInterface.bulkDelete('card_sets')
     await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 11')
+    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
     await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
     await queryInterface.bulkInsert('cards', firstTenCardsWithId)
   })
@@ -55,8 +58,8 @@ describe('When user asks for individual card the server', () => {
     expect(receivedData).toHaveProperty('name', expectedCard.name)
     expect(receivedData).toHaveProperty('cardNumber', expectedCard.card_number)
     expect(receivedData).toHaveProperty('manaCost', expectedCard.mana_cost)
-    expect(receivedData).toHaveProperty('price', expectedCard.price)
     expect(receivedData).toHaveProperty('rulesText', expectedCard.rules_text)
+    expect(receivedData).toHaveProperty('price', expectedCard.price)
     expect(receivedData).toHaveProperty('rarity', expectedCard.rarity)
   })
 
@@ -82,7 +85,7 @@ describe('When user updates a card the server', () => {
   beforeEach(async() => {
     await queryInterface.bulkDelete('card_sets')
     await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 11')
+    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
     await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
     await queryInterface.bulkInsert('cards', firstTenCardsWithId)
   })
@@ -205,11 +208,11 @@ describe('When user updates a card the server', () => {
   })
 })
 
-describe.only('When user deletes a card from the server', () => {
+describe('When user deletes a card from the server', () => {
   beforeEach(async() => {
     await queryInterface.bulkDelete('card_sets')
     await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 11')
+    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
     await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
     await queryInterface.bulkInsert('cards', firstTenCardsWithId)
   })
@@ -263,5 +266,76 @@ describe.only('When user deletes a card from the server', () => {
     for (const card of cardsAfterDelete) {
       expect(cardsBeforeDelete).toContainEqual(card)
     }
+  })
+})
+
+describe('When user adds an individual card', () => {
+  beforeEach(async() => {
+    await queryInterface.bulkDelete('card_sets')
+    await queryInterface.bulkDelete('cards')
+    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
+    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
+    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
+  })
+
+  describe('when successful', () => {
+    test('responds with 201', async () => {
+      await api
+        .post('/api/cards')
+        .send(testCardWithCardSetId)
+        .expect(201)
+    })
+
+    test('responds with json', async () => {
+      await api
+        .post('/api/cards')
+        .send(testCardWithCardSetId)
+        .expect('Content-Type', /application\/json/)
+    })
+
+    test('returns expected object', async () => {
+      const receivedData = await api
+        .post('/api/cards')
+        .send(testCardWithCardSetId)
+
+      const addedCard = receivedData.body
+
+      expect(addedCard).toHaveProperty('id', 11)
+      expect(addedCard).toHaveProperty('cardSetId', testCardWithCardSetId.cardSetId)
+      expect(addedCard).toHaveProperty('name', testCardWithCardSetId.name)
+      expect(addedCard).toHaveProperty('cardNumber', testCardWithCardSetId.cardNumber)
+      expect(addedCard).toHaveProperty('manaCost', testCardWithCardSetId.manaCost)
+      expect(addedCard).toHaveProperty('price', testCardWithCardSetId.price)
+      expect(addedCard).toHaveProperty('rulesText', testCardWithCardSetId.rulesText)
+      expect(addedCard).toHaveProperty('rarity', testCardWithCardSetId.rarity)
+    })
+  })
+
+  describe('when unsuccessful', () => {
+    test('returns 400 when sent card object is invalid', async() => {
+      const modifiedCard = { ...testCardWithCardSetId }
+
+      modifiedCard.rulesText = ['not', 'a', 'valid', 'value']
+
+      await api
+        .post('/api/cards')
+        .send(modifiedCard)
+        .expect(400)
+    })
+
+    test('returns expected error message when card is invalid', async() => {
+      const modifiedCard = { ...testCardWithCardSetId }
+
+      modifiedCard.rulesText = ['not', 'a', 'valid', 'value']
+
+      const receivedData = await api
+        .post('/api/cards')
+        .send(modifiedCard)
+
+      const errorResponse = receivedData.body
+
+      expect(errorResponse).toHaveProperty('error', 'Invalid or missing data')
+      expect(errorResponse.invalidProperties).toHaveProperty('rulesText', 'INVALID')
+    })
   })
 })

@@ -10,24 +10,25 @@ class Validator {
     rarity: (data) => this.checkIfString(data)
   }
 
+  static #basicPropertyNames = [
+    'name',
+    'cardNumber',
+    'manaCost',
+    'price',
+    'rulesText',
+    'rarity'
+  ]
+
   static #cardPropertyNames = {
-    new: [
-      'name',
-      'cardNumber',
-      'manaCost',
-      'price',
-      'rulesText',
-      'rarity'
+    new: [ ...this.#basicPropertyNames ],
+    addedToCardSet: [
+      'cardSetId',
+      ...this.#basicPropertyNames
     ],
     existing: [
       'id',
       'cardSetId',
-      'name',
-      'cardNumber',
-      'manaCost',
-      'price',
-      'rulesText',
-      'rarity'
+      ...this.#basicPropertyNames
     ]
   }
 

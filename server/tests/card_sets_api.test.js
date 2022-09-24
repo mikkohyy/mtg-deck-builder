@@ -269,7 +269,7 @@ describe('When user deletes a card set from the server', () => {
 
     test('with proper error message when id is not valid', async () => {
       const { body } = await api.delete('/api/card_sets/a4bb')
-      expect(body.error).toMatch(/invalid input syntax/)
+      expect(body.error).toMatch(/Invalid id type/)
     })
   })
 
@@ -358,7 +358,7 @@ describe('When user updates a card set', () => {
 
     test('with proper error message when id is not valid', async () => {
       const { body } = await api.delete('/api/card_sets/a4bb')
-      expect(body.error).toMatch(/invalid input syntax/)
+      expect(body.error).toMatch(/Invalid id type/)
     })
   })
 
@@ -455,7 +455,7 @@ describe('When user asks for a specific card set', () => {
 
     test('with proper error message when id is not valid', async () => {
       const { body } = await api.delete('/api/card_sets/a4bb')
-      expect(body.error).toMatch(/invalid input syntax/)
+      expect(body.error).toMatch(/Invalid id type/)
     })
 
   })

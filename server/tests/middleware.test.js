@@ -1,7 +1,8 @@
 const {
   errorHandler,
   validateNewSetCardsObject,
-  validateExistingCardObject
+  validateExistingCardObject,
+  validateCardObjectAddedToCardSet
 } = require('../utils/middleware')
 const { testCardSets, testCards, testCardsWithId } = require('./test_data')
 const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
@@ -567,7 +568,7 @@ describe('Set cards validator', () => {
 })
 
 describe('Received card validator', () => {
-  describe('when card is in the form of existing card', () => {
+  describe('when existing card', () => {
     test('does not raise an error when card is valid', () => {
       const existingCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
 
@@ -599,9 +600,55 @@ describe('Received card validator', () => {
         thrownError = error
       }
 
+      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
       expect(thrownError.name).toBe('InvalidDataError')
+      expect(invalidPropertyNames).toHaveLength(3)
       expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
       expect(thrownError.invalidProperties).toHaveProperty('rulesText', 'MISSING')
+      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+
+  describe('when new card is added to existing a card set', () => {
+    test('does not raise an error when card is valid', () => {
+      const card = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      delete card.id
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(card)
+
+      try {
+        validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
+      } catch(error) {
+        // intentionally left empty
+      }
+
+      expect(mockNext).toBeCalledTimes(1)
+    })
+
+    test('raises expected error when card is invalid', () => {
+      let thrownError
+      const card = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      delete card.id
+
+      card.name = []
+      card.extra = 'this is extra'
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(card)
+
+      try {
+        validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
+      expect(thrownError.name).toBe('InvalidDataError')
+      expect(invalidPropertyNames).toHaveLength(2)
+      expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
       expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
     })
   })

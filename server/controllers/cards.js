@@ -1,14 +1,29 @@
 const cardsRouter = require('express').Router()
-const { validateIdWhichIsInteger, validateExistingCardObject } = require('../utils/middleware')
+const {
+  validateIdWhichIsInteger,
+  validateExistingCardObject,
+  validateCardObjectAddedToCardSet
+} = require('../utils/middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 const { Card } = require('../models')
 
-cardsRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next) => {
+cardsRouter.get('/:id', validateIdWhichIsInteger, async(request, response, next) => {
   const cardId = request.params.id
 
   try {
     const foundCard = await Card.findOne({ where: { id: cardId } })
     foundCard ? response.json(foundCard) : response.send(404).end()
+  } catch(error) {
+    next(error)
+  }
+})
+
+cardsRouter.post('/', validateCardObjectAddedToCardSet, async(request, response, next) => {
+  try {
+    const newCard = request.body
+    const addedCard = await Card.create(newCard)
+
+    response.status(201).json(addedCard)
   } catch(error) {
     next(error)
   }
