@@ -300,7 +300,7 @@ describe('User endpoint', () => {
         .expect(400)
     })
 
-    it.only('returns expected error information when sent data is invalid', async () => {
+    test('returns expected error information when sent data is invalid', async () => {
       const updatedObject = {
         username: []
       }

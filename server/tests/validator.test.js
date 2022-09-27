@@ -308,7 +308,7 @@ describe('Object validations', () => {
     })
   })
 
-  describe.only('Updated user', () => {
+  describe('Updated user', () => {
     test('accepts data when valid properties', () => {
       const data = { ...testUsers[0] }
       const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
