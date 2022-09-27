@@ -1,4 +1,4 @@
-const { testCards } = require('./test_data')
+const { testCards, testUsers } = require('./test_data')
 const Validator = require('../utils/validator')
 
 describe('Data validations', () => {
@@ -248,6 +248,119 @@ describe('Object validations', () => {
         expect(whatIsWrongAboutThisCard).toHaveProperty('rulesText', 'MISSING')
         expect(whatIsWrongAboutThisCard).toHaveProperty('manaCost', 'INVALID')
       })
+    })
+  })
+
+  describe('New user', () => {
+    test('accepts data when valid properties', () => {
+      const data = { ...testUsers[0] }
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'new')
+
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('rejects data with correct information when missing property', () => {
+      const data = { ...testUsers[0] }
+      delete data.password
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('password', 'MISSING')
+    })
+
+    test('rejects data with correct information when invalid property', () => {
+      const data = { ...testUsers[0] }
+      data.username = []
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('username', 'INVALID')
+    })
+
+    test('rejects data with correct information when unexpected property', () => {
+      const data = { ...testUsers[0] }
+      data.extra = ['this is extra']
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('extra', 'UNEXPECTED')
+    })
+
+    test('rejects data with correct information when invalid and missing properties', () => {
+      const data = { ...testUsers[0] }
+      delete data.username
+      data.password = { valid: 'not' }
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(2)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('username', 'MISSING')
+      expect(whatIsWrongAboutThisUser).toHaveProperty('password', 'INVALID')
+    })
+  })
+
+  describe.only('Updated user', () => {
+    test('accepts data when valid properties', () => {
+      const data = { ...testUsers[0] }
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
+
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('accepts data when only one property', () => {
+      const data = { username: testUsers[0].username }
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
+
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('rejects data with correct information when invalid property', () => {
+      const data = { ...testUsers[0] }
+      data.username = []
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('username', 'INVALID')
+    })
+
+    test('rejects data with correct information when unexpected property', () => {
+      const data = { ...testUsers[0] }
+      data.extra = ['this is extra']
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('extra', 'UNEXPECTED')
+    })
+
+    test('rejects data with correct information when two invalid properties', () => {
+      const data = {
+        username: [1, 2, 4],
+        password: { thisIs: 'invalid' }
+      }
+
+      const whatIsWrongAboutThisUser = Validator.checkIfUserIsValid(data, 'updated')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisUser)
+
+      expect(numberOfProperties).toHaveLength(2)
+      expect(whatIsWrongAboutThisUser).toHaveProperty('username', 'INVALID')
+      expect(whatIsWrongAboutThisUser).toHaveProperty('password', 'INVALID')
     })
   })
 })

@@ -10,18 +10,27 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({ error: error.message })
   } else if (error.name === 'SequelizeDatabaseError') {
     return response.status(400).json({ error: error.message })
+  } else if (error.name === 'SequelizeUniqueConstraintError') {
+    const errorInfo = {
+      error: error.message,
+      alreadyExistingValues: { ...error.fields }
+    }
+
+    return response.status(400).json( errorInfo )
   } else if (error.name === 'InvalidDataError') {
     const errorInfo = {
       error: error.message,
       invalidProperties: error.invalidProperties
+
+    }
+    return response.status(400).json(errorInfo)
+  } else if (error.name === 'InvalidResourceId') {
+    const errorInfo = {
+      error: error.message,
+      expectedType: error.expectedType
     }
 
     return response.status(400).json(errorInfo)
-  } else if (error.name === 'InvalidResourceId') {
-    return response.status(400).json({
-      error: error.message,
-      expectedType: error.expectedType
-    })
   }
 
   next(error)
@@ -47,7 +56,7 @@ const validateNewSetCardsObject = (request, response, next) => {
     invalidProperties['description'] = getMissingOrInvalid(body.description)
   }
 
-  invalidProperties = checkIfUnnecessaryProperties(invalidProperties, body)
+  invalidProperties = checkIfCardHasUnnecessaryProperties(invalidProperties, body)
 
   if (Object.keys(invalidProperties).length !== 0) {
     throw new InvalidDataError('Invalid or missing data', invalidProperties)
@@ -88,6 +97,30 @@ const validateCardObjectAddedToCardSet = (request, response, next) => {
   }
 }
 
+const validateNewUserObject = (request, respons, next) => {
+  const user = request.body
+
+  const invalidProperties = Validator.checkIfUserIsValid(user, 'new')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
+const validateUpdatedUserObject = (request, respons, next) => {
+  const user = request.body
+
+  const invalidProperties = Validator.checkIfUserIsValid(user, 'updated')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
 const checkIfInvalidCards = (invalidCards, cards) => {
   for (const [i, card] of Object.entries(cards)) {
     const invalidProperties = Validator.checkIfCardIsValid(card, 'new')
@@ -100,7 +133,7 @@ const checkIfInvalidCards = (invalidCards, cards) => {
   return invalidCards
 }
 
-const checkIfUnnecessaryProperties = (invalidProperties, data) => {
+const checkIfCardHasUnnecessaryProperties = (invalidProperties, data) => {
   const propertyNames = Object.keys(data)
 
   for (const name of propertyNames) {
@@ -119,5 +152,7 @@ module.exports = {
   validateNewSetCardsObject,
   validateIdWhichIsInteger,
   validateExistingCardObject,
-  validateCardObjectAddedToCardSet
+  validateCardObjectAddedToCardSet,
+  validateNewUserObject,
+  validateUpdatedUserObject
 }

@@ -425,10 +425,25 @@ const invalidCardSet = {
   'description': 'An invalid set'
 }
 
+const testUsers = [
+  {
+    username: 'zerocool',
+    password: 'loocorez'
+  },
+  { username: 'acidburn',
+    password: 'nrubdica'
+  },
+  {
+    username: 'cerealkiller',
+    password: 'relliklaerec'
+  }
+]
+
 module.exports = {
   testCardSetsWithId,
   testCardSets,
   invalidCardSet,
   testCardsWithId,
   testCards,
+  testUsers
 }

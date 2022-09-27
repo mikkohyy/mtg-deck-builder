@@ -1,7 +1,6 @@
 const cors = require('cors')
 const express = require('express')
 const app = express()
-const { User, Deck } = require('./models')
 
 const { QueryTypes, DataTypes } = require('sequelize')
 const { sequelize, connectToDatabase } = require('./utils/db')
@@ -12,6 +11,7 @@ connectToDatabase()
 
 const cardSetsRouter = require('./controllers/card_sets')
 const cardsRouter = require('./controllers/cards')
+const usersRouter = require('./controllers/users')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -19,6 +19,7 @@ app.use(express.json())
 
 app.use('/api/card_sets', cardSetsRouter)
 app.use('/api/cards', cardsRouter)
+app.use('/api/users', usersRouter)
 
 if (process.env.NODE_ENV === 'test') {
   app.post('/api/initialize-e2e', async (req, res) => {
@@ -48,12 +49,6 @@ app.get('/api', async (req, res) => {
   } catch (error) {
     res.status(404).send({ error: error })
   }
-})
-
-app.get('/api/users', async (req, res) => {
-  User.findAll()
-  Deck.findAll()
-  res.status(200).end()
 })
 
 app.use(errorHandler)

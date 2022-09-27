@@ -10,7 +10,13 @@ class Validator {
     rarity: (data) => this.checkIfString(data)
   }
 
-  static #basicPropertyNames = [
+  static #userPropertyChecks = {
+    id: (data) => this.checkIfInteger(data),
+    username: (data) => this.checkIfString(data),
+    password: (data) => this.checkIfString(data)
+  }
+
+  static #basicCardPropertyNames = [
     'name',
     'cardNumber',
     'manaCost',
@@ -19,17 +25,26 @@ class Validator {
     'rarity'
   ]
 
+  static #basicUserPropertyNames = [
+    'username',
+  ]
+
   static #cardPropertyNames = {
-    new: [ ...this.#basicPropertyNames ],
+    new: [ ...this.#basicCardPropertyNames ],
     addedToCardSet: [
       'cardSetId',
-      ...this.#basicPropertyNames
+      ...this.#basicCardPropertyNames
     ],
     existing: [
       'id',
       'cardSetId',
-      ...this.#basicPropertyNames
+      ...this.#basicCardPropertyNames
     ]
+  }
+
+  static #userPropertyNames = {
+    new: [ ...this.#basicUserPropertyNames, 'password' ],
+    updated: [ ...this.#basicUserPropertyNames, 'password' ]
   }
 
   static checkIfString(data) {
@@ -74,22 +89,81 @@ class Validator {
 
   static checkIfCardIsValid(data, cardStatus) {
     let invalidParts = {}
-    let { validPropertyNames, unexpectedPropertyNames } = this.#checkPropertyNames(data, cardStatus)
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkCardPropertyNames(data, cardStatus)
 
     invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
-    invalidParts = this.#checkIfMissingProperties(validPropertyNames, invalidParts, cardStatus)
-    invalidParts = this.#checkIfInvalidTypes(validPropertyNames, invalidParts, data)
+    invalidParts = this.#checkIfCardHasMissingProperties(validPropertyNames, invalidParts, cardStatus)
+    invalidParts = this.#checkIfCardHasInvalidTypes(validPropertyNames, invalidParts, data)
 
     return invalidParts
   }
 
-  static #checkPropertyNames(data, cardStatus) {
+  static checkIfUserIsValid(data, userStatus) {
+    const invalidParts = userStatus === 'new'
+      ? this.#checkIfNewUserIsValid(data, 'new')
+      : this.#checkIfUpdatedUserIsValid(data, 'updated')
+
+    return invalidParts
+  }
+
+  static #checkIfNewUserIsValid(data) {
+    let invalidParts = {}
+
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkUserPropertyNames(data, 'new')
+
+    invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
+    invalidParts = this.#checkIfUserHasMissingProperties(validPropertyNames, invalidParts, 'new')
+    invalidParts = this.#checkIfUserHasInvalidTypes(validPropertyNames, invalidParts, data)
+
+    return invalidParts
+  }
+
+  static #checkIfUpdatedUserIsValid(data) {
+    let invalidParts = {}
+
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkUserPropertyNames(data, 'updated')
+
+    invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
+    invalidParts = this.#checkIfUserHasInvalidTypes(validPropertyNames, invalidParts, data)
+
+    return invalidParts
+  }
+
+  static #checkCardPropertyNames(data, cardStatus) {
     const validNames = []
     const unexpectedNames = []
     const dataPropertyNames = Object.keys(data)
 
     for (const propertyName of dataPropertyNames) {
       this.#cardPropertyNames[cardStatus].includes(propertyName)
+        ? validNames.push(propertyName)
+        : unexpectedNames.push(propertyName)
+    }
+
+    const propertyNameInfo = {
+      validPropertyNames: validNames,
+      unexpectedPropertyNames: unexpectedNames
+    }
+
+    return propertyNameInfo
+  }
+
+  static #checkUserPropertyNames(data, userStatus) {
+    const validNames = []
+    const unexpectedNames = []
+    const dataPropertyNames = Object.keys(data)
+
+    for (const propertyName of dataPropertyNames) {
+      this.#userPropertyNames[userStatus].includes(propertyName)
         ? validNames.push(propertyName)
         : unexpectedNames.push(propertyName)
     }
@@ -110,7 +184,7 @@ class Validator {
     return invalidParts
   }
 
-  static #checkIfMissingProperties(propertyNames, invalidParts, cardStatus) {
+  static #checkIfCardHasMissingProperties(propertyNames, invalidParts, cardStatus) {
     for (const property of this.#cardPropertyNames[cardStatus]) {
       !propertyNames.includes(property) && (invalidParts[property] = 'MISSING')
     }
@@ -118,10 +192,27 @@ class Validator {
     return invalidParts
   }
 
-  static #checkIfInvalidTypes(validPropertyNames, invalidParts, data) {
+  static #checkIfUserHasMissingProperties(propertyNames, invalidParts, userStatus) {
+    for (const property of this.#userPropertyNames[userStatus]) {
+      !propertyNames.includes(property) && (invalidParts[property] = 'MISSING')
+    }
+
+    return invalidParts
+  }
+
+  static #checkIfCardHasInvalidTypes(validPropertyNames, invalidParts, data) {
     for (const property of validPropertyNames) {
       const value = data[property]
       !this.#cardPropertyChecks[property](value) && (invalidParts[property] = 'INVALID')
+    }
+
+    return invalidParts
+  }
+
+  static #checkIfUserHasInvalidTypes(validPropertyNames, invalidParts, data) {
+    for (const property of validPropertyNames) {
+      const value = data[property]
+      !this.#userPropertyChecks[property](value) && (invalidParts[property] = 'INVALID')
     }
 
     return invalidParts

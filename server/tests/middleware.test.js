@@ -2,9 +2,18 @@ const {
   errorHandler,
   validateNewSetCardsObject,
   validateExistingCardObject,
-  validateCardObjectAddedToCardSet
+  validateCardObjectAddedToCardSet,
+  validateNewUserObject,
+  validateUpdatedUserObject
 } = require('../utils/middleware')
-const { testCardSets, testCards, testCardsWithId } = require('./test_data')
+
+const {
+  testCardSets,
+  testCards,
+  testCardsWithId,
+  testUsers
+} = require('./test_data')
+
 const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
 
 const validCardSetWithCards = {
@@ -649,6 +658,90 @@ describe('Received card validator', () => {
       expect(thrownError.name).toBe('InvalidDataError')
       expect(invalidPropertyNames).toHaveLength(2)
       expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
+      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+})
+
+describe('Received user validator', () => {
+  describe('when new user is added', () => {
+    test('does not raise an error when user is valid', () => {
+      const user = testUsers[0]
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(user)
+
+      try {
+        validateNewUserObject(mockRequest, null, mockNext)
+      } catch(error) {
+        // intentionally left empty
+      }
+
+      expect(mockNext).toBeCalledTimes(1)
+    })
+
+    test('raises expected error when user is invalid', () => {
+      let thrownError
+      const user = testUsers[0]
+
+      user.username = []
+      user.extra = 'this is extra'
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(user)
+
+      try {
+        validateNewUserObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
+      expect(thrownError.name).toBe('InvalidDataError')
+      expect(invalidPropertyNames).toHaveLength(2)
+      expect(thrownError.invalidProperties).toHaveProperty('username', 'INVALID')
+      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+
+  describe('when user is updated', () => {
+    test('does not raise an error when user is valid', () => {
+      const user = { username: 'zerocool' }
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(user)
+
+      try {
+        validateUpdatedUserObject(mockRequest, null, mockNext)
+      } catch(error) {
+        // intentionally left empty
+      }
+
+      expect(mockNext).toBeCalledTimes(1)
+    })
+
+    test('raises expected error when user is invalid', () => {
+      let thrownError
+      const user = (testUsers[0])
+
+      user.username = []
+      user.extra = 'this is extra'
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(user)
+
+      try {
+        validateNewUserObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
+      expect(thrownError.name).toBe('InvalidDataError')
+      expect(invalidPropertyNames).toHaveLength(2)
+      expect(thrownError.invalidProperties).toHaveProperty('username', 'INVALID')
       expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
     })
   })
