@@ -7,10 +7,17 @@ const { getHashedString } = require('../utils/general')
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
+sequelize.options.logging = false
+
 const newUser = {
   username: 'zerocool',
   password: 'password'
 }
+
+beforeAll(async () => {
+  await queryInterface.bulkDelete('deck_cards')
+  await queryInterface.bulkDelete('decks')
+})
 
 afterAll(async () => {
   sequelize.close()

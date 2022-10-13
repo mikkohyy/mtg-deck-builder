@@ -31,6 +31,8 @@ const errorHandler = (error, request, response, next) => {
     }
 
     return response.status(400).json(errorInfo)
+  } else {
+    response.status(500).json({ error: error.errorInfo })
   }
 
   next(error)
@@ -44,7 +46,7 @@ const validateNewSetCardsObject = (request, response, next) => {
   if (!Validator.checkIfArray(body.cards)) {
     invalidProperties['cards'] = getMissingOrInvalid(body.cards)
   } else {
-    invalidCards = checkIfInvalidCards(invalidCards, body.cards)
+    invalidCards = checkIfInvalidCards(invalidCards, body.cards, 'new')
     invalidCards.length !== 0 && (invalidProperties['cardObjects'] = invalidCards)
   }
 
@@ -121,9 +123,57 @@ const validateUpdatedUserObject = (request, respons, next) => {
   }
 }
 
-const checkIfInvalidCards = (invalidCards, cards) => {
+const validateNewDeckObject = (request, response, next) => {
+  const deck = request.body
+
+  const invalidProperties = Validator.checkIfDeckIsValid(deck, 'new')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
+const validateUpdatedDeckObject = (request, response, next) => {
+  let invalidProperties
+  let nOfInvalidProperties = 0
+  const deck = request.body
+  const whatToUpdate = request.query.update
+
+  if (whatToUpdate === 'information') {
+    invalidProperties = Validator.checkIfDeckIsValid(deck, 'update')
+    nOfInvalidProperties = Object.keys(invalidProperties).length
+  } else if (whatToUpdate === 'cards') {
+    invalidProperties = validateCardsAsPartOfUpdatedDeck(deck)
+    for (const invalidInformation of Object.values(invalidProperties)) {
+      nOfInvalidProperties = nOfInvalidProperties + invalidInformation.length
+    }
+  }
+
+  if (nOfInvalidProperties !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
+const validateCardsAsPartOfUpdatedDeck = (cards) => {
+  const { added, updated, deleted } = cards
+
+  const invalidProperties = {
+    'added': checkIfInvalidCards([], added, 'partOfDeck'),
+    'updated': checkIfInvalidCards([], updated, 'partOfDeck'),
+    'deleted': checkIfInvalidCards([], deleted, 'partOfDeck')
+  }
+
+  return invalidProperties
+}
+
+const checkIfInvalidCards = (invalidCards, cards, cardStatus) => {
+
   for (const [i, card] of Object.entries(cards)) {
-    const invalidProperties = Validator.checkIfCardIsValid(card, 'new')
+    const invalidProperties = Validator.checkIfCardIsValid(card, cardStatus)
 
     if (Object.keys(invalidProperties).length !== 0) {
       invalidCards.push({ ...invalidProperties, index: i })
@@ -154,5 +204,7 @@ module.exports = {
   validateExistingCardObject,
   validateCardObjectAddedToCardSet,
   validateNewUserObject,
-  validateUpdatedUserObject
+  validateUpdatedUserObject,
+  validateUpdatedDeckObject,
+  validateNewDeckObject
 }

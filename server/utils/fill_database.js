@@ -1,6 +1,6 @@
 const cardData = require('../data/card_set.json')
 const { connectToDatabase } = require('./db')
-const { CardSet, Card, User } = require('../models')
+const { CardSet, Card, User, Deck, DeckCard } = require('../models')
 
 const addDataToDatabase = async () => {
   await connectToDatabase()
@@ -34,6 +34,52 @@ const addDataToDatabase = async () => {
     {
       username: 'acidburn',
       password: 'password'
+    }
+  ])
+
+  await Deck.bulkCreate([
+    {
+      userId: 1,
+      name: 'Green/Blue counter deck',
+      notes: 'Created for draft which happened in 24.9.2022'
+    },
+    {
+      userId: 2,
+      name: 'White/Red weenie deck',
+      notes: 'Created for draft which happened in 22.9.2021'
+    },
+  ])
+
+  await DeckCard.bulkCreate([
+    {
+      deckId: 1,
+      cardId: 1,
+      nInDeck: 3,
+      sideboard: true
+    },
+    {
+      deckId: 1,
+      cardId: 3,
+      nInDeck: 2,
+      sideboard: false
+    },
+    {
+      deckId: 1,
+      cardId: 5,
+      nInDeck: 1,
+      sideboard: false
+    },
+    {
+      deckId: 2,
+      cardId: 12,
+      nInDeck: 1,
+      sideboard: false
+    },
+    {
+      deckId: 2,
+      cardId: 100,
+      nInDeck: 3,
+      sideboard: false
     }
   ])
 }

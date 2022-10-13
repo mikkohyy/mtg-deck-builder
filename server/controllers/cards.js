@@ -12,7 +12,7 @@ cardsRouter.get('/:id', validateIdWhichIsInteger, async(request, response, next)
 
   try {
     const foundCard = await Card.findOne({ where: { id: cardId } })
-    foundCard ? response.json(foundCard) : response.send(404).end()
+    foundCard ? response.json(foundCard) : response.status(404).end()
   } catch(error) {
     next(error)
   }
@@ -56,7 +56,7 @@ cardsRouter.put(
         updatedObject = extractInformationOnUpdatedObject(updatedInfo)
       }
 
-      updatedObject ? response.json(updatedObject) : response.send(404).end()
+      updatedObject ? response.json(updatedObject) : response.status(404).end()
     } catch(error) {
       next(error)
     }

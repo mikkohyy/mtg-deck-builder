@@ -3,18 +3,24 @@ const {
   testCardsWithId,
   testCards
 } = require('./test_data')
+const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
 
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
-const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
+
+sequelize.options.logging = false
 
 const firstTestCardSetWithId = [testCardSetsWithId[0]]
 const firstTenCardsWithId = testCardsWithId.slice(0, 10)
 
 const testCardWithCardSetId = { ...testCards[0], cardSetId: 1 }
+
+beforeAll(async () => {
+  await queryInterface.bulkDelete('deck_cards')
+})
 
 afterAll(async () => {
   sequelize.close()
@@ -63,7 +69,7 @@ describe('When user asks for individual card the server', () => {
     expect(receivedData).toHaveProperty('rarity', expectedCard.rarity)
   })
 
-  test('returns 404 when invalid id', async () => {
+  test('returns 400 when invalid id', async () => {
     await api.get('/api/cards/3_not_valid_id').expect(400)
   })
 

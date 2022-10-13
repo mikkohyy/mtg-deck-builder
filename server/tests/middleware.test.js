@@ -4,17 +4,26 @@ const {
   validateExistingCardObject,
   validateCardObjectAddedToCardSet,
   validateNewUserObject,
-  validateUpdatedUserObject
+  validateUpdatedUserObject,
+  validateNewDeckObject,
+  validateUpdatedDeckObject
 } = require('../utils/middleware')
 
 const {
   testCardSets,
   testCards,
   testCardsWithId,
-  testUsers
+  testUsers,
+  testDecks,
+  testDecksWithId,
+  testUpdatedCards
 } = require('./test_data')
 
-const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
+const {
+  transformSnakeCaseCardFieldsToCamelCase,
+  transformPropertiesFromSnakecaseToCamelCase,
+  getAllInvalidCardsFromUpdatedCards
+} = require('./test_helpers')
 
 const validCardSetWithCards = {
   ...testCardSets[0],
@@ -743,6 +752,179 @@ describe('Received user validator', () => {
       expect(invalidPropertyNames).toHaveLength(2)
       expect(thrownError.invalidProperties).toHaveProperty('username', 'INVALID')
       expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+})
+
+describe('Received deck validator', () => {
+  describe('when new deck is added', () => {
+    test('does not raise an error when valid', () => {
+      const data = { ...testDecks[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(deckInfo)
+
+      try {
+        validateNewDeckObject(mockRequest, null, mockNext)
+      } catch(error) {
+        // intentionally left empty
+      }
+
+      expect(mockNext).toBeCalledTimes(1)
+    })
+
+    test('raise an error when invalid', () => {
+      let thrownError
+
+      const data = { ...testDecks[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      deckInfo.notes = []
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(deckInfo)
+
+      try {
+        validateNewDeckObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
+      expect(thrownError.name).toBe('InvalidDataError')
+      expect(invalidPropertyNames).toHaveLength(1)
+      expect(thrownError.invalidProperties).toHaveProperty('notes', 'INVALID')
+    })
+
+  })
+
+  describe('when deck is updated', () => {
+    describe('deck information',() => {
+      test('does not raise an error when valid', () => {
+        const data = { ...testDecksWithId[0] }
+        const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(deckInfo)
+
+        mockRequest.query = { update: 'information' }
+
+        try {
+          validateUpdatedDeckObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+
+        expect(mockNext).toBeCalledTimes(1)
+      })
+
+      test('raises expected error when invalid', () => {
+        let thrownError
+
+        const data = { ...testDecksWithId[0] }
+        const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+        deckInfo.notes = []
+        deckInfo.extra = 'this is extra'
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(deckInfo)
+
+        mockRequest.query = { update: 'information' }
+
+        try {
+          validateUpdatedDeckObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+
+        expect(thrownError.name).toBe('InvalidDataError')
+        expect(invalidPropertyNames).toHaveLength(2)
+        expect(thrownError.invalidProperties).toHaveProperty('notes', 'INVALID')
+        expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+      })
+    })
+
+    describe('when cards are updated', () => {
+      describe('when existing cards are updated', () => {
+        test('does not raise an error when cards are valid', () => {
+          const updatedCards = [
+            { ...testUpdatedCards[0] },
+            { ...testUpdatedCards[1] }
+          ]
+
+          const cardObject = {
+            'added': [],
+            'updated': updatedCards,
+            'deleted': []
+          }
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(cardObject)
+
+          mockRequest.query = { update: 'cards' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            // intentionally left empty
+          }
+
+          expect(mockNext).toBeCalledTimes(1)
+        })
+
+        test('raises expected errors when cards are valid', () => {
+          let thrownError
+
+          const updatedCards = [
+            { ...testUpdatedCards[0] },
+            { ...testUpdatedCards[1] }
+          ]
+
+          updatedCards[0].sideboard = 4
+          delete updatedCards[1].nInDeck
+
+          const cardObject = {
+            'added': [],
+            'updated': updatedCards,
+            'deleted': []
+          }
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(cardObject)
+
+          mockRequest.query = { update: 'cards' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            thrownError = error
+          }
+
+          const invalidCards = getAllInvalidCardsFromUpdatedCards(thrownError.invalidProperties)
+
+          const firstInvalidCard = thrownError.invalidProperties.updated[0]
+          const secondInvalidCard = thrownError.invalidProperties.updated[1]
+
+          const keysOfFirstErrorInfo = Object.keys(firstInvalidCard)
+          const keysOfSecondErrorInfo = Object.keys(firstInvalidCard)
+
+          expect(thrownError.name).toBe('InvalidDataError')
+          expect(invalidCards).toHaveLength(2)
+
+          expect(firstInvalidCard).toHaveProperty('index', '0')
+          expect(firstInvalidCard).toHaveProperty('sideboard', 'INVALID')
+          expect(keysOfFirstErrorInfo).toHaveLength(2)
+
+          expect(secondInvalidCard).toHaveProperty('index', '1')
+          expect(secondInvalidCard).toHaveProperty('nInDeck', 'MISSING')
+          expect(keysOfSecondErrorInfo).toHaveLength(2)
+        })
+      })
     })
   })
 })

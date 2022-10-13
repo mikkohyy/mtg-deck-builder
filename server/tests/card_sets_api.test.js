@@ -9,13 +9,20 @@ const {
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
+
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
+
+sequelize.options.logging = false
 
 const getAllCardSetsQueryString = 'SELECT id, name, description, date FROM card_sets'
 const cardSetWithCards = { ...testCardSets[0], cards: testCards }
 
 const invalidCardSetWithCards = { ...invalidCardSet, cards: testCards }
+
+beforeAll(async () => {
+  await queryInterface.bulkDelete('deck_cards')
+})
 
 afterAll(async () => {
   sequelize.close()

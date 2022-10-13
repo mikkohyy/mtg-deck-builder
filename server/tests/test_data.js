@@ -439,11 +439,184 @@ const testUsers = [
   }
 ]
 
+const testUsersWithId = [
+  {
+    id: 1,
+    username: 'zerocool',
+    password: 'loocorez'
+  },
+  { id: 2,
+    username: 'acidburn',
+    password: 'nrubdica'
+  },
+  {
+    id: 3,
+    username: 'cerealkiller',
+    password: 'relliklaerec'
+  }
+]
+
+const testDecksWithId = [
+  {
+    id: 1,
+    user_id: 1,
+    name: 'Blue/Green ramp',
+    notes: 'A very basic Blue/Green ramp deck'
+  },
+  {
+    id: 2,
+    user_id: 1,
+    name: 'White weenie deck',
+    notes: 'A very basic white weenie aggro deck'
+  },
+  {
+    id: 3,
+    user_id: 3,
+    name: 'Blue/Red control',
+    notes: 'A very irritating control deck'
+  }
+]
+
+const testDecks = [
+  {
+    user_id: 1,
+    name: 'Blue/red/green/white draft deck',
+    notes: 'Ended up with a deck that has too many colors. Not a winner.'
+  },
+  {
+    user_id: 2,
+    name: 'White monoaggro',
+    notes: 'An aggerssive single color deck. Was made for the tournament.'
+  },
+  {
+    user_id: 3,
+    name: 'Green/Red big creatures',
+    notes: 'The idea is to destroy everything the opponent can throw at me. Then kill them with large creaturs.'
+  }
+]
+
+const testCardDeckCombination = [
+  {
+    deck_id: 1,
+    card_id: 1,
+    n_in_deck: 2,
+    sideboard: false
+  },
+  {
+    deck_id: 1,
+    card_id: 2,
+    n_in_deck: 1,
+    sideboard: false
+  },
+  {
+    deck_id: 1,
+    card_id: 4,
+    n_in_deck: 4,
+    sideboard: true
+  },
+  {
+    deck_id: 1,
+    card_id: 6,
+    n_in_deck: 1,
+    sideboard: false
+  },
+  {
+    deck_id: 1,
+    card_id: 8,
+    n_in_deck: 3,
+    sideboard: false
+  },
+  {
+    deck_id: 1,
+    card_id: 9,
+    n_in_deck: 2,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 21,
+    n_in_deck: 2,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 23,
+    n_in_deck: 1,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 25,
+    n_in_deck: 4,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 26,
+    n_in_deck: 3,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 27,
+    n_in_deck: 1,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 29,
+    n_in_deck: 4,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 14,
+    n_in_deck: 2,
+    sideboard: false
+  },
+  {
+    deck_id: 3,
+    card_id: 15,
+    n_in_deck: 1,
+    sideboard: true
+  }
+]
+
+const testUpdatedCards = [
+  {
+    'id': 29,
+    'name': 'Curse of Leeches',
+    'cardNumber': 94,
+    'manaCost': '2 black',
+    'price': 0.18,
+    'rulesText': 'Enchant player\nAs this permanent transforms into Curse of Leeches, attach it to a player.\nAt the beginning of enchanted player\'s upkeep, they lose 1 life and you gain 1 life.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\n//\n\nLifelink\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    'rarity': 'rare',
+    'nInDeck': 2,
+    'sideboard': false
+  },
+  {
+    'id': 24,
+    'name': 'Shady Traveler',
+    'cardNumber': 120,
+    'manaCost': '2 black',
+    'price': 0.04,
+    'rulesText': 'Menace (This creature can\'t be blocked except by two or more creatures.)\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\n//\n\nMenace (This creature can\'t be blocked except by two or more creatures.)\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    'rarity': 'common',
+    'nInDeck': 3,
+    'sideboard': true
+  },
+]
+
 module.exports = {
-  testCardSetsWithId,
   testCardSets,
+  testCardSetsWithId,
   invalidCardSet,
-  testCardsWithId,
   testCards,
-  testUsers
+  testCardsWithId,
+  testUsers,
+  testUsersWithId,
+  testDecks,
+  testDecksWithId,
+  testCardDeckCombination,
+  testUpdatedCards
 }

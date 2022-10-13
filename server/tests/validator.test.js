@@ -1,4 +1,11 @@
-const { testCards, testUsers } = require('./test_data')
+const {
+  testCards,
+  testUsers,
+  testDecksWithId,
+  testDecks,
+  testUpdatedCards
+} = require('./test_data')
+const { transformPropertiesFromSnakecaseToCamelCase } = require('./test_helpers')
 const Validator = require('../utils/validator')
 
 describe('Data validations', () => {
@@ -362,5 +369,128 @@ describe('Object validations', () => {
       expect(whatIsWrongAboutThisUser).toHaveProperty('username', 'INVALID')
       expect(whatIsWrongAboutThisUser).toHaveProperty('password', 'INVALID')
     })
+  })
+
+  describe('New deck', () => {
+    test('accepts data when valid properties', () => {
+      const data = { ...testDecks[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
+
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('rejects data with correct information when invalid property', () => {
+      const data = { ...testDecks[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      deckInfo.notes = []
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
+
+      expect(numberOfProperties).toHaveLength(1)
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('notes', 'INVALID')
+    })
+
+    test('rejects data with correct information when invalid, missing and unexpected properties', () => {
+      const data = { ...testDecks[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      deckInfo.notes = []
+      delete deckInfo.userId
+      deckInfo.extra = 'this is extra'
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'new')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
+
+      expect(numberOfProperties).toHaveLength(3)
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('notes', 'INVALID')
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('userId', 'MISSING')
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+
+  describe('Updated deck', () => {
+    test('accepts data when valid properties', () => {
+      const data = { ...testDecksWithId[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'update')
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
+
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('rejects data with correct information when invalid property', () => {
+      const data = { ...testDecksWithId[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      deckInfo.notes = []
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'updated')
+
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('notes', 'INVALID')
+    })
+
+    test('rejects data with correct information when invalid, missing and unexpected properties', () => {
+      const data = { ...testDecksWithId[0] }
+      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+
+      deckInfo.notes = []
+      delete deckInfo.id
+      deckInfo.extra = 'this is extra'
+
+      const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'updated')
+
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('notes', 'INVALID')
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('id', 'MISSING')
+      expect(whatIsWrongAboutThisDeck).toHaveProperty('extra', 'UNEXPECTED')
+    })
+  })
+
+  describe('updated card in deck', () => {
+    test('accepts data when valid properties', () => {
+      const cardData = { ...testUpdatedCards[0] }
+      const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(cardData, 'partOfDeck')
+
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisCard)
+      expect(numberOfProperties).toHaveLength(0)
+    })
+
+    test('rejects data when ivalid properties', () => {
+      const cardData = { ...testUpdatedCards[0] }
+      cardData.sideboard = []
+
+      const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(cardData, 'partOfDeck')
+
+      const numberOfProperties = Object.keys(whatIsWrongAboutThisCard)
+      expect(numberOfProperties).toHaveLength(1)
+    })
+
+    test('returns information on which properties are invalid', () => {
+      const cardData = { ...testUpdatedCards[0] }
+      cardData.sideboard = []
+
+      const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(cardData, 'partOfDeck')
+
+      expect(whatIsWrongAboutThisCard).toHaveProperty('sideboard', 'INVALID')
+    })
+
+    test('returns information on which properties are invalid, missing or unexpected', () => {
+      const cardData = { ...testUpdatedCards[0] }
+      cardData.sideboard = []
+      cardData.extra = 'extra'
+      delete cardData.nInDeck
+
+      const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(cardData, 'partOfDeck')
+
+      expect(whatIsWrongAboutThisCard).toHaveProperty('sideboard', 'INVALID')
+      expect(whatIsWrongAboutThisCard).toHaveProperty('extra', 'UNEXPECTED')
+      expect(whatIsWrongAboutThisCard).toHaveProperty('nInDeck', 'MISSING')
+    })
+
   })
 })

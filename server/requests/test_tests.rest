@@ -1,1 +1,15 @@
-GET http://localhost:3001
+PUT http://localhost:3001/api/decks/1?update=cards
+Content-Type: application/json
+
+[
+  { 
+    "cardId": 1,
+    "nInDeck": 20,
+    "sideboard": true
+  },
+  { 
+    "cardId": 2,
+    "nInDeck": 15,
+    "sideboard": false
+  }
+]

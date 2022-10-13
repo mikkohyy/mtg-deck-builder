@@ -18,7 +18,7 @@ cardSetsRouter.get('/:id', validateIdWhichIsInteger, async (request, response, n
       }
     })
 
-    foundSet ? response.json(foundSet) : response.send(404).end()
+    foundSet ? response.json(foundSet) : response.status(404).end()
   } catch(error) {
     next(error)
   }
@@ -54,7 +54,7 @@ cardSetsRouter.delete('/:id', validateIdWhichIsInteger, async (request, response
     const cardSetId = request.params.id
     const rowsDestroyed = await CardSet.destroy({ where: { id: cardSetId } })
 
-    rowsDestroyed ? response.status(204).end() : response.send(404).end()
+    rowsDestroyed ? response.status(204).end() : response.status(404).end()
   } catch(error) {
     next(error)
   }

@@ -7,13 +7,22 @@ class Validator {
     manaCost: (data) => this.checkIfString(data),
     price: (data) => this.checkIfFloat(data),
     rulesText: (data) => this.checkIfString(data),
-    rarity: (data) => this.checkIfString(data)
+    rarity: (data) => this.checkIfString(data),
+    nInDeck: (data) => this.checkIfInteger(data),
+    sideboard: (data) => this.checkIfBoolean(data)
   }
 
   static #userPropertyChecks = {
     id: (data) => this.checkIfInteger(data),
     username: (data) => this.checkIfString(data),
     password: (data) => this.checkIfString(data)
+  }
+
+  static #deckPropertyChecks = {
+    id: (data) => this.checkIfInteger(data),
+    userId: (data) => this.checkIfInteger(data),
+    name: (data) => this.checkIfString(data),
+    notes: (data) => this.checkIfString(data)
   }
 
   static #basicCardPropertyNames = [
@@ -29,6 +38,12 @@ class Validator {
     'username',
   ]
 
+  static #basicDeckPropertyNames = [
+    'userId',
+    'name',
+    'notes'
+  ]
+
   static #cardPropertyNames = {
     new: [ ...this.#basicCardPropertyNames ],
     addedToCardSet: [
@@ -39,12 +54,23 @@ class Validator {
       'id',
       'cardSetId',
       ...this.#basicCardPropertyNames
+    ],
+    partOfDeck: [
+      'id',
+      'nInDeck',
+      'sideboard',
+      ...this.#basicCardPropertyNames
     ]
   }
 
   static #userPropertyNames = {
     new: [ ...this.#basicUserPropertyNames, 'password' ],
     updated: [ ...this.#basicUserPropertyNames, 'password' ]
+  }
+
+  static #deckPropertyNames = {
+    new: [ ...this.#basicDeckPropertyNames ],
+    existing: ['id', ...this.#basicDeckPropertyNames ]
   }
 
   static checkIfString(data) {
@@ -72,7 +98,7 @@ class Validator {
   }
 
   static checkIfInteger(data) {
-    if (!data | !this.#isItInteger(data)) {
+    if (data === undefined || Array.isArray(data) || !this.#isItInteger(data)) {
       return false
     } else {
       return true
@@ -81,6 +107,14 @@ class Validator {
 
   static checkIfRarityClass(data) {
     if (!data || !this.#isItString(data) || !this.#isItRarityClass(data)) {
+      return false
+    } else {
+      return true
+    }
+  }
+
+  static checkIfBoolean(data) {
+    if (!data === undefined || !this.#isItBoolean(data)) {
       return false
     } else {
       return true
@@ -107,6 +141,44 @@ class Validator {
       : this.#checkIfUpdatedUserIsValid(data, 'updated')
 
     return invalidParts
+  }
+
+  static checkIfDeckIsValid(data, deckStatus) {
+    const invalidParts = deckStatus === 'new'
+      ? this.#checkIfNewDeckIsValid(data)
+      : this.#checkIfUpdatedDeckIsValid(data)
+
+    return invalidParts
+  }
+
+  static #checkIfNewDeckIsValid(data) {
+    let invalidParts = {}
+
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkDeckPropertyNames(data, 'new')
+
+    invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
+    invalidParts = this.#checkIfDeckHasMissingProperties(validPropertyNames, invalidParts, 'new')
+    invalidParts = this.#checkIfDeckHasInvalidTypes(validPropertyNames, invalidParts, data)
+
+    return invalidParts
+  }
+
+  static #checkIfUpdatedDeckIsValid(data) {
+    let invalidParts = {}
+
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkDeckPropertyNames(data, 'existing')
+
+    invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
+    invalidParts = this.#checkIfDeckHasMissingProperties(validPropertyNames, invalidParts, 'existing')
+    invalidParts = this.#checkIfDeckHasInvalidTypes(validPropertyNames, invalidParts, data)
+
+    return  invalidParts
   }
 
   static #checkIfNewUserIsValid(data) {
@@ -176,6 +248,26 @@ class Validator {
     return propertyNameInfo
   }
 
+  static #checkDeckPropertyNames(data, userStatus) {
+    const validNames = []
+    const unexpectedNames = []
+    const dataPropertyNames = Object.keys(data)
+
+    for (const propertyName of dataPropertyNames) {
+      this.#deckPropertyNames[userStatus].includes(propertyName)
+        ? validNames.push(propertyName)
+        : unexpectedNames.push(propertyName)
+    }
+
+    const propertyNameInfo = {
+      validPropertyNames: validNames,
+      unexpectedPropertyNames: unexpectedNames
+    }
+
+    return propertyNameInfo
+  }
+
+
   static #addUnexpectedPropertyNames(propertyNames, invalidParts) {
     for (const propertyName of propertyNames) {
       invalidParts[propertyName] = 'UNEXPECTED'
@@ -200,6 +292,14 @@ class Validator {
     return invalidParts
   }
 
+  static #checkIfDeckHasMissingProperties(propertyNames, invalidParts, deckStatus) {
+    for (const property of this.#deckPropertyNames[deckStatus]) {
+      !propertyNames.includes(property) && (invalidParts[property] = 'MISSING')
+    }
+
+    return invalidParts
+  }
+
   static #checkIfCardHasInvalidTypes(validPropertyNames, invalidParts, data) {
     for (const property of validPropertyNames) {
       const value = data[property]
@@ -213,6 +313,15 @@ class Validator {
     for (const property of validPropertyNames) {
       const value = data[property]
       !this.#userPropertyChecks[property](value) && (invalidParts[property] = 'INVALID')
+    }
+
+    return invalidParts
+  }
+
+  static #checkIfDeckHasInvalidTypes(validPropertyNames, invalidParts, data) {
+    for (const property of validPropertyNames) {
+      const value = data[property]
+      !this.#deckPropertyChecks[property](value) && (invalidParts[property] = 'INVALID')
     }
 
     return invalidParts
@@ -249,6 +358,16 @@ class Validator {
     const isRarityClass = rarityClasses.includes(data)
 
     return isRarityClass
+  }
+
+  static #isItBoolean(data) {
+    let dataIsBoolean = false
+
+    if (data === false || data === true) {
+      dataIsBoolean = true
+    }
+
+    return dataIsBoolean
   }
 }
 

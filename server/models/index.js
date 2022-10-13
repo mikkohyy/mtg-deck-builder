@@ -11,7 +11,7 @@ CardSet.hasMany(Card)
 Card.belongsTo(CardSet)
 
 Card.belongsToMany(Deck, { through: DeckCard })
-Deck.belongsToMany(Card, { through: DeckCard })
+Deck.belongsToMany(Card, { through: DeckCard } )
 
 module.exports = {
   User,

@@ -98,13 +98,17 @@ module.exports = {
     await queryInterface.createTable('deck_cards', {
       deck_id: {
         type: DataTypes.INTEGER,
+        primaryKey: true,
         allowNull: false,
-        references: { model: 'decks', key: 'id' }
+        references: { model: 'decks', key: 'id' },
+        onDelete: 'cascade'
       },
       card_id: {
         type: DataTypes.INTEGER,
+        primaryKey: true,
         allowNull: false,
-        references: { model: 'cards', key: 'id' }
+        references: { model: 'cards', key: 'id' },
+        onDelete: 'cascade'
       },
       n_in_deck: {
         type: DataTypes.INTEGER,
@@ -112,6 +116,7 @@ module.exports = {
       },
       sideboard: {
         type: DataTypes.BOOLEAN,
+        allowNull: false,
         defaultValue: false
       }
     })
