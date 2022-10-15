@@ -237,8 +237,7 @@ describe('Decks endpoint', () => {
         expect(addedDeck).toEqual(expectedDeck)
       })
     })
-
-    describe.only('when unsuccessful', () => {
+    describe('when unsuccessful', () => {
       beforeAll(async () => {
         const newDeck = {
           userId: 1,
