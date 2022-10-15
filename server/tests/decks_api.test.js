@@ -3,7 +3,7 @@ const {
   transformSnakeCaseCardFieldsToCamelCase,
   addInfoRelatedToDeckToCard,
   transformPropertiesFromSnakecaseToCamelCase,
-  getTableContentWithSQLQuery,
+  queryTableContent,
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,
   removePropertiesFromObject
@@ -286,26 +286,26 @@ describe('Decks endpoint', () => {
       })
 
       test('deck is removed from the database', async () => {
-        const decksBefore = await getTableContentWithSQLQuery('decks')
+        const decksBefore = await queryTableContent('decks')
         const deletedDeck = decksBefore[0]
 
         await api
           .delete('/api/decks/1')
 
-        const decksAfter = await getTableContentWithSQLQuery('decks')
+        const decksAfter = await queryTableContent('decks')
 
         expect(decksAfter).toHaveLength(decksBefore.length - 1)
         expect(decksAfter).not.toContainEqual(deletedDeck)
       })
 
       test('connections are removed from the connection table', async () => {
-        const connectionTableBefore = await getTableContentWithSQLQuery('deck_cards')
+        const connectionTableBefore = await queryTableContent('deck_cards')
         const firstCard = connectionTableBefore[0]
 
         await api
           .delete('/api/decks/1')
 
-        const connectionTableAfter = await getTableContentWithSQLQuery('deck_cards')
+        const connectionTableAfter = await queryTableContent('deck_cards')
         const deckIdsAfter = connectionTableAfter.map(deckCard => deckCard.deck_id)
 
         expect(connectionTableAfter).not.toHaveLength(connectionTableBefore.length)

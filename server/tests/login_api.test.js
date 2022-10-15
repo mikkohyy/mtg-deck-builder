@@ -1,7 +1,7 @@
 const { testUsers, testUsersWithId, testDecksWithId } = require('./test_data')
 const { sequelize } = require('../utils/db')
+const { getHashedString } = require('../utils/general')
 const queryInterface = sequelize.getQueryInterface()
-const bcrypt = require('bcrypt')
 
 const supertest = require('supertest')
 const app = require('../app')
@@ -13,7 +13,7 @@ const hashPasswords = async(userData) => {
   const users = []
 
   for (const user of userData) {
-    const hashedPassword = await bcrypt.hash(user.password, 5)
+    const hashedPassword = await getHashedString(user.password, 5)
 
     const userWithHashedPassword = {
       id: user.id,

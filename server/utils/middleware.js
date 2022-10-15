@@ -11,12 +11,20 @@ const errorHandler = (error, request, response, next) => {
   } else if (error.name === 'SequelizeDatabaseError') {
     return response.status(400).json({ error: error.message })
   } else if (error.name === 'SequelizeUniqueConstraintError') {
-    const errorInfo = {
-      error: error.message,
-      alreadyExistingValues: { ...error.fields }
+    const invalidProperties = {}
+
+    for (const duplicate of Object.keys(error.fields)) {
+      invalidProperties[duplicate] = 'EXISTS'
     }
 
-    return response.status(400).json( errorInfo )
+    const errorInfo = {
+      error: error.message,
+      invalidProperties: invalidProperties
+    }
+
+    console.log(errorInfo)
+
+    return response.status(400).json(errorInfo)
   } else if (error.name === 'InvalidDataError') {
     const errorInfo = {
       error: error.message,

@@ -4,6 +4,7 @@ const {
   testUsersWithId,
   testCardDeckCombination
 } = require('./test_data')
+const { QueryTypes } = require('sequelize')
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
@@ -91,16 +92,16 @@ const fillDatabaseForDecksAPITests = async () => {
   await queryInterface.bulkInsert('users', testUsersWithId)
 }
 
-const getTableContentWithSQLQuery = async (tableName) => {
-  const queryResponse = await sequelize.query(`SELECT * FROM ${tableName}`)
-  const tableContent = queryResponse[0]
-
+const queryTableContent = async (tableName) => {
+  const tableContent = await sequelize
+    .query(
+      `SELECT * FROM ${tableName}`,
+      { type: QueryTypes.SELECT }
+    )
   return tableContent
 }
 
 const getFilteredTableContentWithSQLQuery = async (tableName, fieldName, value) => {
-  // tähän querytype?
-  // https://doc.esdoc.org/github.com/sequelize/sequelize/manual/raw-queries.html
   const queryResponse = await sequelize
     .query(`SELECT * FROM ${tableName} WHERE ${fieldName}=${value}`)
   const tableContent = queryResponse[0]
@@ -144,7 +145,7 @@ module.exports = {
   fillDatabaseForDecksAPITests,
   addInfoRelatedToDeckToCard,
   transformPropertiesFromSnakecaseToCamelCase,
-  getTableContentWithSQLQuery,
+  queryTableContent,
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,
   removePropertiesFromObject,

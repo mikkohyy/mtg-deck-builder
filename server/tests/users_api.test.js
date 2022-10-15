@@ -1,27 +1,19 @@
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
+
+const { sequelize } = require('../utils/db')
+const { QueryTypes } = require('sequelize')
+const queryInterface = sequelize.getQueryInterface()
+
+const { queryTableContent } = require('./test_helpers')
 const { testUsers } = require('./test_data')
 const { getHashedString } = require('../utils/general')
 
-const { sequelize } = require('../utils/db')
-const queryInterface = sequelize.getQueryInterface()
-
 sequelize.options.logging = false
 
-const newUser = {
-  username: 'zerocool',
-  password: 'password'
-}
-
-beforeAll(async () => {
-  await queryInterface.bulkDelete('deck_cards')
-  await queryInterface.bulkDelete('decks')
-})
-
-afterAll(async () => {
-  sequelize.close()
-})
+let receivedData
+let receivedObject
 
 const addNewUserToDatabaseWithQuery = async (username, password) => {
   const hashedPassword = await getHashedString(password, 10)
@@ -29,112 +21,127 @@ const addNewUserToDatabaseWithQuery = async (username, password) => {
     .query(`INSERT INTO users (username, password) VALUES ('${username}', '${hashedPassword}')`)
 }
 
-const getContentOfUsersTableWithQuery = async () => {
-  const queryResponse = await sequelize
-    .query('SELECT * FROM "users"')
-
-  const usersTableState = queryResponse[0]
-
-  return usersTableState
+const prepareUsersTable = async () => {
+  await queryInterface.bulkDelete('users')
+  await sequelize.query('ALTER SEQUENCE "users_id_seq" RESTART WITH 1')
 }
 
-const getUserByIdQuery = async (id) => {
+const queryUserWithId = async (id) => {
   const queryResponse = await sequelize
-    .query(`SELECT * FROM "users" WHERE id = ${id}`)
-
-  const userInDb = queryResponse[0]
-
-  return userInDb
+    .query(
+      `SELECT * FROM "users" WHERE id = ${id}`,
+      { type: QueryTypes.SELECT }
+    )
+  return queryResponse
 }
 
-describe('User endpoint', () => {
-  beforeEach(async () => {
-    await queryInterface.bulkDelete('users')
-    await sequelize.query('ALTER SEQUENCE "users_id_seq" RESTART WITH 1')
-  })
+beforeAll(async () => {
+  await queryInterface.bulkDelete('deck_cards')
+  await queryInterface.bulkDelete('decks')
+  await queryInterface.bulkDelete('users')
+})
 
-  describe('When invalid data', () => {
-    test('responds with 400', async () => {
-      await api
-        .post('/api/users')
-        .send({ username: newUser.username })
-        .expect(400)
+afterAll(async () => {
+  sequelize.close()
+})
+
+describe('/api/users', () => {
+  describe.only('when new user is added', () => {
+    describe('if successful', () => {
+      beforeAll(async () => {
+        await prepareUsersTable()
+        const newUser = { ...testUsers[0] }
+
+        receivedData = await api
+          .post('/api/users')
+          .send(newUser)
+
+        receivedObject = receivedData.body
+      })
+
+      test('responds with 201', () => {
+        expect(receivedData.statusCode).toBe(201)
+      })
+
+      test('returns object with expected number of properties', async () => {
+        const propertyNames = Object.keys(receivedObject)
+        expect(propertyNames).toHaveLength(2)
+      })
+
+      test('returns object with expected properties', async () => {
+        const expectedObject = {
+          id: 1,
+          username: 'zerocool'
+        }
+
+        expect(receivedObject).toEqual(expectedObject)
+      })
+
+      test('user\'s password is saved in hashed form', async () => {
+        const userInDatabase = await queryUserWithId(1)
+        const createdUser = userInDatabase[0]
+
+        expect(createdUser).not.toHaveProperty('password', 'password')
+      })
     })
 
-    test('responds with expected information', async () => {
-      const invalidUserObject = {
-        username: newUser.username,
-        password: [1,2]
-      }
+    describe('if unsuccessful', () => {
+      describe('when sent user object is invalid', () => {
+        beforeAll(async () => {
+          await prepareUsersTable()
 
-      const receivedData = await api
-        .post('/api/users')
-        .send(invalidUserObject)
+          const newUser = {
+            username: 'zerocool'
+          }
 
-      const errorResponse = receivedData.body
-      const propertyNames = Object.keys(errorResponse.invalidProperties)
+          receivedData = await api
+            .post('/api/users')
+            .send(newUser)
 
-      expect(propertyNames).toHaveLength(1)
-      expect(errorResponse).toHaveProperty('error', 'Invalid or missing data')
-      expect(errorResponse.invalidProperties).toHaveProperty('password', 'INVALID')
-    }),
+          receivedObject = receivedData.body
+        })
 
-    test('creating new user fails is username already exists and returns expected information', async () => {
-      await addNewUserToDatabaseWithQuery('zerocool', 'password')
+        test('responds with 400', async () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
 
-      const receivedData = await api
-        .post('/api/users')
-        .send(newUser)
+        test('responds with expected information', async () => {
+          const expectedObject = {
+            error: 'Invalid or missing data',
+            invalidProperties: {
+              password: 'MISSING'
+            }
+          }
 
-      const errorResponse = receivedData.body
-      const propertyNames = Object.keys(errorResponse.alreadyExistingValues)
+          expect(receivedObject).toEqual(expectedObject)
+        })
+      })
+      describe('when username already exists', () => {
+        test('returns expected error information', async () => {
+          await prepareUsersTable()
+          await addNewUserToDatabaseWithQuery(testUsers[0].username, testUsers[0].password)
 
-      expect(propertyNames).toHaveLength(1)
-      expect(errorResponse).toHaveProperty('error', 'Validation error')
-      expect(errorResponse.alreadyExistingValues).toHaveProperty('username', 'zerocool')
-    })
-  })
+          const expectedObject = {
+            error: 'Validation error',
+            invalidProperties: {
+              username: 'EXISTS'
+            }
+          }
 
-  describe('When new user is created successfully', () => {
-    test('responds with 201', async () => {
-      await api
-        .post('/api/users')
-        .send(newUser)
-        .expect(201)
-    })
+          const newUser = {
+            username: testUsers[0].username,
+            password: 'password'
+          }
 
-    test('returns object with expected number of properties', async () => {
-      const receivedData = await api
-        .post('/api/users')
-        .send(newUser)
+          const receivedData = await api
+            .post('/api/users')
+            .send(newUser)
 
-      const addedUser = receivedData.body
-      const propertyNames = Object.keys(addedUser)
+          const receivedObject = receivedData.body
 
-      expect(propertyNames).toHaveLength(2)
-    })
-
-    test('returns object with expected properties', async () => {
-      const receivedData = await api
-        .post('/api/users')
-        .send(newUser)
-
-      const addedUser = receivedData.body
-
-      expect(addedUser).toHaveProperty('username', 'zerocool')
-      expect(addedUser).toHaveProperty('id', 1)
-      expect(addedUser).not.toHaveProperty('password')
-    })
-
-    test('user\'s password is saved in hashed form', async () => {
-      await api
-        .post('/api/users')
-        .send(newUser)
-
-      const userInDatabase = await getUserByIdQuery(1)
-      const createdUser = userInDatabase[0]
-
-      expect(createdUser).not.toHaveProperty('password', 'password')
+          expect(receivedObject).toEqual(expectedObject)
+        })
+      })
     })
   })
 
@@ -148,7 +155,6 @@ describe('User endpoint', () => {
           { ...testUsers[2], id: 3 }
         ])
     })
-
     test('responds with 204', async () => {
       await sequelize.query('SELECT * FROM "users"')
       await api
@@ -157,13 +163,13 @@ describe('User endpoint', () => {
     })
 
     test('the user is deleted', async () => {
-      const beforeDelete = await getContentOfUsersTableWithQuery()
+      const beforeDelete = await queryTableContent('users')
       const deletedUser = beforeDelete[1]
 
       await api
         .delete('/api/users/2')
 
-      const afterDelete = await getContentOfUsersTableWithQuery()
+      const afterDelete = await queryTableContent('users')
 
       expect(afterDelete).toHaveLength(beforeDelete.length - 1)
       expect(afterDelete).not.toContain(deletedUser)
@@ -191,7 +197,6 @@ describe('User endpoint', () => {
         .expect(404)
     })
   })
-
   describe('when existing user is updated', () => {
     beforeEach(async () => {
       await addNewUserToDatabaseWithQuery(newUser.username, newUser.password)
@@ -234,7 +239,7 @@ describe('User endpoint', () => {
         .put('/api/users/1')
         .send(updatedObject)
 
-      const databaseResponse = await getUserByIdQuery(1)
+      const databaseResponse = await queryUserWithId(1)
       const userInDatabase = databaseResponse[0]
 
       expect(userInDatabase).toHaveProperty('username', 'acidburn')
@@ -246,14 +251,14 @@ describe('User endpoint', () => {
         password: 'new_password'
       }
 
-      const databaseBeforePasswordChange = await getUserByIdQuery(1)
+      const databaseBeforePasswordChange = await queryUserWithId(1)
       const userBefore = databaseBeforePasswordChange[0]
 
       await api
         .put('/api/users/1')
         .send(updatedObject)
 
-      const databaseAfterPasswordChange = await getUserByIdQuery(1)
+      const databaseAfterPasswordChange = await queryUserWitd(1)
       const userAfter = databaseAfterPasswordChange[0]
 
       expect(userAfter.password).not.toBe(userBefore.password)
@@ -268,7 +273,7 @@ describe('User endpoint', () => {
         .put('/api/users/1')
         .send(updatedObject)
 
-      const databaseAfterPasswordChange = await getUserByIdQuery(1)
+      const databaseAfterPasswordChange = await queryUserWithId(1)
       const userAfter = databaseAfterPasswordChange[0]
 
       expect(userAfter.password).not.toBe(updatedObject.password)

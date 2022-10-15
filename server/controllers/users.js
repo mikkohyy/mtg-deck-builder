@@ -8,6 +8,19 @@ const {
 } = require('../utils/middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 
+/**
+ * Returned object when a new user is created
+ * @typedef {Object} CreatedUser - Created user
+ * @property {number} id - Id of the created user
+ * @property {string} username - Created username
+ */
+
+/**
+ * Endpoint for adding a new user. Expects request body to have:
+ * @param {string} username
+ * @param {string} password
+ * @returns {CreatedUser} created user
+ */
 usersRouter.post('/', validateNewUserObject, async (request, response, next) => {
   try {
     const receivedUserData = request.body
@@ -16,9 +29,12 @@ usersRouter.post('/', validateNewUserObject, async (request, response, next) => 
     const newAddedUser = await User
       .create({ ...receivedUserData, password: hashedPassword })
 
-    delete newAddedUser.dataValues.password
+    const userWithoutPassword = {
+      id: newAddedUser.id,
+      username: newAddedUser.username
+    }
 
-    response.status(201).json(newAddedUser)
+    response.status(201).json(userWithoutPassword)
   } catch(error) {
     next(error)
   }
