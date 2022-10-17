@@ -6,8 +6,8 @@ const { sequelize } = require('../utils/db')
 const { QueryTypes } = require('sequelize')
 const queryInterface = sequelize.getQueryInterface()
 
-const { queryTableContent } = require('./test_helpers')
-const { testUsers } = require('./test_data')
+const { queryTableContent, queryTableContentWithId } = require('./test_helpers')
+const { testUsers, testUsersWithId } = require('./test_data')
 const { getHashedString } = require('../utils/general')
 
 sequelize.options.logging = false
@@ -46,7 +46,7 @@ afterAll(async () => {
 })
 
 describe('/api/users', () => {
-  describe.only('when new user is added', () => {
+  describe('when new user is added', () => {
     describe('if successful', () => {
       beforeAll(async () => {
         await prepareUsersTable()
@@ -145,189 +145,213 @@ describe('/api/users', () => {
     })
   })
 
-  describe('When existing user is deleted', () => {
-    beforeEach(async () => {
-      await queryInterface.bulkInsert(
-        'users',
-        [
-          { ...testUsers[0], id: 1 },
-          { ...testUsers[1], id: 2 },
-          { ...testUsers[2], id: 3 }
-        ])
-    })
-    test('responds with 204', async () => {
-      await sequelize.query('SELECT * FROM "users"')
-      await api
-        .delete('/api/users/3')
-        .expect(204)
-    })
+  describe('when user is deleted', () => {
+    let usersBeforeDelete
+    let usersAfterDelete
 
-    test('the user is deleted', async () => {
-      const beforeDelete = await queryTableContent('users')
-      const deletedUser = beforeDelete[1]
+    describe('when successful', () => {
+      beforeAll(async () => {
+        await prepareUsersTable()
+        await queryInterface.bulkInsert('users', testUsersWithId)
 
-      await api
-        .delete('/api/users/2')
+        usersBeforeDelete = await queryTableContent('users')
 
-      const afterDelete = await queryTableContent('users')
+        receivedData = await api
+          .delete('/api/users/2')
 
-      expect(afterDelete).toHaveLength(beforeDelete.length - 1)
-      expect(afterDelete).not.toContain(deletedUser)
-    })
+        usersAfterDelete = await queryTableContent('users')
 
-    test('returns 400 if invalid user id', async () => {
-      await api
-        .delete('/api/users/not_valid_2')
-        .expect(400)
+      })
+
+      test('responds with 204', async () => {
+        expect(receivedData.statusCode).toBe(204)
+      })
+
+      test('the user is deleted', async () => {
+        const deletedUser = testUsersWithId[1]
+
+        expect(usersAfterDelete).toHaveLength(usersBeforeDelete.length - 1)
+        expect(usersAfterDelete).not.toContain(deletedUser)
+      })
     })
 
-    test('returns expected error if invalid user id', async () => {
-      const receivedData = await api
-        .delete('/api/users/not_valid_2')
+    describe('if unsuccessful', () => {
+      describe('when invalid id', () => {
+        beforeAll(async () => {
+          await prepareUsersTable()
+          await queryInterface.bulkInsert('users', testUsersWithId)
 
-      const errorInfo = receivedData.body
+          receivedData = await api
+            .delete('/api/users/not_valid_2')
+        })
 
-      expect(errorInfo.error).toBe('Invalid id type')
-      expect(errorInfo.expectedType).toBe('INTEGER')
-    })
+        test('returns 400 if invalid user id', async () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
 
-    test('returns 404 if id does not exist', async () => {
-      await api
-        .delete('/api/users/234')
-        .expect(404)
+        test('returns expected error if invalid user id', async () => {
+          const expectedError = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+
+          const errorInfo = receivedData.body
+
+          expect(errorInfo).toEqual(expectedError)
+        })
+      })
+
+      describe('when user does not exist', () => {
+        beforeAll(async () => {
+          await prepareUsersTable()
+          await queryInterface.bulkInsert('users', testUsersWithId)
+
+          receivedData = await api
+            .delete('/api/users/15')
+        })
+
+        test('returns 404', async () => {
+          expect(receivedData.statusCode).toBe(404)
+        })
+      })
     })
   })
-  describe('when existing user is updated', () => {
-    beforeEach(async () => {
-      await addNewUserToDatabaseWithQuery(newUser.username, newUser.password)
+
+  describe('when user is updated', () => {
+    describe('if successful', () => {
+      describe('when username is updated', () => {
+        beforeAll(async () => {
+          await prepareUsersTable()
+          await queryInterface.bulkInsert('users', testUsersWithId)
+
+          const updatedObject = {
+            username: 'icecold'
+          }
+
+          receivedData = await api
+            .put('/api/users/1')
+            .send(updatedObject)
+        })
+
+        test('returns 200 when successful', () => {
+          expect(receivedData.statusCode).toBe(200)
+        })
+
+        test('returns updated object when successful', () => {
+          const expectedObject = {
+            id: 1,
+            username: 'icecold'
+          }
+
+          receivedObject = receivedData.body
+
+          expect(receivedObject).toEqual(expectedObject)
+        })
+
+        test('user in the database is updated', async () => {
+          const databaseResponse = await queryTableContentWithId('users', 1)
+          const foundUser = databaseResponse[0]
+
+          expect(foundUser.username).not.toBe('zerocool')
+          expect(foundUser.username).toBe('icecold')
+        })
+      })
+
+      describe('when password is updated', () => {
+        let userBeforeUpdate
+        let userAfterUpdate
+        const newPassword = 'new_password'
+        beforeAll(async () => {
+          await prepareUsersTable()
+          await queryInterface.bulkInsert('users', testUsersWithId)
+
+          const updatedObject = {
+            password: newPassword
+          }
+
+          const userInDatabaseBeforeChange = await queryTableContentWithId('users', 1)
+          userBeforeUpdate = userInDatabaseBeforeChange[0]
+
+          receivedData = await api
+            .put('/api/users/1')
+            .send(updatedObject)
+
+          const userInDatabaseAfterChange = await queryTableContentWithId('users', 1)
+          userAfterUpdate = userInDatabaseAfterChange[0]
+        })
+        test('user\'s password is changed', async () => {
+          expect(userAfterUpdate.password).not.toBe(userBeforeUpdate.password)
+        })
+
+        test('user\'s updated password is not saved in raw form', async () => {
+          expect(userAfterUpdate.password).not.toBe(newPassword)
+        })
+      })
     })
+    describe('if unsuccessful', () => {
+      describe('when invalid id', () => {
+        beforeAll(async () => {
+          const updatedObject = {
+            username: 'icecold'
+          }
+          receivedData = await api
+            .put('/api/users/not_a_valid_id_2')
+            .send(updatedObject)
+        })
+        test('returns 400', async () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
+        test('returns expected error information', () => {
+          const expectedError = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
 
-    test('returns 200 when successful', async () => {
-      const updatedObject = {
-        username: 'acidburn'
-      }
+          const errorInfo = receivedData.body
 
-      await api
-        .put('/api/users/1')
-        .send(updatedObject)
-        .expect(200)
-    })
+          expect(errorInfo).toEqual(expectedError)
+        })
 
-    test('returns updated object when successful', async () => {
-      const updatedObject = {
-        username: 'acidburn'
-      }
+      })
 
-      const responseData = await api
-        .put('/api/users/1')
-        .send(updatedObject)
+      describe('when non existing id', () => {
+        test('returns 404 when non existing id', async () => {
+          const updatedObject = {
+            username: 'acidburn'
+          }
 
-      const updatedUser = responseData.body
+          await api
+            .put('/api/users/1234')
+            .send(updatedObject)
+            .expect(404)
+        })
+      })
 
-      expect(updatedUser).toHaveProperty('username', 'acidburn')
-      expect(updatedUser).not.toHaveProperty('username', newUser.username)
-      expect(updatedUser).toHaveProperty('id', 1)
-      expect(updatedUser).not.toHaveProperty('password')
-    })
+      describe('when sent data is invalid', () => {
+        beforeAll(async () => {
+          const updatedObject = {
+            username: ['icecold']
+          }
+          receivedData = await api
+            .put('/api/users/not_a_valid_id_2')
+            .send(updatedObject)
+        })
 
-    test('user in the database is updated', async () => {
-      const updatedObject = {
-        username: 'acidburn'
-      }
+        test('returns 400', async () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
 
-      await api
-        .put('/api/users/1')
-        .send(updatedObject)
+        test('returns expected error information when sent data is invalid', async () => {
+          const expectedErrorObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
 
-      const databaseResponse = await queryUserWithId(1)
-      const userInDatabase = databaseResponse[0]
+          const errorObject = receivedData.body
 
-      expect(userInDatabase).toHaveProperty('username', 'acidburn')
-      expect(userInDatabase).not.toHaveProperty('username', newUser.username)
-    })
-
-    test('user\'s password is changed', async () => {
-      const updatedObject = {
-        password: 'new_password'
-      }
-
-      const databaseBeforePasswordChange = await queryUserWithId(1)
-      const userBefore = databaseBeforePasswordChange[0]
-
-      await api
-        .put('/api/users/1')
-        .send(updatedObject)
-
-      const databaseAfterPasswordChange = await queryUserWitd(1)
-      const userAfter = databaseAfterPasswordChange[0]
-
-      expect(userAfter.password).not.toBe(userBefore.password)
-    })
-
-    it('user\'s updated password is not saved in raw form', async () => {
-      const updatedObject = {
-        password: 'new_password'
-      }
-
-      await api
-        .put('/api/users/1')
-        .send(updatedObject)
-
-      const databaseAfterPasswordChange = await queryUserWithId(1)
-      const userAfter = databaseAfterPasswordChange[0]
-
-      expect(userAfter.password).not.toBe(updatedObject.password)
-    })
-
-    test('returns 400 when invalid id', async () => {
-      const updatedObject = {
-        username: 'acidburn'
-      }
-
-      await api
-        .put('/api/users/not_a_valid_id_2')
-        .send(updatedObject)
-        .expect(400)
-    })
-
-    test('returns 404 when non existing id', async () => {
-      const updatedObject = {
-        username: 'acidburn'
-      }
-
-      await api
-        .put('/api/users/1234')
-        .send(updatedObject)
-        .expect(404)
-    })
-
-    test('returns 400 when sent data is invalid', async () => {
-      const updatedObject = {
-        username: []
-      }
-
-      await api
-        .put('/api/users/1')
-        .send(updatedObject)
-        .expect(400)
-    })
-
-    test('returns expected error information when sent data is invalid', async () => {
-      const updatedObject = {
-        username: []
-      }
-
-      const receivedData = await api
-        .put('/api/users/1')
-        .send(updatedObject)
-
-      const errorResponse = receivedData.body
-
-      const propertyNames = Object.keys(errorResponse.invalidProperties)
-
-      expect(propertyNames).toHaveLength(1)
-      expect(errorResponse).toHaveProperty('error', 'Invalid or missing data')
-      expect(errorResponse.invalidProperties).toHaveProperty('username', 'INVALID')
+          expect(errorObject).toEqual(expectedErrorObject)
+        })
+      })
     })
   })
 })

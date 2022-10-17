@@ -101,6 +101,15 @@ const queryTableContent = async (tableName) => {
   return tableContent
 }
 
+const queryTableContentWithId = async (tableName, id) => {
+  const queryResponse = await sequelize
+    .query(
+      `SELECT * FROM "${tableName}"  WHERE id = ${id}`,
+      { type: QueryTypes.SELECT }
+    )
+  return queryResponse
+}
+
 const getFilteredTableContentWithSQLQuery = async (tableName, fieldName, value) => {
   const queryResponse = await sequelize
     .query(`SELECT * FROM ${tableName} WHERE ${fieldName}=${value}`)
@@ -149,5 +158,6 @@ module.exports = {
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,
   removePropertiesFromObject,
-  getAllInvalidCardsFromUpdatedCards
+  getAllInvalidCardsFromUpdatedCards,
+  queryTableContentWithId
 }
