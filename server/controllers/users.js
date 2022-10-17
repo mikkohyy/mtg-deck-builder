@@ -8,9 +8,11 @@ const {
 } = require('../utils/middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 
+const HASH_ROUNDS = 10
+
 /**
- * Returned object when a new user is created
- * @typedef {Object} CreatedUser - Created user
+ * The object containing information about user
+ * @typedef {Object} User - Information about user
  * @property {number} id - Id of the created user
  * @property {string} username - Created username
  */
@@ -19,7 +21,7 @@ const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
  * Endpoint for adding a new user. Expects request body to have:
  * @param {string} username
  * @param {string} password
- * @returns {CreatedUser} created user
+ * @returns {User} created user
  */
 usersRouter.post('/', validateNewUserObject, async (request, response, next) => {
   try {
@@ -40,6 +42,9 @@ usersRouter.post('/', validateNewUserObject, async (request, response, next) => 
   }
 })
 
+/**
+ * Endpoint for deleting user defined by id that is given as parameter
+ */
 usersRouter.delete('/:id', validateIdWhichIsInteger, async (request, response, next) => {
   const userId = request.params.id
 
@@ -51,6 +56,13 @@ usersRouter.delete('/:id', validateIdWhichIsInteger, async (request, response, n
   }
 })
 
+/**
+ * Endpoind for updating user defined by id that is given as parameter
+ * expects an object with the following propertie:
+ * @param {string} username (optional)
+ * @param {string} password (optional)
+ * @returns {User} user with updated information
+ */
 usersRouter.put(
   '/:id',
   validateIdWhichIsInteger,
@@ -59,22 +71,12 @@ usersRouter.put(
     const userId = request.params.id
 
     try {
-      const updatedFields = { ...request.body }
+      let updatedFields = { ...request.body }
 
-      if (updatedFields.password) {
-        const hashedPassword = await getHashedString(updatedFields.password, 10)
-        updatedFields.password = hashedPassword
-      }
+      updatedFields = await ifPasswordHashIt(updatedFields)
+      const updateResponse = await updateUserInDatabase(updatedFields, userId)
 
-      const updateResponse = await User.update({
-        ...updatedFields
-      },
-      {
-        where: { id: userId },
-        returning: ['id', 'username']
-      })
-
-      if (updateResponse[0] !== 0) {
+      if (wasUserUpdated(updateResponse) === true) {
         const updatedUser = extractInformationOnUpdatedObject(updateResponse)
         response.status(200).json(updatedUser)
       } else {
@@ -86,5 +88,53 @@ usersRouter.put(
     }
   }
 )
+
+/**
+ * Checks if object has property password and if it has, hashes it
+ * @param {object} updatedFields
+ * @returns {object} input object with hashed password if property existed
+ */
+const ifPasswordHashIt = async(updatedFields) => {
+  if (updatedFields.password) {
+    const hashedPassword = await getHashedString(updatedFields.password, HASH_ROUNDS)
+    updatedFields.password = hashedPassword
+  }
+  return updatedFields
+}
+
+
+/**
+ * Updates user whose id is given as parameter
+ * @param {object} updatedFields object containing the colums that should be updated
+ * @param {number} userId id of the user
+ * @returns {[{number}, {object}]} response to the update-request
+ */
+const updateUserInDatabase = async(updatedFields, userId) => {
+  const updateResponse = await User.update({
+    ...updatedFields
+  },
+  {
+    where: { id: userId },
+    returning: ['id', 'username']
+  })
+
+  console.log(updateResponse)
+
+  return updateResponse
+}
+
+/**
+ * Checks from update-request if a user was updated
+ * @param {[{number}, {object}]} updateResponse reponse object from update-request
+ * @returns {boolean}
+ */
+const wasUserUpdated = (updateResponse) => {
+  let wasUpdated = false
+  if (updateResponse[0] !== 0) {
+    wasUpdated = true
+  }
+
+  return wasUpdated
+}
 
 module.exports = usersRouter
