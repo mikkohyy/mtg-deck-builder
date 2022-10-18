@@ -384,6 +384,16 @@ const testCardsWithId = [
   }
 ]
 
+const newCard = {
+  'cardSetId': 1,
+  'name': 'Bladestitched Skaab',
+  'cardNumber': 212,
+  'manaCost': 'blue black',
+  'price': 0.13,
+  'rulesText': 'Other Zombies you control get +1/+0.',
+  'rarity': 'uncommon'
+}
+
 const testCardSetsWithId = [
   {
     id: 1,
@@ -618,5 +628,6 @@ module.exports = {
   testDecks,
   testDecksWithId,
   testCardDeckCombination,
-  testUpdatedCards
+  testUpdatedCards,
+  newCard
 }

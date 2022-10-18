@@ -8,22 +8,7 @@ const { QueryTypes } = require('sequelize')
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
-const transformSnakeCaseCardFieldsToCamelCase = (card) => {
-  const dbCompatibleCard = {
-    'id': card.id,
-    'cardSetId': card.card_set_id,
-    'name': card.name,
-    'cardNumber': card.card_number,
-    'manaCost': card.mana_cost,
-    'price': card.price,
-    'rulesText': card.rules_text,
-    'rarity': card.rarity
-  }
-
-  return dbCompatibleCard
-}
-
-const transformPropertiesFromSnakecaseToCamelCase = (snakecaseObject) => {
+const transformKeysFromSnakeCaseToCamelCase = (snakecaseObject) => {
   const camelCaseObject = {}
 
   for (const [key, value] of Object.entries(snakecaseObject)) {
@@ -150,10 +135,9 @@ const getAllInvalidCardsFromUpdatedCards = (invalidCardsInfo) => {
 }
 
 module.exports = {
-  transformSnakeCaseCardFieldsToCamelCase,
+  transformKeysFromSnakeCaseToCamelCase,
   fillDatabaseForDecksAPITests,
   addInfoRelatedToDeckToCard,
-  transformPropertiesFromSnakecaseToCamelCase,
   queryTableContent,
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,

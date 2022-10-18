@@ -5,7 +5,7 @@ const {
   testDecks,
   testUpdatedCards
 } = require('./test_data')
-const { transformPropertiesFromSnakecaseToCamelCase } = require('./test_helpers')
+const { transformKeysFromSnakeCaseToCamelCase } = require('./test_helpers')
 const Validator = require('../utils/validator')
 
 describe('Data validations', () => {
@@ -374,7 +374,7 @@ describe('Object validations', () => {
   describe('New deck', () => {
     test('accepts data when valid properties', () => {
       const data = { ...testDecks[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'new')
       const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
@@ -384,7 +384,7 @@ describe('Object validations', () => {
 
     test('rejects data with correct information when invalid property', () => {
       const data = { ...testDecks[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
 
@@ -397,7 +397,7 @@ describe('Object validations', () => {
 
     test('rejects data with correct information when invalid, missing and unexpected properties', () => {
       const data = { ...testDecks[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
       delete deckInfo.userId
@@ -416,7 +416,7 @@ describe('Object validations', () => {
   describe('Updated deck', () => {
     test('accepts data when valid properties', () => {
       const data = { ...testDecksWithId[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'update')
       const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
@@ -426,7 +426,7 @@ describe('Object validations', () => {
 
     test('rejects data with correct information when invalid property', () => {
       const data = { ...testDecksWithId[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
 
@@ -437,7 +437,7 @@ describe('Object validations', () => {
 
     test('rejects data with correct information when invalid, missing and unexpected properties', () => {
       const data = { ...testDecksWithId[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
       delete deckInfo.id

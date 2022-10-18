@@ -1,8 +1,8 @@
 const {
   fillDatabaseForDecksAPITests,
-  transformSnakeCaseCardFieldsToCamelCase,
+  transformKeysFromSnakeCaseToCamelCase,
   addInfoRelatedToDeckToCard,
-  transformPropertiesFromSnakecaseToCamelCase,
+  transformKeysFromSnakeCaseToCamelCase,
   queryTableContent,
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,
@@ -135,7 +135,7 @@ describe('Decks endpoint', () => {
         const testCardsInSnakeCase = testCardsWithId
           .filter(card => cardsInDeckIds.includes(card.id))
         const testCardsInCamelCase = testCardsInSnakeCase
-          .map(card => transformSnakeCaseCardFieldsToCamelCase(card))
+          .map(card => transformKeysFromSnakeCaseToCamelCase(card))
 
         const expectedCards = addInfoRelatedToDeckToCard(testCardsInCamelCase)
 
@@ -363,9 +363,9 @@ describe('Decks endpoint', () => {
            WHERE deck_id = 1`
         )
 
-      const deckInCamelCase = transformPropertiesFromSnakecaseToCamelCase(firstDeckInDb[0])
+      const deckInCamelCase = transformKeysFromSnakeCaseToCamelCase(firstDeckInDb[0])
       const cardsInCamelCase = deckCardsInDb[0]
-        .map(card => transformPropertiesFromSnakecaseToCamelCase(card))
+        .map(card => transformKeysFromSnakeCaseToCamelCase(card))
 
       deckFromDb = {
         ...deckInCamelCase,
@@ -422,7 +422,7 @@ describe('Decks endpoint', () => {
               { type: QueryTypes.SELECT }
             )
 
-          const deckInDbAfter = transformPropertiesFromSnakecaseToCamelCase(deckQueryDataAfter[0])
+          const deckInDbAfter = transformKeysFromSnakeCaseToCamelCase(deckQueryDataAfter[0])
 
           expect(returnedData).not.toEqual(originalDeck)
           expect(returnedData).toEqual(deckInDbAfter)
@@ -599,7 +599,7 @@ describe('Decks endpoint', () => {
               )
 
             const deckCardsAfterInDbCamelCase = deckCardsAfterInDb
-              .map(card => transformPropertiesFromSnakecaseToCamelCase(card))
+              .map(card => transformKeysFromSnakeCaseToCamelCase(card))
 
             const firstUpdatedCard = updatedCards[0]
             const secondUpdatedCard = updatedCards[1]
@@ -609,8 +609,8 @@ describe('Decks endpoint', () => {
           })
         })
         describe('when cards are added', () => {
-          const firstAddedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[24])
-          const secondAddedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[25])
+          const firstAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
+          const secondAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
 
           delete firstAddedCard.cardSetId
           firstAddedCard.nInDeck = 2
@@ -970,8 +970,8 @@ describe('Decks endpoint', () => {
               }
             ]
 
-            const firstAddedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[24])
-            const secondAddedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[25])
+            const firstAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
+            const secondAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
 
             delete firstAddedCard.cardSetId
             firstAddedCard.nInDeck = []
@@ -1021,8 +1021,8 @@ describe('Decks endpoint', () => {
               }
             ]
 
-            const firstDeletedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[24])
-            const secondDeletedCard = transformPropertiesFromSnakecaseToCamelCase(testCardsWithId[25])
+            const firstDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
+            const secondDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
 
             delete firstDeletedCard.cardSetId
             firstDeletedCard.id = []

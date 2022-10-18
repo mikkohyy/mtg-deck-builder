@@ -20,8 +20,8 @@ const {
 } = require('./test_data')
 
 const {
-  transformSnakeCaseCardFieldsToCamelCase,
-  transformPropertiesFromSnakecaseToCamelCase,
+  transformKeysFromSnakeCaseToCamelCase,
+  transformKeysFromSnakeCaseToCamelCase,
   getAllInvalidCardsFromUpdatedCards
 } = require('./test_helpers')
 
@@ -588,7 +588,7 @@ describe('Set cards validator', () => {
 describe('Received card validator', () => {
   describe('when existing card', () => {
     test('does not raise an error when card is valid', () => {
-      const existingCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      const existingCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
 
       const mockNext = jest.fn()
       const mockRequest = new MockRequest(existingCard)
@@ -604,7 +604,7 @@ describe('Received card validator', () => {
 
     test('raises expected error when card is invalid', () => {
       let thrownError
-      const existingCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      const existingCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
       existingCard.name = []
       delete existingCard.rulesText
       existingCard.extra = 'this is extra'
@@ -630,7 +630,7 @@ describe('Received card validator', () => {
 
   describe('when new card is added to existing a card set', () => {
     test('does not raise an error when card is valid', () => {
-      const card = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
       delete card.id
 
       const mockNext = jest.fn()
@@ -647,7 +647,7 @@ describe('Received card validator', () => {
 
     test('raises expected error when card is invalid', () => {
       let thrownError
-      const card = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
+      const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
       delete card.id
 
       card.name = []
@@ -760,7 +760,7 @@ describe('Received deck validator', () => {
   describe('when new deck is added', () => {
     test('does not raise an error when valid', () => {
       const data = { ...testDecks[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       const mockNext = jest.fn()
       const mockRequest = new MockRequest(deckInfo)
@@ -778,7 +778,7 @@ describe('Received deck validator', () => {
       let thrownError
 
       const data = { ...testDecks[0] }
-      const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
 
@@ -804,7 +804,7 @@ describe('Received deck validator', () => {
     describe('deck information',() => {
       test('does not raise an error when valid', () => {
         const data = { ...testDecksWithId[0] }
-        const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+        const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
         const mockNext = jest.fn()
         const mockRequest = new MockRequest(deckInfo)
@@ -824,7 +824,7 @@ describe('Received deck validator', () => {
         let thrownError
 
         const data = { ...testDecksWithId[0] }
-        const deckInfo = transformPropertiesFromSnakecaseToCamelCase(data)
+        const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
         deckInfo.notes = []
         deckInfo.extra = 'this is extra'

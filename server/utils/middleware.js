@@ -22,8 +22,6 @@ const errorHandler = (error, request, response, next) => {
       invalidProperties: invalidProperties
     }
 
-    console.log(errorInfo)
-
     return response.status(400).json(errorInfo)
   } else if (error.name === 'InvalidDataError') {
     const errorInfo = {
