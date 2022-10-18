@@ -21,7 +21,7 @@ const HASH_ROUNDS = 10
  * Endpoint for adding a new user. Expects request body to have:
  * @param {string} username
  * @param {string} password
- * @returns {User} created user
+ * @returns {User} created user as the body of the response
  */
 usersRouter.post('/', validateNewUserObject, async (request, response, next) => {
   try {
@@ -61,7 +61,7 @@ usersRouter.delete('/:id', validateIdWhichIsInteger, async (request, response, n
  * expects an object with the following propertie:
  * @param {string} username (optional)
  * @param {string} password (optional)
- * @returns {User} user with updated information
+ * @returns {User} created user as the body of the response
  */
 usersRouter.put(
   '/:id',
