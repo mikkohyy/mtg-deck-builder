@@ -1,9 +1,14 @@
 const {
   testCardSetsWithId,
   testCardsWithId,
-  testCards
+  newCard
 } = require('./test_data')
-const { transformSnakeCaseCardFieldsToCamelCase } = require('./test_helpers')
+
+const {
+  transformKeysFromSnakeCaseToCamelCase,
+  queryTableContentWithId,
+  queryTableContent
+} = require('./test_helpers')
 
 const supertest = require('supertest')
 const app = require('../app')
@@ -13,335 +18,388 @@ const queryInterface = sequelize.getQueryInterface()
 
 sequelize.options.logging = false
 
-const firstTestCardSetWithId = [testCardSetsWithId[0]]
-const firstTenCardsWithId = testCardsWithId.slice(0, 10)
-
-const testCardWithCardSetId = { ...testCards[0], cardSetId: 1 }
+const TEST_CARD_ID = 3
+const NON_EXISTING_CARD_ID = 234
+const INVALID_ID = '3_not_valid'
 
 beforeAll(async () => {
   await queryInterface.bulkDelete('deck_cards')
+  await queryInterface.bulkDelete('cards')
 })
 
 afterAll(async () => {
   sequelize.close()
 })
 
-describe('When user asks for individual card the server', () => {
-  beforeEach(async () => {
-    await queryInterface.bulkDelete('card_sets')
-    await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
-    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
-    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
-  })
+const prepareDatabase = async () => {
+  await queryInterface.bulkDelete('card_sets')
+  await queryInterface.bulkDelete('cards')
+  await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 31')
+  await queryInterface.bulkInsert('card_sets', testCardSetsWithId)
+  await queryInterface.bulkInsert('cards', testCardsWithId)
+}
 
-  test('responds with 200', async () => {
-    await api
-      .get('/api/cards/3')
-      .expect(200)
-  })
-
-  test('responds with json', async () => {
-    await api
-      .get('/api/cards/3')
-      .expect('Content-Type', /application\/json/)
-  })
-
-  test('expected card has the right number of properties', async () => {
-    const response = await api.get('/api/cards/3')
-    const propertyNames = Object.keys(response.body)
-
-    expect(propertyNames).toHaveLength(8)
-  })
-
-  test('expected card is returned', async () => {
-    const expectedCard = { ...firstTenCardsWithId[2] }
-    const response = await api.get('/api/cards/3')
-    const receivedData = response.body
-
-    expect(receivedData).toHaveProperty('id', expectedCard.id)
-    expect(receivedData).toHaveProperty('cardSetId', expectedCard.card_set_id)
-    expect(receivedData).toHaveProperty('name', expectedCard.name)
-    expect(receivedData).toHaveProperty('cardNumber', expectedCard.card_number)
-    expect(receivedData).toHaveProperty('manaCost', expectedCard.mana_cost)
-    expect(receivedData).toHaveProperty('rulesText', expectedCard.rules_text)
-    expect(receivedData).toHaveProperty('price', expectedCard.price)
-    expect(receivedData).toHaveProperty('rarity', expectedCard.rarity)
-  })
-
-  test('returns 400 when invalid id', async () => {
-    await api.get('/api/cards/3_not_valid_id').expect(400)
-  })
-
-  test('returns expected error message when invalid id', async () => {
-    const { body } = await api.get('/api/cards/3_not_valid_id')
-
-    expect(body.error).toMatch(/Invalid id type/)
-    expect(body.expectedType).toBe('INTEGER')
-  })
-
-  test('returns 404 when id does not exist', async () => {
-    await api
-      .get('/api/cards/12345')
-      .expect(404)
-  })
-})
-
-describe('When user updates a card the server', () => {
-  beforeEach(async() => {
-    await queryInterface.bulkDelete('card_sets')
-    await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
-    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
-    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
-  })
-
-  test('responds with 200', async () => {
-    const updatedCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    updatedCard.price = 24.5
-
-    await api
-      .put('/api/cards/1')
-      .send(updatedCard)
-      .expect(200)
-  })
-
-  test('returned card has the right number of properties', async () => {
-    const updatedCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    updatedCard.price = 24.5
-
-    const receivedData = await api
-      .put('/api/cards/1')
-      .send(updatedCard)
-      .expect(200)
-
-    const { body } = receivedData
-    const propertyNames = Object.keys(body)
-
-    expect(propertyNames).toHaveLength(8)
-  })
-
-  test('expected card is returned', async () => {
-    const originalCard = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    const updatedCard = { ...originalCard, price: 24.5 }
-
-    const response = await api
-      .put('/api/cards/1')
-      .send(updatedCard)
-      .expect(200)
-
-    const receivedData = response.body
-
-    expect(receivedData).toHaveProperty('id', originalCard.id)
-    expect(receivedData).toHaveProperty('cardSetId', originalCard.cardSetId)
-    expect(receivedData).toHaveProperty('name', originalCard.name)
-    expect(receivedData).toHaveProperty('cardNumber', originalCard.cardNumber)
-    expect(receivedData).toHaveProperty('manaCost', originalCard.manaCost)
-    expect(receivedData).toHaveProperty('price')
-    expect(receivedData.price).not.toBe(0.09)
-    expect(receivedData.price).toBe(24.5)
-    expect(receivedData).toHaveProperty('rulesText', originalCard.rulesText)
-    expect(receivedData).toHaveProperty('rarity', originalCard.rarity)
-  })
-
-  test('card in the database is updated', async () => {
-    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    const updatedCard = { ...cardInCamelCase, price: 24.5 }
-
-    const response = await api
-      .put('/api/cards/1')
-      .send(updatedCard)
-
-    const receivedData = response.body
-
-    const dataFromDatabase = await sequelize
-      .query(`SELECT * FROM "cards" WHERE id = ${receivedData.id}`)
-
-    const cardInDatabase = dataFromDatabase[0][0]
-
-    expect(cardInDatabase).toHaveProperty('id', updatedCard.id)
-    expect(cardInDatabase).toHaveProperty('card_set_id', updatedCard.cardSetId)
-    expect(cardInDatabase).toHaveProperty('name', updatedCard.name)
-    expect(cardInDatabase).toHaveProperty('card_number', updatedCard.cardNumber)
-    expect(cardInDatabase).toHaveProperty('mana_cost', updatedCard.manaCost)
-    expect(cardInDatabase).toHaveProperty('price', updatedCard.price)
-    expect(cardInDatabase).toHaveProperty('rules_text', updatedCard.rulesText)
-    expect(cardInDatabase).toHaveProperty('rarity', updatedCard.rarity)
-  })
-
-  test('returns 400 when invalid id', async () => {
-    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    const updatedCard = { ...cardInCamelCase, price: 24.5 }
-
-    await api
-      .put('/api/cards/3_not_valid_id')
-      .send(updatedCard)
-      .expect(400)
-  })
-
-  test('returns expected error message when invalid id', async () => {
-    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    const updatedCard = { ...cardInCamelCase, price: 24.5 }
-
-    const response = await api
-      .put('/api/cards/3_not_valid_id')
-      .send(updatedCard)
-
-    const receivedData = response.body
-
-    expect(receivedData.error).toMatch(/Invalid id type/)
-    expect(receivedData.expectedType).toBe('INTEGER')
-  })
-
-  test('returns 404 when id does not exist', async () => {
-    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    const updatedCard = { ...cardInCamelCase, price: 24.5 }
-
-    await api
-      .put('/api/cards/12345')
-      .send(updatedCard)
-      .expect(404)
-  })
-
-  test('returns 400 when updated card is invalid', async () => {
-    const cardInCamelCase = transformSnakeCaseCardFieldsToCamelCase(testCardsWithId[0])
-    cardInCamelCase.name = [1, 2, 3]
-
-    await api
-      .put('/api/cards/4')
-      .send(cardInCamelCase)
-      .expect(400)
-  })
-})
-
-describe('When user deletes a card from the server', () => {
-  beforeEach(async() => {
-    await queryInterface.bulkDelete('card_sets')
-    await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
-    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
-    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
-  })
-
-  test('when successful responds with 204', async () => {
-    await api
-      .delete('/api/cards/3')
-      .expect(204)
-  })
-
-  test('when invalid id responds with 400', async () => {
-    await api
-      .delete('/api/cards/3_not_valid')
-      .expect(400)
-  })
-
-  test('when non existing id responds with 404', async () => {
-    await api
-      .delete('/api/cards/12345')
-      .expect(404)
-  })
-
-  test('the card is deleted', async () => {
-    const databaseBeforeDelete = await sequelize.query('SELECT * FROM "cards"')
-    const cardsBeforeDelete = databaseBeforeDelete[0]
-
-    await api
-      .delete('/api/cards/1')
-
-    const databaseAfterDelete = await sequelize.query('SELECT * FROM "cards"')
-    const cardsAfterDelete = databaseAfterDelete[0]
-
-    const cardIdsAfterDelete = cardsAfterDelete.map(card => card.id)
-
-    expect(cardsAfterDelete).not.toHaveLength(cardsBeforeDelete.length)
-    expect(cardIdsAfterDelete).not.toContain(1)
-  })
-
-  test('nothing changes in the database when non-existing id', async () => {
-    const databaseBeforeDelete = await sequelize.query('SELECT * FROM "cards"')
-    const cardsBeforeDelete = databaseBeforeDelete[0]
-
-    await api
-      .delete('/api/cards/123')
-
-    const databaseAfterDelete = await sequelize.query('SELECT * FROM "cards"')
-    const cardsAfterDelete = databaseAfterDelete[0]
-
-    expect(cardsAfterDelete).toHaveLength(cardsBeforeDelete.length)
-
-    for (const card of cardsAfterDelete) {
-      expect(cardsBeforeDelete).toContainEqual(card)
-    }
-  })
-})
-
-describe('When user adds an individual card', () => {
-  beforeEach(async() => {
-    await queryInterface.bulkDelete('card_sets')
-    await queryInterface.bulkDelete('cards')
-    await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 11')
-    await queryInterface.bulkInsert('card_sets', firstTestCardSetWithId)
-    await queryInterface.bulkInsert('cards', firstTenCardsWithId)
-  })
-
-  describe('when successful', () => {
-    test('responds with 201', async () => {
-      await api
-        .post('/api/cards')
-        .send(testCardWithCardSetId)
-        .expect(201)
+describe('/api/cards', () => {
+  describe('When user asks for an individual card', () => {
+    beforeAll(async () => {
+      await prepareDatabase()
     })
 
-    test('responds with json', async () => {
-      await api
-        .post('/api/cards')
-        .send(testCardWithCardSetId)
-        .expect('Content-Type', /application\/json/)
+    describe('if successful', () => {
+      let receivedData
+      beforeAll(async () => {
+        receivedData = await api
+          .get(`/api/cards/${TEST_CARD_ID}`)
+      })
+
+      test('responds with 200', () => {
+        expect(receivedData.statusCode).toBe(200)
+      })
+
+      test('responds with json', () => {
+        expect(receivedData.type).toBe('application/json')
+      })
+
+      test('returns expected card', () => {
+        const expectedObject = {
+          'id': 3,
+          'cardSetId': 1,
+          'name': 'Ludevic, Necrogenius',
+          'cardNumber': 233,
+          'manaCost': 'blue black',
+          'price': 0.4,
+          'rulesText': 'Whenever Ludevic, Necrogenius enters the battlefield or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can\'t be 0. Activate only as a sorcery.\n\n//\n\nAs this creature transforms into Olag, Ludevic\'s Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic\'s Hubris, it\'s 4/4, and it\'s a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.',
+          'rarity': 'rare'
+        }
+
+        const returnedObject = receivedData.body
+
+        expect(returnedObject).toEqual(expectedObject)
+      })
     })
+    describe('if unsuccessful', () => {
+      describe('when invalid id', () => {
+        let receivedData
+        beforeAll(async () => {
+          receivedData = await api
+            .get('/api/cards/3_not_valid')
+        })
 
-    test('returns expected object', async () => {
-      const receivedData = await api
-        .post('/api/cards')
-        .send(testCardWithCardSetId)
+        test('returns 400', () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
 
-      const addedCard = receivedData.body
+        test('returns expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+          const receivedObject = receivedData.body
 
-      expect(addedCard).toHaveProperty('id', 11)
-      expect(addedCard).toHaveProperty('cardSetId', testCardWithCardSetId.cardSetId)
-      expect(addedCard).toHaveProperty('name', testCardWithCardSetId.name)
-      expect(addedCard).toHaveProperty('cardNumber', testCardWithCardSetId.cardNumber)
-      expect(addedCard).toHaveProperty('manaCost', testCardWithCardSetId.manaCost)
-      expect(addedCard).toHaveProperty('price', testCardWithCardSetId.price)
-      expect(addedCard).toHaveProperty('rulesText', testCardWithCardSetId.rulesText)
-      expect(addedCard).toHaveProperty('rarity', testCardWithCardSetId.rarity)
+          expect(receivedObject).toEqual(expectedObject)
+        })
+      })
+
+      describe('when card does not exist', () => {
+        let receivedData
+        beforeAll(async () => {
+          receivedData = await api
+            .get(`/api/cards/${NON_EXISTING_CARD_ID}`)
+        })
+
+        test('returns 404', () => {
+          expect(receivedData.statusCode).toBe(404)
+        })
+      })
     })
   })
 
-  describe('when unsuccessful', () => {
-    test('returns 400 when sent card object is invalid', async() => {
-      const modifiedCard = { ...testCardWithCardSetId }
+  describe('When user updates a card', () => {
+    const updatedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[2])
+    updatedCard.price = 50.356
 
-      modifiedCard.rulesText = ['not', 'a', 'valid', 'value']
-
-      await api
-        .post('/api/cards')
-        .send(modifiedCard)
-        .expect(400)
+    beforeAll(async () => {
+      await prepareDatabase()
     })
 
-    test('returns expected error message when card is invalid', async() => {
-      const modifiedCard = { ...testCardWithCardSetId }
+    describe('when successful', () => {
+      let receivedData
+      beforeAll(async () => {
+        receivedData = await api
+          .put(`/api/cards/${TEST_CARD_ID}`)
+          .send(updatedCard)
+      })
 
-      modifiedCard.rulesText = ['not', 'a', 'valid', 'value']
+      test('responds with 200', () => {
+        expect(receivedData.statusCode).toBe(200)
+      })
 
-      const receivedData = await api
-        .post('/api/cards')
-        .send(modifiedCard)
+      test('expected object (updated card) is returned', () => {
+        const expectedObject = {
+          'id': 3,
+          'cardSetId': 1,
+          'name': 'Ludevic, Necrogenius',
+          'cardNumber': 233,
+          'manaCost': 'blue black',
+          'price': 50.356,
+          'rulesText': 'Whenever Ludevic, Necrogenius enters the battlefield or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can\'t be 0. Activate only as a sorcery.\n\n//\n\nAs this creature transforms into Olag, Ludevic\'s Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic\'s Hubris, it\'s 4/4, and it\'s a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.',
+          'rarity': 'rare'
+        }
+        const receivedObject = receivedData.body
 
-      const errorResponse = receivedData.body
+        expect(receivedObject).toEqual(expectedObject)
+      })
 
-      expect(errorResponse).toHaveProperty('error', 'Invalid or missing data')
-      expect(errorResponse.invalidProperties).toHaveProperty('rulesText', 'INVALID')
+      test('card in the database is updated', async () => {
+        const expectedCard = {
+          'id': 3,
+          'card_set_id': 1,
+          'name': 'Ludevic, Necrogenius',
+          'card_number': 233,
+          'mana_cost': 'blue black',
+          'price': 50.356,
+          'rules_text': 'Whenever Ludevic, Necrogenius enters the battlefield or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can\'t be 0. Activate only as a sorcery.\n\n//\n\nAs this creature transforms into Olag, Ludevic\'s Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic\'s Hubris, it\'s 4/4, and it\'s a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.',
+          'rarity': 'rare'
+        }
+        const queryResponse = await queryTableContentWithId('cards', TEST_CARD_ID)
+        const cardInDatabase = queryResponse[0]
+
+        expect(cardInDatabase).toEqual(expectedCard)
+      })
+    })
+    describe('if unsuccessful', () => {
+      describe('when invalid id', () => {
+        let receivedData
+        beforeAll(async () => {
+          receivedData = await api
+            .put(`/api/cards/${INVALID_ID}`)
+            .send(updatedCard)
+        })
+
+        test('returns 400', () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
+
+        test('returns expected error message', () => {
+          const expectedObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+
+          const returnedObject = receivedData.body
+
+          expect(returnedObject).toEqual(expectedObject)
+        })
+      })
+      describe('when card does not exist', () => {
+        let receivedData
+        beforeAll(async () => {
+          receivedData = await api
+            .put(`/api/cards/${NON_EXISTING_CARD_ID}`)
+            .send(updatedCard)
+        })
+
+        test('returns 404', () => {
+          expect(receivedData.statusCode).toBe(404)
+        })
+      })
+      describe('when received card object is invalid', () => {
+        let receivedData
+        beforeAll(async () => {
+          const invalidUpdatedCard = { ...updatedCard }
+          invalidUpdatedCard.name = ['Ludevic, Necrogenius']
+          delete invalidUpdatedCard.cardNumber
+
+          receivedData = await api
+            .put(`/api/cards/${TEST_CARD_ID}`)
+            .send(invalidUpdatedCard)
+        })
+        test('returns 400', () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
+
+        test('returns expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid or missing data',
+            invalidProperties: {
+              name: 'INVALID',
+              cardNumber: 'MISSING'
+            }
+          }
+          const receivedObject = receivedData.body
+
+          expect(receivedObject).toEqual(expectedObject)
+        })
+      })
+    })
+  })
+
+  describe('When user deletes a card from the server', () => {
+    describe('if successful', () => {
+      let cardsTableAfterDelete
+      let cardsTableBeforeDelete
+      let receivedData
+
+      beforeAll(async () => {
+        await prepareDatabase()
+        cardsTableBeforeDelete = await queryTableContent('cards')
+
+        receivedData = await api
+          .delete(`/api/cards/${TEST_CARD_ID}`)
+        cardsTableAfterDelete = await queryTableContent('cards')
+      })
+
+      test('responds with 204', () => {
+        expect(receivedData.statusCode).toBe(204)
+      })
+
+      test('card is deleted from the database', async () => {
+      })
+
+      test('the card is deleted', async () => {
+        const cardIdsAfterDelete = cardsTableAfterDelete.map(card => card.id)
+
+        expect(cardsTableAfterDelete).not.toHaveLength(cardsTableBeforeDelete.length)
+        expect(cardIdsAfterDelete).not.toContain(TEST_CARD_ID)
+      })
+    })
+
+    describe('if unsuccessful', () => {
+      beforeAll(async () => {
+        await prepareDatabase()
+      })
+      describe('when invalid id', () => {
+        let cardsTableAfterDelete
+        let cardsTableBeforeDelete
+        let receivedData
+
+        beforeAll(async () => {
+          cardsTableBeforeDelete = await queryTableContent('cards')
+
+          receivedData = await api
+            .delete(`/api/cards/${INVALID_ID}`)
+
+          cardsTableAfterDelete = await queryTableContent('cards')
+        })
+
+        test('responds with 400', () => {
+          expect(receivedData.statusCode).toBe(400)
+        })
+
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+
+          const receivedObject = receivedData.body
+
+          expect(receivedObject).toEqual(expectedObject)
+        })
+
+        test('nothing changes in the database', () => {
+          expect(cardsTableAfterDelete).toHaveLength(cardsTableBeforeDelete.length)
+        })
+      })
+
+      describe('when non existing id', () => {
+        let cardsTableAfterDelete
+        let cardsTableBeforeDelete
+        let receivedData
+
+        beforeAll(async () => {
+          cardsTableBeforeDelete = await queryTableContent('cards')
+
+          receivedData = await api
+            .delete(`/api/cards/${NON_EXISTING_CARD_ID}`)
+
+          cardsTableAfterDelete = await queryTableContent('cards')
+        })
+
+        test('responds with 404', () => {
+          expect(receivedData.statusCode).toBe(404)
+        })
+
+        test('nothing changes in the database', () => {
+          expect(cardsTableAfterDelete).toHaveLength(cardsTableBeforeDelete.length)
+        })
+      })
+    })
+  })
+
+  describe('When user adds an individual card', () => {
+    describe('if successful', () => {
+      let receivedData
+      beforeAll(async() => {
+        await prepareDatabase()
+        receivedData = await api
+          .post('/api/cards')
+          .send(newCard)
+
+      })
+
+      test('responds with 201', () => {
+        expect(receivedData.statusCode).toBe(201)
+      })
+
+      test('responds with json', async () => {
+        expect(receivedData.type).toBe('application/json')
+      })
+
+      test('returns expected object', async () => {
+        const expectedObject = {
+          'id': 31,
+          'cardSetId': 1,
+          'name': 'Bladestitched Skaab',
+          'cardNumber': 212,
+          'manaCost': 'blue black',
+          'price': 0.13,
+          'rulesText': 'Other Zombies you control get +1/+0.',
+          'rarity': 'uncommon'
+        }
+
+        const receivedObject = receivedData.body
+
+        expect(receivedObject).toEqual(expectedObject)
+      })
+    })
+
+    describe('if unsuccessful', () => {
+      let receivedData
+      beforeAll(async() => {
+        await prepareDatabase()
+
+        const invalidCard = { ...newCard }
+
+        invalidCard.name = ['not valid']
+        delete invalidCard.rulesText
+
+        receivedData = await api
+          .post('/api/cards')
+          .send(invalidCard)
+      })
+
+      test('returns 400', async() => {
+        expect(receivedData.statusCode).toBe(400)
+      })
+
+      test('returns json', async() => {
+        expect(receivedData.type).toBe('application/json')
+      })
+
+      test('returns expected error information', async() => {
+        const expectedObject = {
+          error: 'Invalid or missing data',
+          invalidProperties: {
+            'name': 'INVALID',
+            'rulesText': 'MISSING'
+          }
+        }
+
+        const receivedObject = receivedData.body
+
+        expect(receivedObject).toEqual(expectedObject)
+      })
     })
   })
 })
