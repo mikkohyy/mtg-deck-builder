@@ -2,7 +2,6 @@ const {
   fillDatabaseForDecksAPITests,
   transformKeysFromSnakeCaseToCamelCase,
   addInfoRelatedToDeckToCard,
-  transformKeysFromSnakeCaseToCamelCase,
   queryTableContent,
   getFilteredTableContentWithSQLQuery,
   getDeckCardUpdateObject,

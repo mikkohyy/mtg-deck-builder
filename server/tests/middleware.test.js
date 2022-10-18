@@ -21,7 +21,6 @@ const {
 
 const {
   transformKeysFromSnakeCaseToCamelCase,
-  transformKeysFromSnakeCaseToCamelCase,
   getAllInvalidCardsFromUpdatedCards
 } = require('./test_helpers')
 
