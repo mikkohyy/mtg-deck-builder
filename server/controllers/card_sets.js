@@ -1,30 +1,42 @@
 const cardSetsRouter = require('express').Router()
 const { CardSet, Card } = require('../models')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
-const { validateNewSetCardsObject, validateIdWhichIsInteger } = require('../utils/middleware')
+const {
+  validateNewCardSetObject,
+  validateIdWhichIsInteger,
+  validateUpdatedCardSetObject
+} = require('../utils/middleware')
 
-cardSetsRouter.get('/', async (request, response) => {
-  const foundSets = await CardSet.findAll()
-  response.json(foundSets)
-})
-
-cardSetsRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next) => {
-  const setId = request.params.id
+cardSetsRouter.get('/', async (request, response, next) => {
   try {
-    const foundSet = await CardSet.findOne({
-      where: { id: setId },
-      include: {
-        model: Card
-      }
-    })
-
-    foundSet ? response.json(foundSet) : response.status(404).end()
+    const foundSets = await CardSet.findAll()
+    response.json(foundSets)
   } catch(error) {
     next(error)
   }
 })
 
-cardSetsRouter.post('/', validateNewSetCardsObject, async (request, response, next) => {
+cardSetsRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next) => {
+  const cardSetId = request.params.id
+  try {
+    const foundSet = await CardSet.findOne({
+      where: { id: cardSetId },
+      include: {
+        model: Card
+      }
+    })
+
+    if (didCardSetWithIdExist(foundSet) === true) {
+      response.json(foundSet)
+    } else {
+      response.status(404).end()
+    }
+  } catch(error) {
+    next(error)
+  }
+})
+
+cardSetsRouter.post('/', validateNewCardSetObject, async (request, response, next) => {
   try {
     const { cards, ...userInfo } = request.body
     const newCardSet = { ...userInfo, date: new Date() }
@@ -32,18 +44,18 @@ cardSetsRouter.post('/', validateNewSetCardsObject, async (request, response, ne
 
     let addedCards = []
 
-    if (cards.length !== 0) {
-      const cardsWithCardSetId = cards.map(card => ({ ...card, cardSetId: addedCardSet.id }))
+    if (didCardSetHaveCards(cards) === true) {
+      const cardsWithCardSetId = addCardSetIdToCards(cards, addedCardSet.id)
       const returnedCards = await Card.bulkCreate(cardsWithCardSetId, { validate: true })
-      addedCards = returnedCards.map(card => card.dataValues)
+      addedCards = extractCardsFromQueryResult(returnedCards)
     }
 
-    const addedCardSetWithCards =  {
+    const addedCardSetWithAddedCards =  {
       ...addedCardSet.dataValues,
       cards: addedCards
     }
 
-    response.status(201).json(addedCardSetWithCards)
+    response.status(201).json(addedCardSetWithAddedCards)
   } catch(error) {
     next(error)
   }
@@ -54,40 +66,160 @@ cardSetsRouter.delete('/:id', validateIdWhichIsInteger, async (request, response
     const cardSetId = request.params.id
     const rowsDestroyed = await CardSet.destroy({ where: { id: cardSetId } })
 
-    rowsDestroyed ? response.status(204).end() : response.status(404).end()
-  } catch(error) {
-    next(error)
-  }
-})
-
-cardSetsRouter.put('/:id', validateIdWhichIsInteger, async (request, response, next) => {
-  let updatedObject = null
-  try {
-    const cardSetId = request.params.id
-    const { name, description, date } = request.body
-
-    const updatedInfo = await CardSet.update(
-      {
-        name,
-        description,
-        date
-      },
-      {
-        where: { id: cardSetId },
-        returning: true
-      }
-    )
-
-    const updatedRows = updatedInfo[0]
-
-    if (updatedRows) {
-      updatedObject = extractInformationOnUpdatedObject(updatedInfo)
+    if (wasCardSetDeleted(rowsDestroyed) === true) {
+      response.status(204).end()
+    } else {
+      response.status(404).end()
     }
-
-    updatedRows ? response.status(200).json(updatedObject) : response.status(404).end()
   } catch(error) {
     next(error)
   }
 })
+
+cardSetsRouter.put(
+  '/:id',
+  validateIdWhichIsInteger,
+  validateUpdatedCardSetObject,
+  async (request, response, next) => {
+    let updatedObject = undefined
+
+    try {
+      const cardSetId = request.params.id
+      const { name, description, date, cards } = request.body
+
+      const updateRequestResponse = await CardSet.update(
+        {
+          name,
+          description,
+          date
+        },
+        {
+          where: { id: cardSetId },
+          returning: true
+        }
+      )
+
+      if (wasCardSetUpdated(updateRequestResponse)) {
+        updatedObject = await createUpdateResponseObject(updateRequestResponse, cards)
+        response.status(200).json(updatedObject)
+      } else {
+        response.status(404).end()
+      }
+
+    } catch(error) {
+      next(error)
+    }
+  }
+)
+
+const modifyCardsInDb = async (cards) => {
+  const { added, deleted, updated } = cards
+  const addedCards = await addCardsToDb(added)
+  const deletedCards = await deleteCardsFromDb(deleted)
+  const updatedCards = await updateCardsInDb(updated)
+
+  const modificationResults = {
+    added: addedCards,
+    deleted: deletedCards,
+    updated: updatedCards
+  }
+
+  return modificationResults
+}
+
+const addCardsToDb = async (cardsToAdd) => {
+  let addedCards = []
+  if (cardsToAdd.length > 0) {
+    const returnedCards = await Card.bulkCreate(cardsToAdd, { validate: true })
+    addedCards = returnedCards.map(card => card.dataValues)
+  }
+
+  return addedCards
+}
+
+const deleteCardsFromDb = async (cardsToDelete) => {
+  let nOfDeletedCards = 0
+
+  if (cardsToDelete.length > 0) {
+    const cardIds = cardsToDelete.map(card => card.id)
+    nOfDeletedCards = await Card.destroy({ where: { id: cardIds } })
+  }
+
+  return nOfDeletedCards
+}
+
+const updateCardsInDb = async (cardsToUpdate) => {
+  let updatedCards = []
+
+  if (cardsToUpdate.length > 0) {
+    const columnsToBeUpdated = ['name', 'cardNumber', 'manaCost', 'price', 'rulesText', 'rarity']
+
+    const updateInfo = await Card.bulkCreate(cardsToUpdate, {
+      updateOnDuplicate: columnsToBeUpdated
+    })
+    updatedCards = updateInfo.map(card => card.dataValues)
+  }
+
+  return updatedCards
+}
+
+const addCardSetIdToCards = (cards, cardSetId) => {
+  const cardsWithCardSetId = cards.map(card => ({ ...card, cardSetId: cardSetId }))
+  return  cardsWithCardSetId
+}
+
+const createUpdateResponseObject = async (requestResponse, cards) => {
+  const updateResponse = extractInformationOnUpdatedObject(requestResponse)
+  const cardModificationResults = await modifyCardsInDb(cards)
+
+  updateResponse.cards = cardModificationResults
+
+  return updateResponse
+}
+
+const didCardSetHaveCards = (cards) => {
+  let hadCards = false
+  if (cards.length > 0) {
+    hadCards = true
+  }
+
+  return  hadCards
+}
+
+const didCardSetWithIdExist = (foundSet) => {
+  let setWasFound = false
+
+  if (foundSet !== null) {
+    setWasFound = true
+  }
+
+  return setWasFound
+}
+
+const extractCardsFromQueryResult = (queryResponse) => {
+  const returnedCards = queryResponse.map(card => card.dataValues)
+  return returnedCards
+}
+
+const wasCardSetDeleted = (queryResponse) => {
+  let wasDeleted = false
+
+  if (queryResponse > 0) {
+    wasDeleted = true
+  }
+
+  return wasDeleted
+}
+
+const wasCardSetUpdated = (updateQueryResponse) => {
+  let wasUpdated = false
+  const nOfUpdatedRows = updateQueryResponse[0]
+
+  if (nOfUpdatedRows > 0) {
+    wasUpdated = true
+  }
+
+  return wasUpdated
+}
 
 module.exports = cardSetsRouter
