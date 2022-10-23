@@ -29,6 +29,20 @@ const transformKeysFromSnakeCaseToCamelCase = (snakecaseObject) => {
   return camelCaseObject
 }
 
+const transformKeysFromCamelCaseToSnakeCase = (camelCaseObject) => {
+  let snakeCaseObject = {}
+
+  for (const [key, value] of Object.entries(camelCaseObject)) {
+    const splittedKey = key.split(/(?=[A-Z])/)
+    const splittedKeyInLowerCase = splittedKey.map(word => word.toLowerCase())
+    const keyInSnakeCase = splittedKeyInLowerCase.join('_')
+    snakeCaseObject[keyInSnakeCase] = value
+  }
+
+  return snakeCaseObject
+}
+
+
 const addInfoRelatedToDeckToCard = (cards) => {
   const maxId = Math.max(...testCardDeckCombination.map(card => card.card_id))
   const deckCardInfoById = Array(maxId+1).fill(null)
@@ -95,14 +109,37 @@ const queryTableContentWithId = async (tableName, id) => {
   return queryResponse
 }
 
+const queryTableContentWithFieldValue = async (tableName, field, value) => {
+  const queryResponse = await sequelize
+    .query(
+      `SELECT * FROM "${tableName}" WHERE ${field}=${value}`,
+      { type: QueryTypes.SELECT }
+    )
+  return queryResponse
+}
+
 const getFilteredTableContentWithSQLQuery = async (tableName, fieldName, value) => {
   const queryResponse = await sequelize
-    .query(`SELECT * FROM ${tableName} WHERE ${fieldName}=${value}`)
+    .query(`SELECT * FROM "${tableName}" WHERE ${fieldName}=${value}`)
   const tableContent = queryResponse[0]
 
   return tableContent
 }
 
+/**
+ * @typedef {Object} Modified cards object
+ * @param {Array} addedCards Card objects
+ * @param {Array} updatedCards Card objects
+ * @param {Array} deletedCards Card objects
+ */
+
+/**
+ * Method that adds given array to object which represents changes in card set's cards
+ * @param {array} addedCards
+ * @param {array} updatedCards
+ * @param {array} deletedCards
+ * @returns {object} Object with keys 'added', 'updated' and 'deleted'
+ */
 const getDeckCardUpdateObject = (addedCards, updatedCards, deletedCards) => {
   const updatedDeckCardObject = {
     added: addedCards,
@@ -136,6 +173,7 @@ const getAllInvalidCardsFromUpdatedCards = (invalidCardsInfo) => {
 
 module.exports = {
   transformKeysFromSnakeCaseToCamelCase,
+  transformKeysFromCamelCaseToSnakeCase,
   fillDatabaseForDecksAPITests,
   addInfoRelatedToDeckToCard,
   queryTableContent,
@@ -143,5 +181,6 @@ module.exports = {
   getDeckCardUpdateObject,
   removePropertiesFromObject,
   getAllInvalidCardsFromUpdatedCards,
-  queryTableContentWithId
+  queryTableContentWithId,
+  queryTableContentWithFieldValue
 }

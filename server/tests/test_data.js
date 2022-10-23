@@ -81,6 +81,20 @@ const testCards = [
   }
 ]
 
+const addExpectedIdsAndAddProperties = (data, startId, properties) => {
+  const modifiedData = []
+
+  for (let i = 0; i < data.length; i++) {
+    modifiedData.push({
+      id: i + startId,
+      ...data[i],
+      ...properties,
+    })
+  }
+
+  return modifiedData
+}
+
 const testCardsWithId = [
   {
     'id': 1,
@@ -384,6 +398,8 @@ const testCardsWithId = [
   }
 ]
 
+
+
 const newCard = {
   'cardSetId': 1,
   'name': 'Bladestitched Skaab',
@@ -618,6 +634,7 @@ const testUpdatedCards = [
 ]
 
 module.exports = {
+  addExpectedIdsAndAddProperties,
   testCardSets,
   testCardSetsWithId,
   invalidCardSet,
@@ -629,5 +646,5 @@ module.exports = {
   testDecksWithId,
   testCardDeckCombination,
   testUpdatedCards,
-  newCard
+  newCard,
 }

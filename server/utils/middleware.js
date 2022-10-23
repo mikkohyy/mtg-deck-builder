@@ -1,7 +1,8 @@
 const { InvalidDataError, InvalidResourceId } = require('./errors')
 const Validator = require('./validator')
 
-const NAMES_OF_CARD_SET_PROPERTIES = ['cards', 'name', 'description']
+const NAMES_OF_NEW_CARD_SET_PROPERTIES = ['cards', 'name', 'description']
+const NAMES_OF_UPDATED_CARD_SET_PROPERTIES = ['id', 'date', 'cards', 'name', 'description']
 
 const errorHandler = (error, request, response, next) => {
   console.error(error.message)
@@ -44,7 +45,7 @@ const errorHandler = (error, request, response, next) => {
   next(error)
 }
 
-const validateNewSetCardsObject = (request, response, next) => {
+const validateNewCardSetObject = (request, response, next) => {
   const { body } = request
   let invalidProperties = {}
   let invalidCards = []
@@ -64,7 +65,39 @@ const validateNewSetCardsObject = (request, response, next) => {
     invalidProperties['description'] = getMissingOrInvalid(body.description)
   }
 
-  invalidProperties = checkIfCardHasUnnecessaryProperties(invalidProperties, body)
+  invalidProperties = checkIfNewCardSetHasUnnecessaryProperties(invalidProperties, body)
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
+const validateUpdatedCardSetObject = (request, response, next) => {  const { body } = request
+  let invalidProperties = {}
+  let invalidCards = {}
+
+  if (!Validator.checkIfString(body.name)) {
+    invalidProperties['name'] = getMissingOrInvalid(body.name)
+  }
+
+  if (!Validator.checkIfString(body.description)) {
+    invalidProperties['description'] = getMissingOrInvalid(body.name)
+  }
+
+  if (!Validator.checkIfDate(new Date(body.date))) {
+    invalidProperties['date'] = getMissingOrInvalid(body.date)
+  }
+
+  if (!Validator.checkIfModifiedCardsObjectIsValid(body.cards)) {
+    invalidProperties['cards'] = getMissingOrInvalid(body.cards)
+  } else {
+    invalidCards = validateCardsAsPartOfUpdatedCardSet(body.cards)
+    invalidProperties = addCardsIntoInvalidPropertiesIfInvalidCards(invalidCards, invalidProperties)
+  }
+
+  invalidProperties = checkIfUpdatedCardSetHasUnnecessaryProperties(invalidProperties, body)
 
   if (Object.keys(invalidProperties).length !== 0) {
     throw new InvalidDataError('Invalid or missing data', invalidProperties)
@@ -176,6 +209,18 @@ const validateCardsAsPartOfUpdatedDeck = (cards) => {
   return invalidProperties
 }
 
+const validateCardsAsPartOfUpdatedCardSet = (cards) => {
+  const { added, updated, deleted } = cards
+
+  const invalidProperties = {
+    'added': checkIfInvalidCards([], added, 'addedToCardSet'),
+    'updated': checkIfInvalidCards([], updated, 'existing'),
+    'deleted': checkIfInvalidCards([], deleted, 'existing')
+  }
+
+  return invalidProperties
+}
+
 const checkIfInvalidCards = (invalidCards, cards, cardStatus) => {
 
   for (const [i, card] of Object.entries(cards)) {
@@ -189,11 +234,33 @@ const checkIfInvalidCards = (invalidCards, cards, cardStatus) => {
   return invalidCards
 }
 
-const checkIfCardHasUnnecessaryProperties = (invalidProperties, data) => {
+const checkIfNewCardSetHasUnnecessaryProperties = (invalidProperties, data) => {
   const propertyNames = Object.keys(data)
 
   for (const name of propertyNames) {
-    !NAMES_OF_CARD_SET_PROPERTIES.includes(name) && (invalidProperties[name] = 'UNEXPECTED')
+    !NAMES_OF_NEW_CARD_SET_PROPERTIES.includes(name) && (invalidProperties[name] = 'UNEXPECTED')
+  }
+
+  return invalidProperties
+}
+
+const checkIfUpdatedCardSetHasUnnecessaryProperties = (invalidProperties, data) => {
+  const propertyNames = Object.keys(data)
+
+  for (const name of propertyNames) {
+    !NAMES_OF_UPDATED_CARD_SET_PROPERTIES.includes(name) && (invalidProperties[name] = 'UNEXPECTED')
+  }
+
+  return invalidProperties
+}
+
+const addCardsIntoInvalidPropertiesIfInvalidCards = (invalidCards, invalidProperties) => {
+  for (const cards of Object.values(invalidCards)) {
+    if (cards.length > 0) {
+      invalidProperties['cardObjects'] = invalidCards
+      invalidProperties['cards'] = 'INVALID'
+      break
+    }
   }
 
   return invalidProperties
@@ -203,9 +270,11 @@ const getMissingOrInvalid = (data) => {
   return !data ? 'MISSING' : 'INVALID'
 }
 
+
 module.exports = {
   errorHandler,
-  validateNewSetCardsObject,
+  validateNewCardSetObject,
+  validateUpdatedCardSetObject,
   validateIdWhichIsInteger,
   validateExistingCardObject,
   validateCardObjectAddedToCardSet,

@@ -44,6 +44,12 @@ class Validator {
     'notes'
   ]
 
+  static #updatedCardObjectsPropertyNames = [
+    'added',
+    'updated',
+    'deleted'
+  ]
+
   static #cardPropertyNames = {
     new: [ ...this.#basicCardPropertyNames ],
     addedToCardSet: [
@@ -114,7 +120,15 @@ class Validator {
   }
 
   static checkIfBoolean(data) {
-    if (!data === undefined || !this.#isItBoolean(data)) {
+    if (data === undefined || !this.#isItBoolean(data)) {
+      return false
+    } else {
+      return true
+    }
+  }
+
+  static checkIfDate(data) {
+    if (data === undefined || !this.#isItDate(data)) {
       return false
     } else {
       return true
@@ -131,6 +145,20 @@ class Validator {
     invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
     invalidParts = this.#checkIfCardHasMissingProperties(validPropertyNames, invalidParts, cardStatus)
     invalidParts = this.#checkIfCardHasInvalidTypes(validPropertyNames, invalidParts, data)
+
+    return invalidParts
+  }
+
+  static checkIfModifiedCardsObjectIsValid(data) {
+    let invalidParts = {}
+    let {
+      validPropertyNames,
+      unexpectedPropertyNames
+    } = this.#checkUpdatedCardsObjectPropertyNames(data)
+
+    invalidParts = this.#addUnexpectedPropertyNames(unexpectedPropertyNames, invalidParts)
+    invalidParts = this.#checkIfModifiedCardsObjectHasMissingProperties(validPropertyNames, invalidParts)
+    invalidParts = this.#checkIfUpdatedCardsObjectHasInvalidTypes(validPropertyNames, invalidParts, data)
 
     return invalidParts
   }
@@ -267,6 +295,24 @@ class Validator {
     return propertyNameInfo
   }
 
+  static #checkUpdatedCardsObjectPropertyNames(data) {
+    const validNames = []
+    const unexpectedNames = []
+    const propertyNames = Object.keys(data)
+
+    for (const propertyName of propertyNames) {
+      this.#updatedCardObjectsPropertyNames.includes(propertyName)
+        ? validNames.push(propertyName)
+        : unexpectedNames.push(propertyName)
+    }
+
+    const propertyNameInfo = {
+      validPropertyNames: validNames,
+      unexpectedPropertyNames: unexpectedNames
+    }
+
+    return propertyNameInfo
+  }
 
   static #addUnexpectedPropertyNames(propertyNames, invalidParts) {
     for (const propertyName of propertyNames) {
@@ -278,6 +324,14 @@ class Validator {
 
   static #checkIfCardHasMissingProperties(propertyNames, invalidParts, cardStatus) {
     for (const property of this.#cardPropertyNames[cardStatus]) {
+      !propertyNames.includes(property) && (invalidParts[property] = 'MISSING')
+    }
+
+    return invalidParts
+  }
+
+  static #checkIfModifiedCardsObjectHasMissingProperties(propertyNames, invalidParts) {
+    for (const property of this.#updatedCardObjectsPropertyNames) {
       !propertyNames.includes(property) && (invalidParts[property] = 'MISSING')
     }
 
@@ -303,7 +357,20 @@ class Validator {
   static #checkIfCardHasInvalidTypes(validPropertyNames, invalidParts, data) {
     for (const property of validPropertyNames) {
       const value = data[property]
-      !this.#cardPropertyChecks[property](value) && (invalidParts[property] = 'INVALID')
+      if (!this.#cardPropertyChecks[property](value)) {
+        invalidParts[property] = 'INVALID'
+      }
+    }
+
+    return invalidParts
+  }
+
+  static #checkIfUpdatedCardsObjectHasInvalidTypes(validPropertyNames, invalidParts, data) {
+    for (const property of validPropertyNames) {
+      const value = data[property]
+      if (!this.checkIfArray(value)) {
+        invalidParts[property] = 'INVALID'
+      }
     }
 
     return invalidParts
@@ -368,6 +435,16 @@ class Validator {
     }
 
     return dataIsBoolean
+  }
+
+  static #isItDate(data) {
+    let dataIsDate = false
+
+    if (data instanceof Date && !isNaN(data)) {
+      dataIsDate = true
+    }
+
+    return dataIsDate
   }
 }
 

@@ -179,6 +179,29 @@ describe('Data validations', () => {
       expect(validationResult).toBe(true)
     })
   })
+
+  describe('Date', () => {
+    test('returns true when actual date', () => {
+      const data = new Date(2022, 11, 20, 19, 37, 15, 23)
+      const validationResult = Validator.checkIfDate(data)
+
+      expect(validationResult).toBe(true)
+    })
+
+    test('returns false when not a date', () => {
+      const data = '2022'
+      const validationResult = Validator.checkIfDate(data)
+
+      expect(validationResult).toBe(false)
+    })
+
+    test('returns false when undefined', () => {
+      const data = undefined
+      const validationResult = Validator.checkIfDate(data)
+
+      expect(validationResult).toBe(false)
+    })
+  })
 })
 
 describe('Object validations', () => {
@@ -486,11 +509,124 @@ describe('Object validations', () => {
       delete cardData.nInDeck
 
       const whatIsWrongAboutThisCard = Validator.checkIfCardIsValid(cardData, 'partOfDeck')
-
       expect(whatIsWrongAboutThisCard).toHaveProperty('sideboard', 'INVALID')
       expect(whatIsWrongAboutThisCard).toHaveProperty('extra', 'UNEXPECTED')
       expect(whatIsWrongAboutThisCard).toHaveProperty('nInDeck', 'MISSING')
     })
+  })
 
+  describe('object with modified cards info', () => {
+    test('accepts when valid object', () => {
+      const data = {
+        added: [],
+        updated: [],
+        deleted: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+      const invalidProperties = Object.keys(whatIsWrongAboutThisObject)
+
+      expect(invalidProperties).toHaveLength(0)
+    })
+
+    test('rejects with expected information when "added" is missing', () => {
+      const expectedErrorObject = {
+        added: 'MISSING'
+      }
+      const data = {
+        updated: [],
+        deleted: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when "updated" is missing', () => {
+      const expectedErrorObject = {
+        updated: 'MISSING'
+      }
+      const data = {
+        added: [],
+        deleted: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when "deleted" is missing', () => {
+      const expectedErrorObject = {
+        deleted: 'MISSING'
+      }
+      const data = {
+        added: [],
+        updated: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when "added" is invalid type', () => {
+      const expectedErrorObject = {
+        added: 'INVALID'
+      }
+      const data = {
+        added: 'added',
+        updated: [],
+        deleted: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when "updated" is invalid type', () => {
+      const expectedErrorObject = {
+        updated: 'INVALID'
+      }
+      const data = {
+        added: [],
+        updated: 4,
+        deleted: []
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when "deleted" is invalid type', () => {
+      const expectedErrorObject = {
+        deleted: 'INVALID'
+      }
+      const data = {
+        added: [],
+        updated: [],
+        deleted: {}
+      }
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
+
+    test('rejects with expected information when object is empty', () => {
+      const expectedErrorObject = {
+        added: 'MISSING',
+        updated: 'MISSING',
+        deleted: 'MISSING'
+      }
+      const data = {}
+
+      const whatIsWrongAboutThisObject = Validator.checkIfModifiedCardsObjectIsValid(data)
+
+      expect(whatIsWrongAboutThisObject).toEqual(expectedErrorObject)
+    })
   })
 })

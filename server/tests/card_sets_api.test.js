@@ -111,7 +111,6 @@ describe('/api/card_sets', () => {
       })
 
       test('returns expected object', () => {
-        console.log(lastIdOfTestCards())
         const propertiesToBeAdded = { cardSetId: 4 }
         const expectedCards = addExpectedIdsAndAddProperties(testCards, lastIdOfTestCards() + 1, propertiesToBeAdded)
 
