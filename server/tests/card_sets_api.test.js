@@ -25,7 +25,7 @@ const api = supertest(app)
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
-// Logging SQL commands is set off, to enable set this too true
+// Logging SQL commands while testing is set off, to enable set this too true
 sequelize.options.logging = false
 
 const prepareDatabase = async () => {
