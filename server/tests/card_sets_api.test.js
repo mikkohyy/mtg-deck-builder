@@ -1,6 +1,5 @@
 const {
   testCardSetsWithId,
-  invalidCardSet,
   testCardsWithId,
   testCards,
   addExpectedIdsAndAddProperties,
