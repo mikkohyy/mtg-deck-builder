@@ -22,15 +22,16 @@ class Validator {
     id: (data) => this.checkIfInteger(data),
     userId: (data) => this.checkIfInteger(data),
     name: (data) => this.checkIfString(data),
-    notes: (data) => this.checkIfString(data)
+    notes: (data) => this.checkIfString(data),
+    cards: (data) => this.checkIfArray(data)
   }
 
   static #basicCardPropertyNames = [
     'name',
     'cardNumber',
     'manaCost',
-    'price',
     'rulesText',
+    'price',
     'rarity'
   ]
 
@@ -41,7 +42,7 @@ class Validator {
   static #basicDeckPropertyNames = [
     'userId',
     'name',
-    'notes'
+    'notes',
   ]
 
   static #updatedCardObjectsPropertyNames = [
@@ -66,7 +67,7 @@ class Validator {
       'nInDeck',
       'sideboard',
       ...this.#basicCardPropertyNames
-    ]
+    ],
   }
 
   static #userPropertyNames = {
@@ -75,7 +76,7 @@ class Validator {
   }
 
   static #deckPropertyNames = {
-    new: [ ...this.#basicDeckPropertyNames ],
+    new: [ ...this.#basicDeckPropertyNames, 'cards' ],
     existing: ['id', ...this.#basicDeckPropertyNames ]
   }
 
@@ -206,7 +207,7 @@ class Validator {
     invalidParts = this.#checkIfDeckHasMissingProperties(validPropertyNames, invalidParts, 'existing')
     invalidParts = this.#checkIfDeckHasInvalidTypes(validPropertyNames, invalidParts, data)
 
-    return  invalidParts
+    return invalidParts
   }
 
   static #checkIfNewUserIsValid(data) {

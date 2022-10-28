@@ -14,7 +14,16 @@ class InvalidResourceId extends Error {
   }
 }
 
+class RequestParameterError extends Error {
+  constructor(message, missingParameters) {
+    super(message)
+    this.name = 'RequestParameterError'
+    this.missingParameters = missingParameters
+  }
+}
+
 module.exports = {
   InvalidDataError,
-  InvalidResourceId
+  InvalidResourceId,
+  RequestParameterError
 }

@@ -13,8 +13,59 @@ decksRouter.post('/', validateNewDeckObject, async (request, response, next) => 
   const newDeck = request.body
 
   try {
-    const createdDeck = await Deck.create(newDeck)
-    createdDeck.setDataValue('cards', [])
+    const { userId, name, notes, cards } = newDeck
+    let addedCards = []
+
+    const newDeckObject = {
+      userId: userId,
+      name: name,
+      notes: notes
+    }
+
+    const createdDeck = await Deck.create(newDeckObject)
+
+    if (cards.length > 0) {
+      const dataWithAddedDeckId = cards.map(card => (
+        {
+          cardId: card.id,
+          nInDeck: card.nInDeck,
+          sideboard: card.sideboard,
+          deckId: createdDeck.id
+        })
+      )
+      const addingInfo = await DeckCard.bulkCreate(dataWithAddedDeckId)
+      const addedCardsIds = addingInfo.map(info => info.dataValues.cardId)
+
+      const cardsAddedToDatabase = await sequelize
+        .query(
+          `SELECT 
+              deck_cards.n_in_deck AS "nInDeck",
+              deck_cards.sideboard,
+              cards.id,
+              cards.name,
+              cards.card_number AS "cardNumber",
+              cards.mana_cost AS "manaCost",
+              cards.price,
+              cards.rules_text AS "rulesText",
+              cards.rarity
+            FROM deck_cards
+            JOIN cards
+            ON deck_cards.card_id = cards.id
+            WHERE deck_id = :deckId
+            AND card_id IN(:updatedCardsIds)`,
+          {
+            replacements: {
+              deckId: createdDeck.id,
+              updatedCardsIds: addedCardsIds
+            },
+            type: QueryTypes.SELECT
+          }
+        )
+
+      addedCards = [...cardsAddedToDatabase]
+    }
+
+    createdDeck.setDataValue('cards', addedCards)
 
     return response.status(201).json(createdDeck)
   } catch(error) {
@@ -176,11 +227,10 @@ decksRouter.put(
         )
 
         try {
-          const updateInfo = await DeckCard.bulkCreate(dataWithAddedDeckId)
+          const addingInfo = await DeckCard.bulkCreate(dataWithAddedDeckId)
+          const addedCardsIds = addingInfo.map(info => info.dataValues.cardId)
 
-          const updatedCardsIds = updateInfo.map(info => info.dataValues.cardId)
-
-          const updatedCards = await sequelize
+          const addedCards = await sequelize
             .query(
               `SELECT 
                   deck_cards.n_in_deck AS "nInDeck",
@@ -200,13 +250,13 @@ decksRouter.put(
               {
                 replacements: {
                   deckId: deckId,
-                  updatedCardsIds: updatedCardsIds
+                  updatedCardsIds: addedCardsIds
                 },
                 type: QueryTypes.SELECT
               }
             )
 
-          changesInCards.updated = [...updatedCards]
+          changesInCards.added = [...addedCards]
         } catch(error) {
           next(error)
         }

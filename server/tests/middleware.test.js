@@ -18,7 +18,8 @@ const {
   testDecks,
   testDecksWithId,
   testUpdatedCards,
-  testCardSetsWithId
+  testCardSetsWithId,
+  newDeck
 } = require('./test_data')
 
 const {
@@ -29,17 +30,17 @@ const {
 
 const validCardSetWithCards = {
   ...testCardSets[0],
-  cards: testCards
+  cards: testCards.map(card => ({ ...card }) )
 }
 
 const cardSetWithoutName = {
   description: testCardSets[0].description,
-  cards: testCards
+  cards: testCards.map(card => ({ ...card }) )
 }
 
 const cardSetWithoutDescription = {
   name: testCardSets[0].name,
-  cards: testCards
+  cards: testCards.map(card => ({ ...card }) )
 }
 
 const cardSetWithoutCardsProperty = {
@@ -508,7 +509,7 @@ describe('Set cards validator', () => {
       test('error object has the right information when invalid in all categories', () => {
         let thrownError
 
-        const cardSet = { ...validCardSetWithCards }
+        const cardSet = { ...validCardSetWithCards, cards: [ ... validCardSetWithCards.cards ] }
         cardSet.extra = 'this is extra'
         cardSet.description = ['this is an array']
         delete cardSet.name
@@ -546,7 +547,8 @@ describe('Set cards validator', () => {
       test('throws InvalidDataError when one card is missing a property', () => {
         let thrownError
 
-        const cardSet = { ...validCardSetWithCards }
+        const cardSet = { ...validCardSetWithCards, cards: [ ...validCardSetWithCards.cards ] }
+
         delete cardSet.cards[0].name
 
         const mockNext = jest.fn()
@@ -565,7 +567,7 @@ describe('Set cards validator', () => {
       test('returns expected info about what is invalid when one card is missing a property', () => {
         let thrownError
 
-        const cardSet = { ...validCardSetWithCards }
+        const cardSet = { ...validCardSetWithCards, cards: [ ...validCardSetWithCards.cards ] }
         delete cardSet.cards[0].name
 
         const mockNext = jest.fn()
@@ -587,7 +589,7 @@ describe('Set cards validator', () => {
       })
     })
   })
-  describe.only('when card set is updated', () => {
+  describe('when card set is updated', () => {
     const existingCardSet = transformKeysFromSnakeCaseToCamelCase(testCardSetsWithId[0])
     const cardSetCardsInSnakeCase = testCardsWithId.filter(card => card.card_set_id === 1)
     const cardSetCards = cardSetCardsInSnakeCase
@@ -616,7 +618,7 @@ describe('Set cards validator', () => {
         })
 
         test('when cards have been changed', async() => {
-          const newCard = testCards[0]
+          const newCard = { ...testCards[0] }
           newCard.cardSetId = 1
           const updatedCard = { ...cardSetCards[1] }
           updatedCard.name = 'Changed name'
@@ -626,6 +628,7 @@ describe('Set cards validator', () => {
             ...existingCardSet,
             cards: getDeckCardUpdateObject([newCard], [updatedCard], [deletedCard])
           }
+
 
           const mockNext = jest.fn()
           const mockRequest = new MockRequest(updatedCardSet)
@@ -702,12 +705,12 @@ describe('Set cards validator', () => {
             }
           }
 
-          const firstNewCard = testCards[0]
+          const firstNewCard = { ...testCards[0] }
           firstNewCard.cardNumber = 0.4
           firstNewCard.cardSetId = 1
-          const secondNewCard = testCards[1]
+          const secondNewCard = { ...testCards[1] }
           secondNewCard.cardSetId = 1
-          const thirdNewCard = testCards[2]
+          const thirdNewCard = { ...testCards[2] }
           thirdNewCard.cardSetId = 1
           thirdNewCard.rulesText = 0.4
           const updatedCard = { ...cardSetCards[2] }
@@ -732,8 +735,6 @@ describe('Set cards validator', () => {
             thrownError = error
           }
 
-          console.log(thrownError)
-
           expect(thrownError.name).toBe('InvalidDataError')
           expect(thrownError.invalidProperties).toEqual(invalidProperties)
         })
@@ -755,7 +756,6 @@ describe('Received card validator', () => {
       } catch(error) {
         // intentionally left empty
       }
-
       expect(mockNext).toBeCalledTimes(1)
     })
 
@@ -916,11 +916,13 @@ describe('Received user validator', () => {
 describe('Received deck validator', () => {
   describe('when new deck is added', () => {
     test('does not raise an error when valid', () => {
-      const data = { ...testDecks[0] }
-      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
+      const data = {
+        ...newDeck,
+        cards: newDeck.cards.map(card => ({ ...card }))
+      }
 
       const mockNext = jest.fn()
-      const mockRequest = new MockRequest(deckInfo)
+      const mockRequest = new MockRequest(data)
 
       try {
         validateNewDeckObject(mockRequest, null, mockNext)
@@ -933,14 +935,16 @@ describe('Received deck validator', () => {
 
     test('raise an error when invalid', () => {
       let thrownError
+      const data = {
+        ...newDeck,
+        cards: newDeck.cards.map(card => ({ ...card }))
+      }
 
-      const data = { ...testDecks[0] }
-      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
-
-      deckInfo.notes = []
+      data.notes = []
+      data.cards[0].cardSetId = 1
 
       const mockNext = jest.fn()
-      const mockRequest = new MockRequest(deckInfo)
+      const mockRequest = new MockRequest(data)
 
       try {
         validateNewDeckObject(mockRequest, null, mockNext)
@@ -951,13 +955,57 @@ describe('Received deck validator', () => {
       const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
 
       expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(1)
+      expect(invalidPropertyNames).toHaveLength(3)
       expect(thrownError.invalidProperties).toHaveProperty('notes', 'INVALID')
     })
 
   })
 
   describe('when deck is updated', () => {
+    describe('raises an error when what to updated is not defined in parameters', () => {
+      let thrownError
+      const expectedObject = { update: 'information or cards' }
+
+      const data = { ...testDecksWithId[0] }
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(deckInfo)
+
+      try {
+        validateUpdatedDeckObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      expect(thrownError.name).toBe('RequestParameterError')
+      expect(thrownError.message).toBe('A request parameter is needed')
+      expect(thrownError.missingParameters).toEqual(expectedObject)
+    })
+
+    describe.only('raises an error when update parameter is invalid', () => {
+      let thrownError
+      const expectedObject = { update: 'should be information or cards' }
+
+      const data = { ...testDecksWithId[0] }
+      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
+
+      const mockNext = jest.fn()
+      const mockRequest = new MockRequest(deckInfo)
+
+      mockRequest.query = { update: 'invalid_parameter' }
+
+      try {
+        validateUpdatedDeckObject(mockRequest, null, mockNext)
+      } catch(error) {
+        thrownError = error
+      }
+
+      expect(thrownError.name).toBe('RequestParameterError')
+      expect(thrownError.message).toBe('Invalid parameter')
+      expect(thrownError.missingParameters).toEqual(expectedObject)
+    })
+
     describe('deck information',() => {
       test('does not raise an error when valid', () => {
         const data = { ...testDecksWithId[0] }

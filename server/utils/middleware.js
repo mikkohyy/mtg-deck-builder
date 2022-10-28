@@ -1,4 +1,4 @@
-const { InvalidDataError, InvalidResourceId } = require('./errors')
+const { InvalidDataError, InvalidResourceId, RequestParameterError } = require('./errors')
 const Validator = require('./validator')
 
 const NAMES_OF_NEW_CARD_SET_PROPERTIES = ['cards', 'name', 'description']
@@ -24,11 +24,17 @@ const errorHandler = (error, request, response, next) => {
     }
 
     return response.status(400).json(errorInfo)
+  } else if (error.name === 'RequestParameterError') {
+    const errorInfo = {
+      error: error.message,
+      missingParameters: error.missingParameters
+    }
+
+    return response.status(400).json(errorInfo)
   } else if (error.name === 'InvalidDataError') {
     const errorInfo = {
       error: error.message,
       invalidProperties: error.invalidProperties
-
     }
     return response.status(400).json(errorInfo)
   } else if (error.name === 'InvalidResourceId') {
@@ -165,7 +171,15 @@ const validateUpdatedUserObject = (request, respons, next) => {
 const validateNewDeckObject = (request, response, next) => {
   const deck = request.body
 
-  const invalidProperties = Validator.checkIfDeckIsValid(deck, 'new')
+  let invalidProperties = Validator.checkIfDeckIsValid(deck, 'new')
+
+  if (deck.cards !== undefined && deck.cards.length > 0) {
+    const invalidCards = checkIfInvalidCards([], deck.cards, 'partOfDeck')
+    if (invalidCards.length > 0) {
+      invalidProperties.cards = 'INVALID'
+      invalidProperties.cardObject = [...invalidCards]
+    }
+  }
 
   if (Object.keys(invalidProperties).length !== 0) {
     throw new InvalidDataError('Invalid or missing data', invalidProperties)
@@ -178,16 +192,22 @@ const validateUpdatedDeckObject = (request, response, next) => {
   let invalidProperties
   let nOfInvalidProperties = 0
   const deck = request.body
-  const whatToUpdate = request.query.update
+  const whatToUpdate = request.query?.update
 
-  if (whatToUpdate === 'information') {
-    invalidProperties = Validator.checkIfDeckIsValid(deck, 'update')
+  if (whatToUpdate === undefined) {
+    const neededParameter = { update: 'information or cards' }
+    throw new RequestParameterError('A request parameter is needed', neededParameter)
+  } else if (whatToUpdate === 'information') {
+    invalidProperties = Validator.checkIfDeckIsValid(deck, whatToUpdate)
     nOfInvalidProperties = Object.keys(invalidProperties).length
   } else if (whatToUpdate === 'cards') {
     invalidProperties = validateCardsAsPartOfUpdatedDeck(deck)
     for (const invalidInformation of Object.values(invalidProperties)) {
       nOfInvalidProperties = nOfInvalidProperties + invalidInformation.length
     }
+  } else {
+    const expectedParameter = { update: 'should be information or cards' }
+    throw new RequestParameterError('Invalid parameter', expectedParameter)
   }
 
   if (nOfInvalidProperties !== 0) {
@@ -233,6 +253,7 @@ const checkIfInvalidCards = (invalidCards, cards, cardStatus) => {
 
   return invalidCards
 }
+
 
 const checkIfNewCardSetHasUnnecessaryProperties = (invalidProperties, data) => {
   const propertyNames = Object.keys(data)

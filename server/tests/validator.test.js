@@ -396,17 +396,18 @@ describe('Object validations', () => {
 
   describe('New deck', () => {
     test('accepts data when valid properties', () => {
-      const data = { ...testDecks[0] }
+      const data = { ...testDecks[0], cards: [] }
       const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       const whatIsWrongAboutThisDeck = Validator.checkIfDeckIsValid(deckInfo, 'new')
+
       const numberOfProperties = Object.keys(whatIsWrongAboutThisDeck)
 
       expect(numberOfProperties).toHaveLength(0)
     })
 
     test('rejects data with correct information when invalid property', () => {
-      const data = { ...testDecks[0] }
+      const data = { ...testDecks[0], cards: [] }
       const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []
@@ -419,7 +420,7 @@ describe('Object validations', () => {
     })
 
     test('rejects data with correct information when invalid, missing and unexpected properties', () => {
-      const data = { ...testDecks[0] }
+      const data = { ...testDecks[0], cards: [] }
       const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
 
       deckInfo.notes = []

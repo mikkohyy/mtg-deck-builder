@@ -1,1063 +1,856 @@
 const {
-  fillDatabaseForDecksAPITests,
   transformKeysFromSnakeCaseToCamelCase,
-  addInfoRelatedToDeckToCard,
   queryTableContent,
-  getFilteredTableContentWithSQLQuery,
-  getDeckCardUpdateObject,
-  removePropertiesFromObject
 } = require('./test_helpers')
 
 const {
   testDecksWithId,
-  testCardDeckCombination,
-  testCardsWithId
+  testCardDeckCombinations,
+  testCardSetsWithId,
+  testCardsWithId,
+  testUsersWithId,
+  newDeck,
+  newDeckCards,
+  testCardUpdatesOnDeckWithIdOne
 } = require('./test_data')
 
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 
-const { QueryTypes } = require('sequelize')
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
+// Logging SQL commands while testing is set off, to enable set this too true
 sequelize.options.logging = false
 
-let deckFromDb
-let serverResponse
-let expectedErrorsOnCards
+const formatDatabaseForTests = async () => {
+  await queryInterface.bulkDelete('deck_cards')
+  await queryInterface.bulkDelete('cards')
+  await queryInterface.bulkDelete('card_sets')
+  await queryInterface.bulkDelete('decks')
+  await queryInterface.bulkDelete('users')
 
-const postDataToEndpoint = async(endPoint, data) => {
-  const responseData = await api
-    .post(endPoint)
-    .send(data)
+  await sequelize.query('ALTER SEQUENCE "cards_id_seq" RESTART WITH 31')
+  await sequelize.query('ALTER SEQUENCE "card_sets_id_seq" RESTART WITH 4')
+  await sequelize.query('ALTER SEQUENCE "users_id_seq" RESTART WITH 4')
 
-  return responseData
+  await queryInterface.bulkInsert('card_sets', testCardSetsWithId)
+  await queryInterface.bulkInsert('cards', testCardsWithId)
+  await queryInterface.bulkInsert('users', testUsersWithId)
 }
 
-const putDataToEndPoint = async(endPoint, data) => {
-  const responseData = await api
-    .put(endPoint)
-    .send(data)
-
-  return responseData
+const prepareDatabase = async () => {
+  await queryInterface.bulkDelete('deck_cards')
+  await queryInterface.bulkDelete('decks')
+  await sequelize.query('ALTER SEQUENCE "decks_id_seq" RESTART WITH 4')
+  await queryInterface.bulkInsert('decks', testDecksWithId)
+  await queryInterface.bulkInsert('deck_cards', testCardDeckCombinations)
 }
 
-const deleteDataToEndPoint = async(endPoint, data) => {
-  const responseData = await api
-    .put(endPoint)
-    .send(data)
+const createDeckWithIdNumberOne = () => {
+  const deckInCamelCase = transformKeysFromSnakeCaseToCamelCase({ ...testDecksWithId[0] })
+  const cardDeckEntries = testCardDeckCombinations.filter(cardDeck => cardDeck.deck_id === 1)
+  const cardIds = cardDeckEntries.map(entry => entry.card_id)
+  const cardsInDeckWithoutDeckInfo = testCardsWithId.filter(card => cardIds.includes(card.id))
 
-  return responseData
+  const cardsInDeck = []
+
+  for (const card of cardsInDeckWithoutDeckInfo) {
+    const cardDeckEntryIndex = cardDeckEntries.findIndex(entry => entry.card_id === card.id)
+    const cardDeckEntry = cardDeckEntries[cardDeckEntryIndex]
+
+    const cardInDeck = {
+      ...card,
+      n_in_deck: cardDeckEntry.n_in_deck,
+      sideboard: cardDeckEntry.sideboard
+    }
+
+    delete cardInDeck.card_set_id
+
+    const cardInDeckInCamelCase = transformKeysFromSnakeCaseToCamelCase(cardInDeck)
+
+    cardDeckEntries.splice(cardDeckEntryIndex, 1)
+    cardsInDeck.push(cardInDeckInCamelCase)
+  }
+
+  const createdDeck = {
+    ...deckInCamelCase,
+    cards: cardsInDeck.map(card => ({ ...card }))
+  }
+
+  return createdDeck
 }
+
+const deckWithIdNumberOne = createDeckWithIdNumberOne()
 
 beforeAll(async () => {
-  await fillDatabaseForDecksAPITests()
+  await formatDatabaseForTests()
 })
 
 afterAll(async() => {
-  sequelize.close()
+  await sequelize.close()
 })
 
-describe('Decks endpoint', () => {
-  beforeEach(async () => {
-    await queryInterface.bulkDelete('deck_cards')
-    await queryInterface.bulkDelete('decks')
-    await sequelize.query('ALTER SEQUENCE "decks_id_seq" RESTART WITH 4')
-    await queryInterface.bulkInsert('decks', testDecksWithId)
-    await queryInterface.bulkInsert('deck_cards', testCardDeckCombination)
-  })
+describe('/api/decks', () => {
+  describe('When user asks for a deck', () => {
+    const deckId = 1
+    describe('if successful', () => {
+      let responseData
 
-  describe('when user asks for a deck', () => {
-    describe('when successful', () => {
-      test('responds with 200', async () => {
-        await api
-          .get('/api/decks/1')
-          .expect(200)
-      })
-
-      test('responds with json', async () => {
-        await api
-          .get('/api/decks/1')
-          .expect('Content-Type', /application\/json/)
-      })
-
-      test('returns expected deck', async () => {
-        const expectedDeck = testDecksWithId[0]
-
-        const receivedData = await api
-          .get('/api/decks/1')
-
-        const deckData = receivedData.body
-
-        expect(deckData).toHaveProperty('id', expectedDeck.id)
-        expect(deckData).toHaveProperty('userId', expectedDeck.user_id)
-        expect(deckData).toHaveProperty('name', expectedDeck.name)
-        expect(deckData).toHaveProperty('notes', expectedDeck.notes)
-        expect(deckData).toHaveProperty('cards')
-      })
-
-      test('returns empty deck array when no cards', async () => {
-        const receivedData = await api
-          .get('/api/decks/2')
-
-        const deckData = receivedData.body
-
-        expect(deckData.cards).toHaveLength(0)
-      })
-
-      test('card in cards array has expected properties', async () => {
-        const receivedData = await api
-          .get('/api/decks/1')
-
-        const cardsInDeck = receivedData.body.cards
-        const firstCard = cardsInDeck[0]
-        const cardProperties = Object.keys(firstCard)
-
-        expect(cardProperties).toHaveLength(9)
-
-        expect(firstCard).toHaveProperty('id')
-        expect(firstCard).toHaveProperty('name')
-        expect(firstCard).toHaveProperty('cardNumber')
-        expect(firstCard).toHaveProperty('manaCost')
-        expect(firstCard).toHaveProperty('price')
-        expect(firstCard).toHaveProperty('rulesText')
-        expect(firstCard).toHaveProperty('rarity')
-        expect(firstCard).toHaveProperty('nInDeck')
-        expect(firstCard).toHaveProperty('sideboard')
-      })
-
-      test('returns expected cards', async () => {
-        const cardsInTestedDeck = testCardDeckCombination.filter(card => card.deck_id === 1)
-        const cardsInDeckIds = cardsInTestedDeck.map(card => card.card_id)
-        const testCardsInSnakeCase = testCardsWithId
-          .filter(card => cardsInDeckIds.includes(card.id))
-        const testCardsInCamelCase = testCardsInSnakeCase
-          .map(card => transformKeysFromSnakeCaseToCamelCase(card))
-
-        const expectedCards = addInfoRelatedToDeckToCard(testCardsInCamelCase)
-
-        const receivedData = await api
-          .get('/api/decks/1')
-
-        const cardsInDeck = receivedData.body.cards
-
-        expect(cardsInDeck).toHaveLength(6)
-        for (const card of expectedCards) {
-          expect(cardsInDeck).toContainEqual(card)
-        }
-      })
-    })
-
-    describe('when unsuccessful', () => {
-      describe('when invalid id', () => {
-        test('responds with 400', async () => {
-          await api
-            .get('/api/decks/2_invalid_id')
-            .expect(400)
-        })
-
-        test('responds with expected error information', async () => {
-          const receivedData = await api
-            .get('/api/decks/2_invalid_id')
-
-          const errorInfo = receivedData.body
-
-          expect(errorInfo.error).toMatch(/Invalid id type/)
-          expect(errorInfo.expectedType).toBe('INTEGER')
-        })
-      })
-      describe('when non-existing deck id', () => {
-        test('responds with 404', async () => {
-          await api
-            .get('/api/decks/1234')
-            .expect(404)
-        })
-      })
-    })
-  })
-
-  describe('when users adds a deck', () => {
-    describe('when successful', () => {
-      const expectedPropertyNames = ['id', 'userId', 'name', 'notes', 'cards']
-      let newDeck
-      let sqlResult
-
-      beforeAll(async() => {
-        newDeck = {
-          userId: 1,
-          name: 'Green/black dinosaur deck',
-          notes: 'Did this because dinosaurs are awesome'
-        }
-        serverResponse = await postDataToEndpoint('/api/decks', newDeck)
-
-        const deckId = serverResponse.body.id
-
-        sqlResult = await sequelize
-          .query(
-            `SELECT id, user_id AS "userId", name, notes 
-             FROM decks
-             WHERE id=${deckId}`,
-            { type: QueryTypes.SELECT }
-          )
-      })
-
-      test('returns 201', () => {
-        expect(serverResponse.statusCode).toBe(201)
-      })
-
-      test('returns the created deck with right number of properties', () => {
-        const returnedObject = serverResponse.body
-        const propertyNames = Object.keys(returnedObject)
-
-        expect(propertyNames).toHaveLength(expectedPropertyNames.length)
-      })
-
-      test('returns the created deck with right properties', () => {
-        const returnedDeck = serverResponse.body
-        const expectedDeck = {
-          ...newDeck,
-          id: 4,
-          cards: []
-        }
-
-        expect(returnedDeck).toEqual(expectedDeck)
-      })
-
-      test('deck is added to the database', async () => {
-        const addedDeck = sqlResult[0]
-
-        const expectedDeck = {
-          ...newDeck,
-          id: 4
-        }
-
-        expect(addedDeck).toEqual(expectedDeck)
-      })
-    })
-    describe('when unsuccessful', () => {
       beforeAll(async () => {
-        const newDeck = {
-          userId: 1,
-          name: 'Green/black dinosaur deck',
-          notes: ['Did this because dinosaurs are awesome'],
-          extra: 'this is extra'
-        }
-
-        serverResponse = await postDataToEndpoint('/api/decks', newDeck)
-      })
-      test('responds with 400', () => {
-        expect(serverResponse.statusCode).toBe(400)
+        await prepareDatabase()
+        responseData = await api
+          .get(`/api/decks/${deckId}`)
       })
 
-      test('responds with expected error message', () => {
-        expect(serverResponse.body).toHaveProperty('error', 'Invalid or missing data')
-        expect(serverResponse.body).toHaveProperty('invalidProperties')
+      test('responds with 200', () => {
+        expect(responseData.statusCode).toBe(200)
       })
 
-      test('responds with right number of invalid properties', () => {
-        const errorInfo = serverResponse.body.invalidProperties
-        const fieldsWithError = Object.keys(errorInfo)
-
-        expect(fieldsWithError).toHaveLength(2)
+      test('returns expected object', () => {
+        const responseObject = responseData.body
+        expect(responseObject).toEqual(deckWithIdNumberOne)
+      })
+    })
+    describe('if unsuccessful', () => {
+      let responseData
+      beforeAll(async () => {
+        await prepareDatabase()
       })
 
-      test('responds with expected information about invalid properties', () => {
-        const expectedObject = {
-          notes: 'INVALID',
-          extra: 'UNEXPECTED'
-        }
+      describe('when invalid id', () => {
+        beforeAll(async () => {
+          responseData = await api
+            .get('/api/decks/1_invalid')
+        })
 
-        const errorInfo = serverResponse.body.invalidProperties
+        test('responds with 400', () => {
+          expect(responseData.statusCode).toBe(400)
+        })
 
-        expect(errorInfo).toEqual(expectedObject)
+        test('responds with expeted object', () => {
+          const expectedObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
+        })
+      })
+
+      describe('when non-existing id', () => {
+        beforeAll(async () => {
+          responseData = await api
+            .get('/api/decks/1234')
+        })
+
+        test('responds with 404', () => {
+          expect(responseData.statusCode).toBe(404)
+        })
       })
     })
   })
 
-  describe('when users deletes a deck', () => {
-    describe('when successful', () => {
-      test('returns 204', async () => {
-        await api
-          .delete('/api/decks/1')
-          .expect(204)
+  describe('When user adds new deck', () => {
+    describe('if successful', () => {
+      describe('when no cards', () => {
+        let responseData
+        let decksTableBeforeAdd
+        let deckCardsTableBeforeAdd
+        let decksTableAfterAdd
+        let deckCardsTableAfterAdd
+        beforeAll(async () => {
+          await prepareDatabase()
+          const newDeckWithoutCards = {
+            ...newDeck,
+            cards: []
+          }
+
+          decksTableBeforeAdd = await queryTableContent('decks')
+          deckCardsTableBeforeAdd = await queryTableContent('deck_cards')
+
+          responseData = await api
+            .post('/api/decks')
+            .send(newDeckWithoutCards)
+
+          decksTableAfterAdd = await queryTableContent('decks')
+          deckCardsTableAfterAdd = await queryTableContent('deck_cards')
+        })
+
+        test('responds with 201', () => {
+          expect(responseData.statusCode).toBe(201)
+        })
+
+        test('returns expected object', () => {
+          const expectedObject = {
+            id: 4,
+            userId: newDeck.userId,
+            name: newDeck.name,
+            notes: newDeck.notes,
+            cards: []
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
+        })
+
+        describe('in database', () => {
+          const expectedDeck = {
+            id: 4,
+            user_id: newDeck.userId,
+            name: newDeck.name,
+            notes: newDeck.notes
+          }
+
+          test('deck is added into the cards table', () => {
+            const nOfDecksBefore = decksTableBeforeAdd.length
+
+            expect(decksTableAfterAdd).not.toEqual(decksTableBeforeAdd)
+            expect(decksTableAfterAdd).toContainEqual(expectedDeck)
+            expect(decksTableAfterAdd).toHaveLength(nOfDecksBefore + 1)
+          })
+
+          test('nothing is added to card_decks table', () => {
+            expect(deckCardsTableAfterAdd).toEqual(deckCardsTableBeforeAdd)
+          })
+        })
       })
 
-      test('deck is removed from the database', async () => {
-        const decksBefore = await queryTableContent('decks')
-        const deletedDeck = decksBefore[0]
+      describe('when cards', () => {
+        let responseData
+        let decksTableBeforeAdd
+        let deckCardsTableBeforeAdd
+        let decksTableAfterAdd
+        let deckCardsTableAfterAdd
 
-        await api
-          .delete('/api/decks/1')
+        beforeAll(async () => {
+          await prepareDatabase()
+          const newDeckWithCards = {
+            ...newDeck,
+            cards: newDeck.cards.map(card => ({ ...card }))
+          }
 
-        const decksAfter = await queryTableContent('decks')
+          decksTableBeforeAdd = await queryTableContent('decks')
+          deckCardsTableBeforeAdd = await queryTableContent('deck_cards')
 
-        expect(decksAfter).toHaveLength(decksBefore.length - 1)
-        expect(decksAfter).not.toContainEqual(deletedDeck)
+          responseData = await api
+            .post('/api/decks')
+            .send(newDeckWithCards)
+
+          decksTableAfterAdd = await queryTableContent('decks')
+          deckCardsTableAfterAdd = await queryTableContent('deck_cards')        })
+
+        test('responds with 201', () => {
+          expect(responseData.statusCode).toBe(201)
+        })
+
+        test('returns expected object', () => {
+          const expectedObject = {
+            id: 4,
+            userId: newDeck.userId,
+            name: newDeck.name,
+            notes: newDeck.notes,
+            cards: newDeck.cards.map(card => ({ ...card }) )
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
+        })
+
+        describe('in database', () => {
+          const expectedAddedDeck = {
+            id: 4,
+            user_id: newDeck.userId,
+            name: newDeck.name,
+            notes: newDeck.notes
+          }
+
+          test('deck is added to the decks table', () => {
+            expect(decksTableAfterAdd).not.toEqual(decksTableBeforeAdd)
+            expect(decksTableAfterAdd).toContainEqual(expectedAddedDeck)
+            expect(decksTableAfterAdd).toHaveLength(decksTableBeforeAdd.length + 1)
+          })
+
+          test('cards are added to the deck_cards table', () => {
+            const addedDeckCardRows = [ ...newDeckCards ]
+
+            expect(deckCardsTableAfterAdd).not.toEqual(deckCardsTableBeforeAdd)
+            expect(deckCardsTableAfterAdd)
+              .toHaveLength(deckCardsTableBeforeAdd.length + addedDeckCardRows.length)
+
+            for (const card of addedDeckCardRows) {
+              expect(deckCardsTableAfterAdd).toContainEqual(card)
+            }
+          })
+        })
+      })
+    })
+    describe('if unsuccesful', () => {
+      describe('when invalid deck information', () => {
+        let responseData
+
+        const invalidDeck = { ...newDeck, cards: newDeck.cards.map(card => ({ ...card })) }
+        invalidDeck.name = ['invalid']
+        delete invalidDeck.cards
+
+        beforeAll(async () => {
+          responseData = await api
+            .post('/api/decks')
+            .send(invalidDeck)
+        })
+
+        test('responds with 400', () => {
+          expect(responseData.statusCode).toBe(400)
+        })
+
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid or missing data',
+            invalidProperties: {
+              name: 'INVALID',
+              cards: 'MISSING'
+            }
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
+        })
       })
 
-      test('connections are removed from the connection table', async () => {
-        const connectionTableBefore = await queryTableContent('deck_cards')
-        const firstCard = connectionTableBefore[0]
+      describe('when invalid cards', () => {
+        let responseData
 
-        await api
-          .delete('/api/decks/1')
+        const invalidDeck = { ...newDeck, cards: newDeck.cards.map(card => ({ ...card })) }
+        invalidDeck.cards[0].name = ['invalid']
+        invalidDeck.cards[0].extra = 'extra'
+        delete invalidDeck.cards[2].name
 
-        const connectionTableAfter = await queryTableContent('deck_cards')
-        const deckIdsAfter = connectionTableAfter.map(deckCard => deckCard.deck_id)
+        beforeAll(async () => {
+          responseData = await api
+            .post('/api/decks')
+            .send(invalidDeck)
+        })
 
-        expect(connectionTableAfter).not.toHaveLength(connectionTableBefore.length)
-        expect(deckIdsAfter).not.toContain(1)
-        expect(connectionTableAfter).not.toContainEqual(firstCard)
+        test('responds with 400', () => {
+          expect(responseData.statusCode).toBe(400)
+        })
+
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid or missing data',
+            invalidProperties: {
+              cards: 'INVALID',
+              cardObject: [
+                {
+                  index: '0',
+                  name: 'INVALID',
+                  extra: 'UNEXPECTED'
+                },
+                {
+                  index: '2',
+                  name: 'MISSING'
+                }
+              ]
+            }
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
+        })
+      })
+    })
+  })
+
+  describe('When user deletes a deck', () => {
+    const deckId = 1
+    const deletedDeckRow = { ...testDecksWithId[deckId-1] }
+    const deletedDeckCards = testCardDeckCombinations.filter(cardDeck => cardDeck.deck_id === deckId)
+
+    describe('if successful', () => {
+      let responseData
+      let decksTableBeforeDelete
+      let deckCardsTableBeforeDelete
+      let decksTableAfterDelete
+      let deckCardsTableAfterDelete
+
+      beforeAll(async () => {
+        await prepareDatabase()
+
+        decksTableBeforeDelete = await queryTableContent('decks')
+        deckCardsTableBeforeDelete = await queryTableContent('deck_cards')
+
+        responseData = await api
+          .delete(`/api/decks/${deckId}`)
+
+        decksTableAfterDelete = await queryTableContent('decks')
+        deckCardsTableAfterDelete = await queryTableContent('deck_cards')
+      })
+
+      test('responds with 204', () => {
+        expect(responseData.statusCode).toBe(204)
+      })
+
+      describe('in database', () => {
+        test('deck is removed from cards table', () => {
+          expect(decksTableBeforeDelete).toContainEqual(deletedDeckRow)
+          expect(decksTableAfterDelete).toHaveLength(decksTableBeforeDelete.length - 1)
+          expect(decksTableAfterDelete).not.toContainEqual(deletedDeckRow)
+        })
+
+        test('deck\'s cards are removed from card_decks table', () => {
+          const nOfDeckCardsBeforeDelete = deckCardsTableBeforeDelete.length
+          const nOfDeletedCards = deletedDeckCards.length
+
+          expect(deckCardsTableAfterDelete)
+            .toHaveLength(nOfDeckCardsBeforeDelete - nOfDeletedCards)
+
+          for (const cardInfo of deletedDeckCards) {
+            expect(deckCardsTableAfterDelete).not.toContainEqual(cardInfo)
+          }
+        })
       })
     })
 
-    describe('when unsuccesful', () => {
+    describe('if unsuccessful', () => {
       describe('if invalid id', () => {
-        test('responds with 400', async () => {
-          await api
-            .delete('/api/decks/not_valid_2')
-            .expect(400)
+        let responseData
+
+        beforeAll(async () => {
+          await prepareDatabase()
+          responseData = await api
+            .delete('/api/decks/2_invalid')
         })
-        test('responds with expected error message', async () => {
-          const responseData = await api
-            .delete('/api/decks/not_valid_2')
 
-          const errorInfo = responseData.body
+        test('responds with 400', () => {
+          expect(responseData.statusCode).toBe(400)
+        })
 
-          expect(errorInfo.error).toMatch(/Invalid id type/)
-          expect(errorInfo.expectedType).toBe('INTEGER')
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
+          }
+
+          const responseObject = responseData.body
+
+          expect(responseObject).toEqual(expectedObject)
         })
       })
 
       describe('if non-existing id', () => {
-        test('responds with 404', async () => {
-          await api
+        let receivedData
+        const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+        updatedDeck.name = 'Updated name'
+
+        beforeAll(async () => {
+          await prepareDatabase()
+          receivedData = await api
+            .put('/api/decks/1234?update=information')
+            .send(updatedDeck)
+        })
+
+        test('responds with 404', () => {
+          expect(receivedData.statusCode).toEqual(404)
+        })
+      })
+
+      describe('when non-existing id', () => {
+        let responseData
+
+        beforeAll(async () => {
+          await prepareDatabase()
+          responseData = await api
             .delete('/api/decks/1234')
-            .expect(404)
+        })
+
+        test('responds with 404', () => {
+          expect(responseData.statusCode).toBe(404)
         })
       })
     })
   })
 
-  describe('when user updates deck', () => {
-    beforeEach(async () => {
-      const firstDeckInDb = await getFilteredTableContentWithSQLQuery('decks', 'id', 1)
-      const deckCardsInDb = await sequelize
-        .query(
-          `SELECT 
-             deck_cards.n_in_deck,
-             deck_cards.sideboard,
-             cards.id,
-             cards.name,
-             cards.card_number,
-             cards.mana_cost,
-             cards.price,
-             cards.rules_text,
-             cards.rarity
-           FROM deck_cards
-           JOIN cards
-           ON deck_cards.card_id = cards.id
-           WHERE deck_id = 1`
-        )
+  describe('When user updates deck', () => {
+    const deckId = 1
+    describe('if invalid id', () => {
+      let receivedData
+      const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+      updatedDeck.name = 'Updated name'
 
-      const deckInCamelCase = transformKeysFromSnakeCaseToCamelCase(firstDeckInDb[0])
-      const cardsInCamelCase = deckCardsInDb[0]
-        .map(card => transformKeysFromSnakeCaseToCamelCase(card))
+      beforeAll(async () => {
+        await prepareDatabase()
+        receivedData = await api
+          .put('/api/decks/1_invalid?update=information')
+          .send(updatedDeck)
+      })
 
-      deckFromDb = {
-        ...deckInCamelCase,
-        cards: [
-          ...cardsInCamelCase
-        ]
-      }
+      test('responds with 400', () => {
+        expect(receivedData.statusCode).toEqual(400)
+      })
+
+      test('responds with expected error information', () => {
+        const expectedObject = {
+          error: 'Invalid id type',
+          expectedType: 'INTEGER'
+        }
+
+        const receivedObject = receivedData.body
+
+        expect(receivedObject).toEqual(expectedObject)
+      })
     })
+    describe('if request parameter on what to update is invalid', () => {
+      describe('when missing', () => {
+        let receivedData
+        const updatedDeck = { ...testDecksWithId[deckId - 1] }
+        updatedDeck.name = 'Updated name'
 
-    describe('if successful', () => {
-      describe('when updates the deck information', () => {
-        test('responds with 200', async () => {
-          deckFromDb.name = 'Red draft deck'
-          delete deckFromDb.cards
-
-          await api
-            .put('/api/decks/1?update=information')
-            .send(deckFromDb)
-            .expect(200)
+        beforeAll(async () => {
+          receivedData = await api
+            .put(`/api/decks/${deckId}`)
+            .send(updatedDeck)
         })
 
-        test('returns updated deck information', async () => {
-          const originalDeck = { ...deckFromDb }
-          delete originalDeck.cards
-
-          deckFromDb.name = 'Red draft deck'
-          delete deckFromDb.cards
-
-          const responseData = await api
-            .put('/api/decks/1?update=information')
-            .send(deckFromDb)
-
-          const returnedData = responseData.body
-
-          expect(returnedData).not.toEqual(originalDeck)
+        test('responds with 400', () => {
+          expect(receivedData.statusCode).toBe(400)
         })
 
-        test('deck in the database is updated', async () => {
-          const originalDeck = { ...deckFromDb }
-          delete originalDeck.cards
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'A request parameter is needed',
+            missingParameters: { update: 'information or cards' }
+          }
 
-          deckFromDb.name = 'Red draft deck'
-          delete deckFromDb.cards
+          const receivedObject = receivedData.body
 
-          const responseData = await api
-            .put('/api/decks/1?update=information')
-            .send(deckFromDb)
-
-          const returnedData = responseData.body
-
-          const deckQueryDataAfter = await sequelize
-            .query(
-              'SELECT * FROM decks WHERE id = 1',
-              { type: QueryTypes.SELECT }
-            )
-
-          const deckInDbAfter = transformKeysFromSnakeCaseToCamelCase(deckQueryDataAfter[0])
-
-          expect(returnedData).not.toEqual(originalDeck)
-          expect(returnedData).toEqual(deckInDbAfter)
+          expect(receivedObject).toEqual(expectedObject)
         })
       })
 
-      describe('when updates cards of a deck', () => {
-        test('responds with 200', async () => {
-          const cardNS = [0, 3]
-          const updatedCards = cardNS.map(i => deckFromDb.cards[i])
+      describe('when not \'information\' or \'missing\'', () => {
+        let receivedData
+        const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+        updatedDeck.name = 'Updated name'
 
-          updatedCards[0].nInDeck = 3
-          updatedCards[1].nInDeck = 0
-
-          const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-          await api
-            .put('/api/decks/1?update=cards')
-            .send(changesInCards)
-            .expect(200)
+        beforeAll(async () => {
+          await prepareDatabase()
+          receivedData = await api
+            .put('/api/decks/1?update=invalid_parameter')
+            .send(updatedDeck)
         })
 
-        test('respose body has properties added, updated and deleted', async () => {
-          const cardNS = [0, 3]
-          const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-          updatedCards[0].nInDeck = 3
-          updatedCards[1].nInDeck = 0
-
-          const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-          const receivedData = await api
-            .put('/api/decks/1?update=cards')
-            .send(changesInCards)
-            .expect(200)
-
-          const updateInfo = receivedData.body
-
-          expect(updateInfo).toHaveProperty('added')
-          expect(updateInfo).toHaveProperty('updated')
-          expect(updateInfo).toHaveProperty('deleted')
+        test('responds with 400', () => {
+          expect(receivedData.statusCode).toBe(400)
         })
 
-        describe('when cards are updated', () => {
-          test('returns card objects', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const receivedUpdatedCards = receivedData.body.updated
-
-            const firstCardAfter = receivedUpdatedCards[0]
-            const propertyNames = Object.keys(firstCardAfter)
-
-            expect(propertyNames).toHaveLength(9)
-
-            expect(firstCardAfter).toHaveProperty('id')
-            expect(firstCardAfter).toHaveProperty('name')
-            expect(firstCardAfter).toHaveProperty('cardNumber')
-            expect(firstCardAfter).toHaveProperty('manaCost')
-            expect(firstCardAfter).toHaveProperty('price')
-            expect(firstCardAfter).toHaveProperty('rulesText')
-            expect(firstCardAfter).toHaveProperty('rarity')
-            expect(firstCardAfter).toHaveProperty('nInDeck')
-            expect(firstCardAfter).toHaveProperty('sideboard')
-          })
-
-          test('only updated cards are returned', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const receivedUpdatedCards = receivedData.body.updated
-
-            expect(receivedUpdatedCards).toHaveLength(2)
-          })
-
-          test('returned cards have updated values', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const receivedUpdatedCards = receivedData.body.updated
-
-            const firstCardAfter = receivedUpdatedCards[0]
-            const secondCardAfter = receivedUpdatedCards[1]
-
-            expect(firstCardAfter.nInDeck).toBe(3)
-            expect(secondCardAfter.nInDeck).toBe(0)
-          })
-
-          test('returned card objects have expected properties', async () => {
-            const unnecessaryProperties = ['cardSetId', 'cardId']
-            const cardNS = [0, 3]
-            const updatedCardsWithUnnecessaryProperties = cardNS.map(i => deckFromDb.cards[i])
-
-            const updatedCards = updatedCardsWithUnnecessaryProperties
-              .map(card => removePropertiesFromObject(card, unnecessaryProperties))
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const receivedUpdatedCards = receivedData.body.updated
-
-            for (const card of receivedUpdatedCards) {
-              expect(updatedCards).toContainEqual(card)
+        test('responds with expected error information', () => {
+          const expectedObject = {
+            error: 'Invalid parameter',
+            missingParameters: {
+              update: 'should be information or cards'
             }
-          })
+          }
 
-          test('cards in the database are updated', async () => {
-            const unnecessaryProperties = ['cardSetId', 'cardId']
-            const cardNS = [0, 3]
-            const updatedCardsWithUnnecessaryProperties = cardNS.map(i => deckFromDb.cards[i])
+          const receivedObject = receivedData.body
 
-            const updatedCards = updatedCardsWithUnnecessaryProperties
-              .map(card => removePropertiesFromObject(card, unnecessaryProperties))
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const deckCardsAfterInDb = await sequelize
-              .query(
-                `SELECT 
-                  deck_cards.n_in_deck,
-                  deck_cards.sideboard,
-                  cards.id,
-                  cards.name,
-                  cards.card_number,
-                  cards.mana_cost,
-                  cards.price,
-                  cards.rules_text,
-                  cards.rarity
-                FROM deck_cards
-                JOIN cards
-                ON deck_cards.card_id = cards.id
-                WHERE deck_id = 1`,
-                { type: QueryTypes.SELECT }
-              )
-
-            const deckCardsAfterInDbCamelCase = deckCardsAfterInDb
-              .map(card => transformKeysFromSnakeCaseToCamelCase(card))
-
-            const firstUpdatedCard = updatedCards[0]
-            const secondUpdatedCard = updatedCards[1]
-
-            expect(deckCardsAfterInDbCamelCase).toContainEqual(firstUpdatedCard)
-            expect(deckCardsAfterInDbCamelCase).toContainEqual(secondUpdatedCard)
-          })
-        })
-        describe('when cards are added', () => {
-          const firstAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
-          const secondAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
-
-          delete firstAddedCard.cardSetId
-          firstAddedCard.nInDeck = 2
-          firstAddedCard.sideboard = true
-
-          delete secondAddedCard.cardSetId
-          secondAddedCard.nInDeck = 3
-          secondAddedCard.sideboard = false
-
-          const addedCards = [{ ...firstAddedCard }, { ...secondAddedCard }]
-
-          const changesInCards = getDeckCardUpdateObject(addedCards, [] , [])
-
-          test('right number of card objects are returned', async () => {
-            const responseData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const returnedAddedCards = responseData.body.updated
-
-            expect(returnedAddedCards).toHaveLength(2)
-          })
-
-          test('returned objects have expected properties', async () => {
-            const responseData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const returnedAddedCards = responseData.body.updated
-
-            for (const card of returnedAddedCards) {
-              const propertyNames = Object.keys(card)
-
-              expect(propertyNames).toHaveLength(9)
-
-              expect(card).toHaveProperty('id')
-              expect(card).toHaveProperty('name')
-              expect(card).toHaveProperty('cardNumber')
-              expect(card).toHaveProperty('manaCost')
-              expect(card).toHaveProperty('price')
-              expect(card).toHaveProperty('rulesText')
-              expect(card).toHaveProperty('rarity')
-              expect(card).toHaveProperty('nInDeck')
-              expect(card).toHaveProperty('sideboard')
-            }
-          })
-
-          test('returned objects have expected values', async () => {
-            const responseData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const returnedAddedCards = responseData.body.updated
-
-            const firstSentCard = addedCards[0]
-            const secondSentCard = addedCards[1]
-
-            expect(returnedAddedCards).toContainEqual(firstSentCard)
-            expect(returnedAddedCards).toContainEqual(secondSentCard)
-          })
-
-          test('information on added cards is saved in the database', async () => {
-            await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const addedDeckCardEntries = await sequelize
-              .query(
-                `SELECT 
-                    deck_cards.n_in_deck,
-                    deck_cards.sideboard,
-                    deck_cards.deck_id,
-                    deck_cards.card_id
-                  FROM deck_cards
-                  WHERE deck_id = :deckId
-                  AND (card_id = :firstCardId OR card_id = :secondCardId)`,
-                {
-                  replacements: {
-                    deckId: 1,
-                    firstCardId: 25,
-                    secondCardId: 26
-                  },
-                  type: QueryTypes.SELECT
-                }
-              )
-
-            expect(addedDeckCardEntries).toHaveLength(2)
-          })
-        })
-        describe('when cards are deleted', () => {
-          test('responds with an integer', async () => {
-            const firstCardToBeDeleted = deckFromDb.cards[0]
-            const secondCardToBeDeleted = deckFromDb.cards[1]
-
-            const cardsToBeDeleted = [ { ...firstCardToBeDeleted }, { ...secondCardToBeDeleted } ]
-
-            const changesInCards = getDeckCardUpdateObject([], [], cardsToBeDeleted)
-
-            const responseData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const nOfDeletedCards = responseData.body.deleted
-
-            expect(typeof nOfDeletedCards).toBe('number')
-          })
-
-          test('information on how many cards were deleted is returned', async () => {
-            const firstCardToBeDeleted = deckFromDb.cards[0]
-            const secondCardToBeDeleted = deckFromDb.cards[1]
-
-            const cardsToBeDeleted = [ { ...firstCardToBeDeleted }, { ...secondCardToBeDeleted } ]
-
-            const changesInCards = getDeckCardUpdateObject([], [], cardsToBeDeleted)
-
-            const responseData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const nOfDeletedCards = responseData.body.deleted
-
-            expect(nOfDeletedCards).toBe(2)
-          })
-
-          test('cards are deleted from the database', async () => {
-            const firstCardToBeDeleted = deckFromDb.cards[0]
-            const secondCardToBeDeleted = deckFromDb.cards[1]
-
-            const cardsToBeDeleted = [ { ...firstCardToBeDeleted }, { ...secondCardToBeDeleted } ]
-
-            const changesInCards = getDeckCardUpdateObject([], [], cardsToBeDeleted)
-
-            await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const deckAfterDelete = await sequelize
-              .query(
-                `SELECT 
-                    deck_cards.card_id
-                  FROM deck_cards
-                  WHERE deck_id = :deckId`,
-                {
-                  replacements: {
-                    deckId: 1,
-                  },
-                  type: QueryTypes.SELECT
-                }
-              )
-
-            const cardIdsAfterDelete = deckAfterDelete.map(deckcard => deckcard.card_id)
-
-            expect(cardIdsAfterDelete).not.toContain(firstCardToBeDeleted.id)
-            expect(cardIdsAfterDelete).not.toContain(secondCardToBeDeleted.id)
-          })
+          expect(receivedObject).toEqual(expectedObject)
         })
       })
     })
+    describe('when deck information is changed', () => {
+      describe('if successful', () => {
+        let receivedData
+        let decksTableBeforeUpdate
+        let decksTableAfterUpdate
+        const originalDeck = { ...testDecksWithId[deckId - 1] }
+        const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
+        updatedDeckSnakeCase.name = 'Updated name'
 
-    describe('if unsuccesful', () => {
-      describe('when deck info is updated', () => {
-        describe('when invalid id', () => {
-          test('responds with 400', async () => {
-            deckFromDb.name = 'Red draft deck'
-            delete deckFromDb.cards
+        const updatedDeckCamelCase = transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase)
 
-            await api
-              .put('/api/decks/1er?update=information')
-              .send(deckFromDb)
-              .expect(400)
-          })
+        beforeAll(async () => {
+          await prepareDatabase()
 
-          test('responds with expected message', async () => {
-            deckFromDb.name = 'Red draft deck'
-            delete deckFromDb.cards
+          decksTableBeforeUpdate = await queryTableContent('decks')
 
-            const receivedData = await api
-              .put('/api/decks/1er?update=information')
-              .send(deckFromDb)
+          receivedData = await api
+            .put(`/api/decks/${deckId}?update=information`)
+            .send(updatedDeckCamelCase)
 
-            const errorInfo = receivedData.body
-
-            expect(errorInfo.error).toMatch(/Invalid id type/)
-            expect(errorInfo.expectedType).toBe('INTEGER')
-          })
+          decksTableAfterUpdate = await queryTableContent('decks')
         })
 
-        describe('when non-existing id', () => {
-          test('responds with 404', async () => {
-            deckFromDb.name = 'Red draft deck'
-            delete deckFromDb.cards
-
-            await api
-              .put('/api/decks/1234?update=information')
-              .send(deckFromDb)
-              .expect(404)
-          })
+        test('responds with 200', () => {
+          expect(receivedData.statusCode).toBe(200)
         })
 
-        describe('when invalid value in information properties', () => {
-          test('responds with 400', async () => {
-            deckFromDb.name = 'Red draft deck'
-            delete deckFromDb.cards
-            deckFromDb.name = []
+        test('returns updated deck info', () => {
+          const receivedObject = receivedData.body
+          expect(receivedObject).toEqual(updatedDeckCamelCase)
+        })
 
-            await api
-              .put('/api/decks/1?update=information')
-              .send(deckFromDb)
-              .expect(400)
-          })
-
-          test('responds with expected error info', async () => {
-            deckFromDb.name = 'Red draft deck'
-            delete deckFromDb.cards
-            deckFromDb.name = []
-
-            const receivedData = await api
-              .put('/api/decks/1?update=information')
-              .send(deckFromDb)
-              .expect(400)
-
-            const errorResponse = receivedData.body
-
-            expect(errorResponse).toHaveProperty('error', 'Invalid or missing data')
-            expect(errorResponse.invalidProperties).toHaveProperty('name', 'INVALID')
-          })
+        test('deck table in the database is modified', () => {
+          expect(decksTableAfterUpdate).toHaveLength(decksTableBeforeUpdate.length)
+          expect(decksTableAfterUpdate).not.toContainEqual(originalDeck)
+          expect(decksTableAfterUpdate).toContainEqual(updatedDeckSnakeCase)
         })
       })
 
-      describe('when cards are updated', () => {
-        describe('when invalid id', () => {
-          test('responds with 400', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
+      describe('if unsuccessful', () => {
+        describe('when invalid value in the update information', () => {
+          let receivedData
+          const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+          updatedDeck.name = ['Updated name']
 
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            await api
-              .put('/api/decks/1er?update=cards')
-              .send(changesInCards)
-              .expect(400)
-          })
-
-          test('responds with expected message', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1er?update=cards')
-              .send(changesInCards)
-
-            const errorInfo = receivedData.body
-
-            expect(errorInfo.error).toMatch(/Invalid id type/)
-            expect(errorInfo.expectedType).toBe('INTEGER')
-          })
-        })
-
-        describe('when non-existing id', () => {
-          test('responds with 404', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = 3
-            updatedCards[1].nInDeck = 0
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            await api
-              .put('/api/decks/1234?update=cards')
-              .send(changesInCards)
-              .expect(404)
-          })
-        })
-
-        describe('when updated card has invalid property', () => {
-          test('responds with 400', async () => {
-            const cardNS = [0]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = []
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-              .expect(400)
-          })
-
-          test('responds with expected number of errors information', async () => {
-            const cardNS = [0]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = []
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const errorInfo = receivedData.body
-
-            const { added, updated, deleted } = errorInfo.invalidProperties
-
-            expect(added).toHaveLength(0)
-            expect(updated).toHaveLength(1)
-            expect(deleted).toHaveLength(0)
-          })
-
-          test('responds with expected information about the errors', async () => {
-            const cardNS = [0, 3]
-            const updatedCards = cardNS.map(i => deckFromDb.cards[i])
-
-            updatedCards[0].nInDeck = []
-            delete updatedCards[0].rulesText
-            updatedCards[1].extra = 'this is extra'
-
-            const changesInCards = getDeckCardUpdateObject([], updatedCards, [])
-
-            const receivedData = await api
-              .put('/api/decks/1?update=cards')
-              .send(changesInCards)
-
-            const errorInfo = receivedData.body
-
-            const invalidUpdatedCards = errorInfo.invalidProperties.updated
-
-            const firstInvalidInfo = invalidUpdatedCards[0]
-            const secondInvalidInfo = invalidUpdatedCards[1]
-
-            expect(errorInfo).toHaveProperty('error', 'Invalid or missing data')
-            expect(firstInvalidInfo).toHaveProperty('nInDeck', 'INVALID')
-            expect(firstInvalidInfo).toHaveProperty('rulesText', 'MISSING')
-            expect(secondInvalidInfo).toHaveProperty('extra', 'UNEXPECTED')
-          })
-        })
-        describe('when added cards have invalid properties', () => {
           beforeAll(async () => {
-            expectedErrorsOnCards = [
-              {
-                index: '0',
-                nInDeck: 'INVALID'
-              },
-              {
-                index: '1',
-                sideboard: 'INVALID'
-              }
-            ]
-
-            const firstAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
-            const secondAddedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
-
-            delete firstAddedCard.cardSetId
-            firstAddedCard.nInDeck = []
-            firstAddedCard.sideboard = true
-
-            delete secondAddedCard.cardSetId
-            secondAddedCard.nInDeck = 3
-            secondAddedCard.sideboard = 'hello'
-
-            const addedCards = [{ ...firstAddedCard }, { ...secondAddedCard }]
-
-            const changesInCards = getDeckCardUpdateObject(addedCards, [] , [])
-
-            serverResponse = await putDataToEndPoint('/api/decks/1?update=cards', changesInCards)
+            await prepareDatabase()
+            receivedData = await api
+              .put(`/api/decks/${deckId}?update=information`)
+              .send(updatedDeck)
           })
 
           test('responds with 400', () => {
-            expect(serverResponse.statusCode).toBe(400)
+            expect(receivedData.statusCode).toEqual(400)
           })
 
-          test('responds with expected number of errors information', () => {
-            const errorInfo = serverResponse.body
-            const infoOnCardErrors = errorInfo.invalidProperties.added
-
-            expect(infoOnCardErrors).toHaveLength(2)
-          })
-
-          test('responds with expected information about the errors', () => {
-            const errorInfo = serverResponse.body
-            const infoOnCardErrors = errorInfo.invalidProperties.added
-
-            for (const expectedErrors of expectedErrorsOnCards) {
-              expect(infoOnCardErrors).toContainEqual(expectedErrors)
+          test('responds with expected error information', () => {
+            const expectedObject = {
+              error: 'Invalid or missing data',
+              invalidProperties: {
+                name: 'INVALID'
+              }
             }
+
+            const receivedObject = receivedData.body
+
+            expect(receivedObject).toEqual(expectedObject)
           })
         })
-        describe('when deleted cards have invalid properties', () => {
-          beforeAll(async () => {
-            expectedErrorsOnCards = [
+      })
+    })
+
+    describe('when deck\'s cards are modified', () => {
+      describe('if successful', () => {
+        let receivedData
+        let deckCardsTableBeforeModification
+        let deckCardsTableAfterModification
+        beforeAll(async () => {
+          await prepareDatabase()
+
+          deckCardsTableBeforeModification = await queryTableContent('deck_cards')
+          receivedData = await api
+            .put(`/api/decks/${deckId}?update=cards`)
+            .send(testCardUpdatesOnDeckWithIdOne)
+          deckCardsTableAfterModification = await queryTableContent('deck_cards')
+
+        })
+
+        test('responds with 200', () => {
+          expect(receivedData.statusCode).toBe(200)
+        })
+
+        test('returns expected object', () => {
+          const expectedObject = {
+            added: [
+              { ...testCardUpdatesOnDeckWithIdOne.added[0] },
+              { ...testCardUpdatesOnDeckWithIdOne.added[1] },
+              { ...testCardUpdatesOnDeckWithIdOne.added[2] }
+            ],
+            deleted: 2,
+            updated: [
+              { ...testCardUpdatesOnDeckWithIdOne.updated[0] },
+              { ...testCardUpdatesOnDeckWithIdOne.updated[1] }
+            ]
+          }
+
+          const receivedObject = receivedData.body
+
+          expect(receivedObject).toEqual(expectedObject)
+        })
+
+        describe('deck_cards table in the database is modified', () => {
+          test('number of rows increases by one (3 added, 2 deleted, 2 updated)', () => {
+            const expectedNOfDeckCards = deckCardsTableBeforeModification.length + 1
+            expect(deckCardsTableAfterModification).toHaveLength(expectedNOfDeckCards)
+          })
+
+          test('expected rows are added', () => {
+            const expectedAddedRows = [
               {
-                index: '0',
-                id: 'INVALID'
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.added[0].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[0].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.added[0].sideboard
               },
               {
-                index: '1',
-                id: 'MISSING'
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.added[1].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[1].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.added[1].sideboard
+              },
+              {
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.added[1].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[1].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.added[1].sideboard
               }
             ]
 
-            const firstDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[24])
-            const secondDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[25])
-
-            delete firstDeletedCard.cardSetId
-            firstDeletedCard.id = []
-            firstDeletedCard.nInDeck = 1
-            firstDeletedCard.sideboard = true
-
-            delete secondDeletedCard.cardSetId
-            delete secondDeletedCard.id
-            secondDeletedCard.nInDeck = 3
-            secondDeletedCard.sideboard = true
-
-            const deletedCards = [{ ...firstDeletedCard }, { ...secondDeletedCard }]
-
-            const changesInCards = getDeckCardUpdateObject([], [], deletedCards)
-
-            serverResponse = await deleteDataToEndPoint('/api/decks/1?update=cards', changesInCards)
-          })
-
-          test('returns 400', () => {
-            expect(serverResponse.statusCode).toBe(400)
-          })
-
-          test('returns expected number of error infos on cards', () => {
-            const errorInfo = serverResponse.body
-            const infoOnCardErrors = errorInfo.invalidProperties.deleted
-
-            expect(infoOnCardErrors).toHaveLength(2)
-          })
-
-          test('responds with expected information about the errors', () => {
-            const errorInfo = serverResponse.body
-            const infoOnCardErrors = errorInfo.invalidProperties.deleted
-
-            for (const expectedErrors of expectedErrorsOnCards) {
-              expect(infoOnCardErrors).toContainEqual(expectedErrors)
+            for (const row of expectedAddedRows) {
+              expect(deckCardsTableBeforeModification).not.toContainEqual(row)
             }
+
+            for (const row of expectedAddedRows) {
+              expect(deckCardsTableAfterModification).toContainEqual(row)
+            }
+          })
+
+          test('expected rows are deleted', () => {
+            const rowsThatShouldNotExist = [
+              {
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.deleted[0].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.deleted[0].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.deleted[0].sideboard
+              },
+              {
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.deleted[1].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.deleted[1].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.deleted[1].sideboard
+              }
+            ]
+
+            for (const row of rowsThatShouldNotExist) {
+              expect(deckCardsTableBeforeModification).toContainEqual(row)
+            }
+
+            for (const row of rowsThatShouldNotExist) {
+              expect(deckCardsTableAfterModification).not.toContainEqual(row)
+            }
+          })
+
+          test('expected rows are updated', () => {
+            const expectedRowsBeforeUpdate = [
+              {
+                deck_id: 1,
+                card_id: 6,
+                n_in_deck: 1,
+                sideboard: false
+              },
+              {
+                deck_id: 1,
+                card_id: 8,
+                n_in_deck: 3,
+                sideboard: false
+              }
+            ]
+
+            const expectedRowsAfterUpdate = [
+              {
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.updated[0].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.updated[0].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.updated[0].sideboard
+              },
+              {
+                deck_id: deckId,
+                card_id: testCardUpdatesOnDeckWithIdOne.updated[1].id,
+                n_in_deck: testCardUpdatesOnDeckWithIdOne.updated[1].nInDeck,
+                sideboard: testCardUpdatesOnDeckWithIdOne.updated[1].sideboard
+              }
+            ]
+
+            for (const row of expectedRowsBeforeUpdate) {
+              expect(deckCardsTableAfterModification).not.toContainEqual(row)
+            }
+
+            for (const row of expectedRowsAfterUpdate) {
+              expect(deckCardsTableAfterModification).toContainEqual(row)
+            }
+          })
+        })
+      })
+      describe('if unsuccessful', () => {
+        let receivedData
+        let deckCardsTableBeforeModification
+        let deckCardsTableAfterModification
+
+        describe('when invalid values in modified cards', () => {
+          const addedCards = testCardUpdatesOnDeckWithIdOne.added.map(card => ({ ...card }))
+          delete addedCards[0].nInDeck
+
+          const deletedCards = testCardUpdatesOnDeckWithIdOne.deleted.map(card => ({ ...card }))
+          deletedCards[1].id = [12]
+
+          const updatedCards = testCardUpdatesOnDeckWithIdOne.updated.map(card => ({ ...card }))
+          updatedCards[0].sideboard = [true]
+          updatedCards[1].id = 'moi'
+
+          const invalidCardModifications = {
+            added: addedCards,
+            deleted: deletedCards,
+            updated: updatedCards
+          }
+
+          beforeAll(async () => {
+            await prepareDatabase()
+            deckCardsTableBeforeModification = await queryTableContent('deck_cards')
+
+            receivedData = await api
+              .put(`/api/decks/${deckId}?update=cards`)
+              .send(invalidCardModifications)
+
+            deckCardsTableAfterModification = await queryTableContent('deck_cards')
+          })
+
+          test('responds with 400', () => {
+            expect(receivedData.statusCode).toBe(400)
+          })
+
+          test('responds with expected error information', () => {
+            const expectedObject = {
+              error: 'Invalid or missing data',
+              invalidProperties: {
+                added: [
+                  {
+                    index: '0',
+                    nInDeck: 'MISSING'
+                  }
+                ],
+                deleted: [
+                  {
+                    index: '1',
+                    id: 'INVALID'
+                  }
+                ],
+                updated: [
+                  {
+                    index: '0',
+                    sideboard: 'INVALID'
+                  },
+                  {
+                    index: '1',
+                    id: 'INVALID'
+                  }
+                ]
+              }
+            }
+
+            const receivedObject = receivedData.body
+
+            expect(receivedObject).toEqual(expectedObject)
+          })
+
+          test('deck_cards table in the database is not modified', () => {
+            expect(deckCardsTableAfterModification).toEqual(deckCardsTableBeforeModification)
           })
         })
       })

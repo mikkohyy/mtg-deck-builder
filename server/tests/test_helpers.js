@@ -2,7 +2,7 @@ const {
   testCardSetsWithId,
   testCardsWithId,
   testUsersWithId,
-  testCardDeckCombination
+  testCardDeckCombinations
 } = require('./test_data')
 const { QueryTypes } = require('sequelize')
 const { sequelize } = require('../utils/db')
@@ -43,11 +43,11 @@ const transformKeysFromCamelCaseToSnakeCase = (camelCaseObject) => {
 }
 
 
-const addInfoRelatedToDeckToCard = (cards) => {
-  const maxId = Math.max(...testCardDeckCombination.map(card => card.card_id))
-  const deckCardInfoById = Array(maxId+1).fill(null)
 
-  for (const combination of testCardDeckCombination) {
+const addInfoRelatedToDeckToCard = (cards) => {
+  const maxId = Math.max(...testCardDeckCombinations.map(card => card.card_id))
+  const deckCardInfoById = Array(maxId+1).fill(null)
+  for (const combination of testCardDeckCombinations) {
     const cardInfo = {
       nInDeck: combination.n_in_deck,
       sideboard: combination.sideboard,

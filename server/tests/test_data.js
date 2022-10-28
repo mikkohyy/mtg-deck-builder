@@ -398,8 +398,6 @@ const testCardsWithId = [
   }
 ]
 
-
-
 const newCard = {
   'cardSetId': 1,
   'name': 'Bladestitched Skaab',
@@ -521,7 +519,86 @@ const testDecks = [
   }
 ]
 
-const testCardDeckCombination = [
+const newDeck = {
+  userId: 1,
+  name: 'Green/black dinosaur deck',
+  notes: 'Did this because dinosaurs are awesome',
+  cards: [
+    {
+      'id': 3,
+      'nInDeck': 1,
+      'sideboard': true,
+      'name': 'Ludevic, Necrogenius',
+      'cardNumber': 233,
+      'manaCost': 'blue black',
+      'price': 0.4,
+      'rulesText': 'Whenever Ludevic, Necrogenius enters the battlefield or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can\'t be 0. Activate only as a sorcery.\n\n//\n\nAs this creature transforms into Olag, Ludevic\'s Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic\'s Hubris, it\'s 4/4, and it\'s a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.',
+      'rarity': 'rare'
+    },
+    {
+      'id': 4,
+      'nInDeck': 2,
+      'sideboard': false,
+      'name': 'Kessig Naturalist',
+      'cardNumber': 231,
+      'manaCost': 'red green',
+      'price': 0.14,
+      'rulesText': 'Whenever Kessig Naturalist attacks, add {R} or {G}. Until end of turn, you don\'t lose this mana as steps and phases end.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\n//\n\nOther Wolves and Werewolves you control get +1/+1.\nWhenever Lord of the Ulvenwald attacks, add {R} or {G}. Until end of turn, you don\'t lose this mana as steps and phases end.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+      'rarity': 'uncommon'
+    },
+    {
+      'id': 5,
+      'nInDeck': 3,
+      'sideboard': true,
+      'name': 'Devoted Grafkeeper',
+      'cardNumber': 218,
+      'manaCost': 'white blue',
+      'price': 0.09,
+      'rulesText': 'When Devoted Grafkeeper enters the battlefield, mill two cards.\nWhenever you cast a spell from your graveyard, tap target creature you don\'t control.\nDisturb {1}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)\n\n//\n\nFlying\nDeparted Soulkeeper can block only creatures with flying.\nIf Departed Soulkeeper would be put into a graveyard from anywhere, exile it instead.',
+      'rarity': 'uncommon'
+    },
+    {
+      'id': 6,
+      'nInDeck': 4,
+      'sideboard': true,
+      'name': 'Dennick, Pious Apprentice',
+      'cardNumber': 217,
+      'manaCost': 'white blue',
+      'price': 0.35,
+      'rulesText': 'Lifelink\nCards in graveyards can\'t be the targets of spells or abilities.\nDisturb {2}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)\n\n//\n\nFlying\nWhenever one or more creature cards are put into graveyards from anywhere, investigate. This ability triggers only once each turn. (Create a colorless Clue artifact token with \'{2}, Sacrifice this artifact: Draw a card.\')\nIf Dennick, Pious Apparition would be put into a graveyard from anywhere, exile it instead.',
+      'rarity': 'rare'
+    }
+  ]
+}
+
+const newDeckCards = [
+  {
+    deck_id: 4,
+    card_id: 3,
+    n_in_deck: 1,
+    sideboard: true
+  },
+  {
+    deck_id: 4,
+    card_id: 4,
+    n_in_deck: 2,
+    sideboard: false
+  },
+  {
+    deck_id: 4,
+    card_id: 5,
+    n_in_deck: 3,
+    sideboard: true
+  },
+  {
+    deck_id: 4,
+    card_id: 6,
+    n_in_deck: 4,
+    sideboard: true
+  }
+]
+
+const testCardDeckCombinations = [
   {
     deck_id: 1,
     card_id: 1,
@@ -633,6 +710,92 @@ const testUpdatedCards = [
   },
 ]
 
+const testCardUpdatesOnDeckWithIdOne = {
+  added: [
+    {
+      'id': 3,
+      'name': 'Ludevic, Necrogenius',
+      'cardNumber': 233,
+      'manaCost': 'blue black',
+      'price': 0.4,
+      'rulesText': 'Whenever Ludevic, Necrogenius enters the battlefield or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can\'t be 0. Activate only as a sorcery.\n\n//\n\nAs this creature transforms into Olag, Ludevic\'s Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic\'s Hubris, it\'s 4/4, and it\'s a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.',
+      'rarity': 'rare',
+      'nInDeck': 4,
+      'sideboard': true
+    },
+    {
+      'id': 5,
+      'name': 'Devoted Grafkeeper',
+      'cardNumber': 218,
+      'manaCost': 'white blue',
+      'price': 0.09,
+      'rulesText': 'When Devoted Grafkeeper enters the battlefield, mill two cards.\nWhenever you cast a spell from your graveyard, tap target creature you don\'t control.\nDisturb {1}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)\n\n//\n\nFlying\nDeparted Soulkeeper can block only creatures with flying.\nIf Departed Soulkeeper would be put into a graveyard from anywhere, exile it instead.',
+      'rarity': 'uncommon',
+      'nInDeck': 1,
+      'sideboard': false
+    },
+    {
+      'id': 10,
+      'name': 'Outland Liberator',
+      'cardNumber': 190,
+      'manaCost': '1 green',
+      'price': 0.16,
+      'rulesText': '{1}, Sacrifice Outland Liberator: Destroy target artifact or enchantment.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\n//\n\n{1}, Sacrifice Frenzied Trapbreaker: Destroy target artifact or enchantment.\nWhenever Frenzied Trapbreaker attacks, destroy target artifact or enchantment defending player controls.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+      'rarity': 'uncommon',
+      'nInDeck': 1,
+      'sideboard': true
+    },
+  ],
+  deleted: [
+    {
+      'id': 1,
+      'name': 'Mystic Skull',
+      'cardNumber': 256,
+      'manaCost': '2',
+      'price': 0.09,
+      'rulesText': '{1}, {T}: Add one mana of any color.\n{5}, {T}: Transform Mystic Skull.\n\n//\n\nLands you control have \'{T}: Add one mana of any color.\'',
+      'rarity': 'uncommon',
+      'nInDeck': 2,
+      'sideboard': false
+    },
+    {
+      'id': 2,
+      'name': 'Tovolar, Dire Overlord',
+      'cardNumber': 246,
+      'manaCost': '1 red green',
+      'price': 2.75,
+      'rulesText': 'Whenever a Wolf or Werewolf you control deals combat damage to a player, draw a card.\nAt the beginning of your upkeep, if you control three or more Wolves and/or Werewolves, it becomes night. Then transform any number of Human Werewolves you control.\nDaybound\n\n//\n\nWhenever a Wolf or Werewolf you control deals combat damage to a player, draw a card.\n{X}{R}{G}: Target Wolf or Werewolf you control gets +X/+0 and gains trample until end of turn.\nNightbound',
+      'rarity': 'rare',
+      'nInDeck': 1,
+      'sideboard': false
+    },
+  ],
+  updated: [
+    {
+      'id': 6,
+      'name': 'Dennick, Pious Apprentice',
+      'cardNumber': 217,
+      'manaCost': 'white blue',
+      'price': 0.35,
+      'rulesText': 'Lifelink\nCards in graveyards can\'t be the targets of spells or abilities.\nDisturb {2}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)\n\n//\n\nFlying\nWhenever one or more creature cards are put into graveyards from anywhere, investigate. This ability triggers only once each turn. (Create a colorless Clue artifact token with \'{2}, Sacrifice this artifact: Draw a card.\')\nIf Dennick, Pious Apparition would be put into a graveyard from anywhere, exile it instead.',
+      'rarity': 'rare',
+      'nInDeck': 4,
+      'sideboard': false
+    },
+    {
+      'id': 8,
+      'name': 'Tovolar\'s Huntmaster',
+      'cardNumber': 204,
+      'manaCost': '4 green green',
+      'price': 0.97,
+      'rulesText': 'When Tovolar\'s Huntmaster enters the battlefield, create two 2/2 green Wolf creature tokens.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)\n\n//\n\nWhenever Tovolar\'s Packleader enters the battlefield or attacks, create two 2/2 green Wolf creature tokens.\n{2}{G}{G}: Another target Wolf or Werewolf you control fights target creature you don\'t control.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+      'rarity': 'rare',
+      'nInDeck': 1,
+      'sideboard': true
+    },
+  ]
+}
+
 module.exports = {
   addExpectedIdsAndAddProperties,
   testCardSets,
@@ -644,7 +807,10 @@ module.exports = {
   testUsersWithId,
   testDecks,
   testDecksWithId,
-  testCardDeckCombination,
+  testCardDeckCombinations,
   testUpdatedCards,
   newCard,
+  newDeck,
+  newDeckCards,
+  testCardUpdatesOnDeckWithIdOne
 }
