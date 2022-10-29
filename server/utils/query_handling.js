@@ -4,6 +4,14 @@ const extractInformationOnUpdatedObject = (returned) => {
   return plainData
 }
 
+const extractFoundDataFromQuery = (queryResults) => {
+  const deckData = queryResults.get({ plain: true })
+
+  return deckData
+}
+
+
 module.exports = {
-  extractInformationOnUpdatedObject
+  extractInformationOnUpdatedObject,
+  extractFoundDataFromQuery
 }

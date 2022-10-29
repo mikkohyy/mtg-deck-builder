@@ -7,7 +7,11 @@ const {
   validateUpdatedDeckObject,
   validateNewDeckObject
 } = require('../utils/middleware')
-const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
+
+const {
+  extractInformationOnUpdatedObject,
+  extractFoundDataFromQuery
+} = require('../utils/query_handling')
 
 decksRouter.post('/', validateNewDeckObject, async (request, response, next) => {
   const newDeck = request.body
@@ -24,45 +28,9 @@ decksRouter.post('/', validateNewDeckObject, async (request, response, next) => 
 
     const createdDeck = await Deck.create(newDeckObject)
 
-    if (cards.length > 0) {
-      const dataWithAddedDeckId = cards.map(card => (
-        {
-          cardId: card.id,
-          nInDeck: card.nInDeck,
-          sideboard: card.sideboard,
-          deckId: createdDeck.id
-        })
-      )
-      const addingInfo = await DeckCard.bulkCreate(dataWithAddedDeckId)
-      const addedCardsIds = addingInfo.map(info => info.dataValues.cardId)
-
-      const cardsAddedToDatabase = await sequelize
-        .query(
-          `SELECT 
-              deck_cards.n_in_deck AS "nInDeck",
-              deck_cards.sideboard,
-              cards.id,
-              cards.name,
-              cards.card_number AS "cardNumber",
-              cards.mana_cost AS "manaCost",
-              cards.price,
-              cards.rules_text AS "rulesText",
-              cards.rarity
-            FROM deck_cards
-            JOIN cards
-            ON deck_cards.card_id = cards.id
-            WHERE deck_id = :deckId
-            AND card_id IN(:updatedCardsIds)`,
-          {
-            replacements: {
-              deckId: createdDeck.id,
-              updatedCardsIds: addedCardsIds
-            },
-            type: QueryTypes.SELECT
-          }
-        )
-
-      addedCards = [...cardsAddedToDatabase]
+    if (areThereCards(cards) === true) {
+      const deckId = createdDeck.id
+      addedCards = await addCardsToDeck(deckId, cards)
     }
 
     createdDeck.setDataValue('cards', addedCards)
@@ -77,7 +45,7 @@ decksRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next
   const deckId = request.params.id
 
   try {
-    const foundDeck = await Deck.findByPk(deckId, {
+    const queryResults = await Deck.findByPk(deckId, {
       include: [
         {
           model: Card,
@@ -89,18 +57,18 @@ decksRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next
       ]
     })
 
-    if (foundDeck) {
-      const deckInPlainForm = foundDeck.get({ plain: true })
-      const deck = {
-        ...deckInPlainForm,
-        cards: moveCardPropertiesToCard(deckInPlainForm.cards)
+    if (wasDeckFound(queryResults) === true) {
+      const deckData = extractFoundDataFromQuery(queryResults)
+
+      const foundDeck = {
+        ...deckData,
+        cards: moveCardDeckPropertiesToCardProperties(deckData.cards)
       }
 
-      response.json(deck)
+      response.json(foundDeck)
     } else {
       response.status(404).end()
     }
-
   } catch(error) {
     next(error)
   }
@@ -110,13 +78,18 @@ decksRouter.delete('/:id', validateIdWhichIsInteger, async (request, response, n
   const deckId = request.params.id
 
   try {
-    const rowsDestroyed = await Deck.destroy({
+    const queryResults = await Deck.destroy({
       where: {
         id: deckId
       }
     })
 
-    rowsDestroyed !== 0 ? response.status(204).end() : response.status(404).end()
+    if (wasDeckDeleted(queryResults) === true) {
+      response.status(204).end()
+    } else {
+      response.status(404).end()
+    }
+
   } catch(error) {
     next(error)
   }
@@ -129,166 +102,82 @@ decksRouter.put(
   async (request, response, next) => {
     const deckId = request.params.id
     const whatToUpdate = request.query.update
-    const updateData = request.body
+    const updatedContent = request.body
 
-    const deckInDb = await Deck.findAll({ where: { id: deckId } })
+    const queryResult = await Deck.findByPk(deckId)
 
-    if (deckInDb.length === 0) {
+    if (wasDeckFound(queryResult) === false) {
       return response.status(404).end()
     }
 
     if (whatToUpdate === 'information') {
-      let updatedDeckInfo
       try {
-        const updateInfo = await Deck.update(
-          updateData,
-          {
-            where: { id: deckId },
-            returning: true
-          }
-        )
-
-        const nOfUpdatedRows = updateInfo[0]
-
-        if (nOfUpdatedRows) {
-          updatedDeckInfo = extractInformationOnUpdatedObject(updateInfo)
-        }
-
-        nOfUpdatedRows !== 0 ? response.json(updatedDeckInfo) : response.status(404).end()
+        const updatedDeckInformation = await updateDeckInformation(deckId, updatedContent)
+        response.json(updatedDeckInformation)
       } catch(error) {
         next(error)
       }
 
     } else if (whatToUpdate === 'cards') {
-      const { added, updated, deleted } = updateData
-
-      const changesInCards = {
-        added: [],
-        updated: [],
-        deleted: []
+      try {
+        const changesInCards = await modifyCardsInDeck(deckId, updatedContent)
+        response.json(changesInCards)
+      } catch(error) {
+        next(error)
       }
-
-      if (updated.length > 0) {
-        const dataWithAddedDeckId = updated.map(card => (
-          {
-            cardId: card.id,
-            nInDeck: card.nInDeck,
-            sideboard: card.sideboard,
-            deckId: deckId
-          })
-        )
-
-        try {
-          const updateInfo = await DeckCard.bulkCreate(dataWithAddedDeckId, {
-            updateOnDuplicate: ['nInDeck', 'sideboard'],
-          })
-          const updatedCardsIds = updateInfo.map(info => info.dataValues.cardId)
-
-          const updatedCards = await sequelize
-            .query(
-              `SELECT 
-                  deck_cards.n_in_deck AS "nInDeck",
-                  deck_cards.sideboard,
-                  cards.id,
-                  cards.name,
-                  cards.card_number AS "cardNumber",
-                  cards.mana_cost AS "manaCost",
-                  cards.price,
-                  cards.rules_text AS "rulesText",
-                  cards.rarity
-                FROM deck_cards
-                JOIN cards
-                ON deck_cards.card_id = cards.id
-                WHERE deck_id = :deckId
-                AND card_id IN(:updatedCardsIds)`,
-              {
-                replacements: {
-                  deckId: deckId,
-                  updatedCardsIds: updatedCardsIds
-                },
-                type: QueryTypes.SELECT
-              }
-            )
-
-          changesInCards.updated = [...updatedCards]
-        } catch(error) {
-          next(error)
-        }
-      }
-
-      if (added.length > 0) {
-        const dataWithAddedDeckId = added.map(card => (
-          {
-            cardId: card.id,
-            nInDeck: card.nInDeck,
-            sideboard: card.sideboard,
-            deckId: deckId
-          })
-        )
-
-        try {
-          const addingInfo = await DeckCard.bulkCreate(dataWithAddedDeckId)
-          const addedCardsIds = addingInfo.map(info => info.dataValues.cardId)
-
-          const addedCards = await sequelize
-            .query(
-              `SELECT 
-                  deck_cards.n_in_deck AS "nInDeck",
-                  deck_cards.sideboard,
-                  cards.id,
-                  cards.name,
-                  cards.card_number AS "cardNumber",
-                  cards.mana_cost AS "manaCost",
-                  cards.price,
-                  cards.rules_text AS "rulesText",
-                  cards.rarity
-                FROM deck_cards
-                JOIN cards
-                ON deck_cards.card_id = cards.id
-                WHERE deck_id = :deckId
-                AND card_id IN(:updatedCardsIds)`,
-              {
-                replacements: {
-                  deckId: deckId,
-                  updatedCardsIds: addedCardsIds
-                },
-                type: QueryTypes.SELECT
-              }
-            )
-
-          changesInCards.added = [...addedCards]
-        } catch(error) {
-          next(error)
-        }
-      }
-
-      if (deleted.length > 0) {
-        const dataWithDeleteCardIds = deleted.map(card => (card.id))
-
-        try {
-          const deletedRows = await DeckCard.destroy(({
-            where: {
-              cardId:dataWithDeleteCardIds,
-              deckId: deckId
-            }
-          }))
-
-          changesInCards.deleted = deletedRows
-        } catch(error) {
-          error(next)
-        }
-      }
-
-      response.json(changesInCards)
     }
   })
 
-const moveCardPropertiesToCard = (cards) => {
-  const formattedCards = cards.map(card => moveNestedNInDeckOneDown(card))
+const wasDeckDeleted = (queryResults) => {
+  let deckWasDestroyed = false
+
+  if (queryResults > 0) {
+    deckWasDestroyed = true
+  }
+
+  return deckWasDestroyed
+}
+
+const wasDeckFound = (queryResults) => {
+  let deckWasFound = false
+
+  if (queryResults !== null) {
+    deckWasFound = true
+  }
+
+  return deckWasFound
+}
+
+
+const areThereCards = (cards) => {
+  let hasCards = false
+
+  if (cards.length > 0) {
+    hasCards = true
+  }
+
+  return hasCards
+}
+
+const formatToDeckCardsTableData = (deckId,cards) => {
+  const formattedData = cards.map(card => (
+    {
+      cardId: card.id,
+      nInDeck: card.nInDeck,
+      sideboard: card.sideboard,
+      deckId: deckId
+    })
+  )
+
+  return formattedData
+}
+
+const moveCardDeckPropertiesToCardProperties = (cards) => {
+  const formattedCards = cards.map(card => moveContentOfCardDeckPropertyOneDown(card))
   return formattedCards
 }
 
-const moveNestedNInDeckOneDown = (card) => {
+const moveContentOfCardDeckPropertyOneDown = (card) => {
   const nInDeck = card.deckCard.nInDeck
   const sideboard = card.deckCard.sideboard
   delete card.deckCard
@@ -300,6 +189,135 @@ const moveNestedNInDeckOneDown = (card) => {
   }
 
   return cardWithNInDeck
+}
+
+const getFullCardInfoOnCardsOnDeck = async (deckId, cardIds) => {
+  const fullCardsInDeckInfo = await sequelize
+    .query(
+      `SELECT 
+          deck_cards.n_in_deck AS "nInDeck",
+          deck_cards.sideboard,
+          cards.id,
+          cards.name,
+          cards.card_number AS "cardNumber",
+          cards.mana_cost AS "manaCost",
+          cards.price,
+          cards.rules_text AS "rulesText",
+          cards.rarity
+        FROM deck_cards
+        JOIN cards
+        ON deck_cards.card_id = cards.id
+        WHERE deck_id = :deckId
+        AND card_id IN(:updatedCardsIds)`,
+      {
+        replacements: {
+          deckId: deckId,
+          updatedCardsIds: cardIds
+        },
+        type: QueryTypes.SELECT
+      }
+    )
+
+  return fullCardsInDeckInfo
+}
+
+const updateDeckInformation = async (deckId, updatedContent) => {
+  let updatedDeckInformation
+
+  const queryResults = await Deck.update(
+    updatedContent,
+    {
+      where: { id: deckId },
+      returning: true
+    }
+  )
+
+  if (wasRowUpdated(queryResults) === true) {
+    updatedDeckInformation = extractInformationOnUpdatedObject(queryResults)
+  }
+
+  return updatedDeckInformation
+}
+
+const wasRowUpdated = (updateQueryResults) => {
+  let rowWasUpdated = false
+  const nOfUpdatedRows = updateQueryResults[0]
+
+  if (nOfUpdatedRows > 0) {
+    rowWasUpdated = true
+  }
+
+  return rowWasUpdated
+}
+
+const modifyCardsInDeck = async (deckId, cards) => {
+  const { added, updated, deleted } = cards
+
+  const changesInCards = {
+    added: [],
+    updated: [],
+    deleted: []
+  }
+
+  if (areThereCards(added) === true) {
+    const cardsAsPartOfDeck = await addCardsToDeck(deckId, added)
+    changesInCards.added = [...cardsAsPartOfDeck]
+  }
+
+  if (areThereCards(deleted) === true) {
+    const nOfDeletedRows = await deleteCardsFromDeck(deckId, deleted)
+    changesInCards.deleted = nOfDeletedRows
+  }
+
+  if (areThereCards(updated) === true) {
+    const cardsAsPartOfDeck = await updateCardsInDeck(deckId, updated)
+    changesInCards.updated = [...cardsAsPartOfDeck]
+  }
+  return changesInCards
+}
+
+const addCardsToDeck = async (deckId, cards) => {
+  const idsOfAddedCards = await modifyDeckCardsTable(deckId, cards, 'add')
+  const cardsAsPartOfDeck = await getFullCardInfoOnCardsOnDeck(deckId, idsOfAddedCards)
+
+  return cardsAsPartOfDeck
+}
+
+const deleteCardsFromDeck = async (deckId, cards) => {
+  const dataWithDeleteCardIds = cards.map(card => (card.id))
+
+  const nOfDeletedRows = await DeckCard.destroy(({
+    where: {
+      cardId: dataWithDeleteCardIds,
+      deckId: deckId
+    }
+  }))
+
+  return nOfDeletedRows
+}
+
+const updateCardsInDeck = async (deckId, cards) => {
+  const idsOfUpdatedCards = await modifyDeckCardsTable(deckId, cards, 'update')
+  const cardsAsPartOfDeck = await getFullCardInfoOnCardsOnDeck(deckId, idsOfUpdatedCards)
+
+  return cardsAsPartOfDeck
+}
+
+const modifyDeckCardsTable = async (deckId, cards, howToModify) => {
+  let returnedModificationInformation
+  const dataForDeckCardsTable = formatToDeckCardsTableData(deckId, cards)
+
+  if (howToModify === 'add') {
+    returnedModificationInformation = await DeckCard.bulkCreate(dataForDeckCardsTable)
+  } else if (howToModify === 'update') {
+    returnedModificationInformation = await DeckCard.bulkCreate(dataForDeckCardsTable, {
+      updateOnDuplicate: ['nInDeck', 'sideboard'],
+    })
+  }
+
+  const idsOfAddedCards = returnedModificationInformation.map(info => info.dataValues.cardId)
+
+  return idsOfAddedCards
 }
 
 module.exports = decksRouter
