@@ -16,7 +16,6 @@ const {
   testCardsWithId,
   testUsers,
   testDecksWithId,
-  testUpdatedCards,
   testCardSetsWithId,
   newDeck,
   testCardUpdatesOnDeckWithIdOne
@@ -24,22 +23,11 @@ const {
 
 const {
   transformKeysFromSnakeCaseToCamelCase,
-  getAllInvalidCardsFromUpdatedCards,
   getDeckCardUpdateObject
 } = require('./test_helpers')
 
 const validCardSetWithCards = {
   ...testCardSets[0],
-  cards: testCards.map(card => ({ ...card }) )
-}
-
-const cardSetWithoutName = {
-  description: testCardSets[0].description,
-  cards: testCards.map(card => ({ ...card }) )
-}
-
-const cardSetWithoutDescription = {
-  name: testCardSets[0].name,
   cards: testCards.map(card => ({ ...card }) )
 }
 
