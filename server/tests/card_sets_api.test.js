@@ -25,7 +25,7 @@ const api = supertest(app)
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
 
-// Logging SQL commands while testing is set off, to enable set this too true
+// Logging SQL commands while testing is set off, to enable set this to true
 sequelize.options.logging = false
 
 const prepareDatabase = async () => {
@@ -202,6 +202,7 @@ describe('/api/card_sets', () => {
         const expectedObject = {
           error: 'Invalid or missing data',
           invalidProperties: {
+            cards: 'INVALID',
             cardObjects: [
               { index: '2', price: 'MISSING' },
               { index: '3', manaCost: 'INVALID' }

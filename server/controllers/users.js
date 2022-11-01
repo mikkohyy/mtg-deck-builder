@@ -118,8 +118,6 @@ const updateUserInDatabase = async(updatedFields, userId) => {
     returning: ['id', 'username']
   })
 
-  console.log(updateResponse)
-
   return updateResponse
 }
 

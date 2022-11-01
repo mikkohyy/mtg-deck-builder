@@ -10,6 +10,7 @@ const { queryTableContent, queryTableContentWithId } = require('./test_helpers')
 const { testUsers, testUsersWithId } = require('./test_data')
 const { getHashedString } = require('../utils/general')
 
+// Logging SQL commands while testing is set off, to enable set this too true
 sequelize.options.logging = false
 
 let receivedData

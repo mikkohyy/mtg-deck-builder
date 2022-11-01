@@ -60,7 +60,11 @@ const validateNewCardSetObject = (request, response, next) => {
     invalidProperties['cards'] = getMissingOrInvalid(body.cards)
   } else {
     invalidCards = checkIfInvalidCards(invalidCards, body.cards, 'new')
-    invalidCards.length !== 0 && (invalidProperties['cardObjects'] = invalidCards)
+
+    if (invalidCards.length !== 0) {
+      invalidProperties['cards'] = 'INVALID'
+      invalidProperties['cardObjects'] = invalidCards
+    }
   }
 
   if (!Validator.checkIfString(body.name)) {
@@ -80,7 +84,8 @@ const validateNewCardSetObject = (request, response, next) => {
   }
 }
 
-const validateUpdatedCardSetObject = (request, response, next) => {  const { body } = request
+const validateUpdatedCardSetObject = (request, response, next) => {
+  const { body } = request
   let invalidProperties = {}
   let invalidCards = {}
 
@@ -196,7 +201,7 @@ const validateUpdatedDeckObject = (request, response, next) => {
 
   if (whatToUpdate === undefined) {
     const neededParameter = { update: 'information or cards' }
-    throw new RequestParameterError('A request parameter is needed', neededParameter)
+    throw new RequestParameterError('A request parameter is required', neededParameter)
   } else if (whatToUpdate === 'information') {
     invalidProperties = Validator.checkIfDeckIsValid(deck, whatToUpdate)
     nOfInvalidProperties = Object.keys(invalidProperties).length
@@ -206,8 +211,8 @@ const validateUpdatedDeckObject = (request, response, next) => {
       nOfInvalidProperties = nOfInvalidProperties + invalidInformation.length
     }
   } else {
-    const expectedParameter = { update: 'should be information or cards' }
-    throw new RequestParameterError('Invalid parameter', expectedParameter)
+    const missingParameter = { update: 'information or cards' }
+    throw new RequestParameterError('Invalid request parameter', missingParameter)
   }
 
   if (nOfInvalidProperties !== 0) {
@@ -254,7 +259,6 @@ const checkIfInvalidCards = (invalidCards, cards, cardStatus) => {
   return invalidCards
 }
 
-
 const checkIfNewCardSetHasUnnecessaryProperties = (invalidProperties, data) => {
   const propertyNames = Object.keys(data)
 
@@ -290,7 +294,6 @@ const addCardsIntoInvalidPropertiesIfInvalidCards = (invalidCards, invalidProper
 const getMissingOrInvalid = (data) => {
   return !data ? 'MISSING' : 'INVALID'
 }
-
 
 module.exports = {
   errorHandler,

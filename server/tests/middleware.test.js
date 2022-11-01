@@ -15,11 +15,11 @@ const {
   testCards,
   testCardsWithId,
   testUsers,
-  testDecks,
   testDecksWithId,
   testUpdatedCards,
   testCardSetsWithId,
-  newDeck
+  newDeck,
+  testCardUpdatesOnDeckWithIdOne
 } = require('./test_data')
 
 const {
@@ -47,6 +47,18 @@ const cardSetWithoutCardsProperty = {
   ...testCardSets[0]
 }
 
+const invalidDataErrorInformationBase = {
+  name: 'InvalidDataError',
+  message: 'Invalid or missing data',
+  invalidProperties: 'change this'
+}
+
+const invalidRequestParameterErrorInformationBase = {
+  name: 'RequestParameterError',
+  message: 'change this',
+  invalidProperties: 'change this'
+}
+
 class MockResponse {
   constructor() {
     this.statusValue = null
@@ -70,77 +82,209 @@ class MockRequest {
   }
 }
 
-describe('Error handler responds', () => {
-  describe('when SequelizeValidationError', () => {
-    test('with status code 400', () => {
+describe('Error handling responds', () => {
+  describe('if SequelizeValidationError', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
       const mockResponse = new MockResponse()
 
-      const error = {
+      error = {
         name: 'SequelizeValidationError',
         message: 'validation failed'
       }
 
-      const response = errorHandler(error, null, mockResponse)
-
-      expect(response.statusValue).toBe(400)
+      receivedData = errorHandler(error, null, mockResponse)
     })
 
-    test('with expected error message', () => {
-      const mockResponse = new MockResponse()
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
+    })
 
-      const error = {
-        name: 'SequelizeValidationError',
-        message: 'validation failed'
-      }
-
-      const response = errorHandler(error, null, mockResponse)
-
-      expect(response.jsonValue).toMatchObject({ error: error.message })
+    test('with expected error information', () => {
+      const errorInformation = receivedData.jsonValue
+      expect(errorInformation).toMatchObject({ error: error.message })
     })
   })
 
-  describe('when SequelizeDatabaseError', () => {
-    test('with status code 400', () => {
+  describe('if SequelizeDatabaseError', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
       const mockResponse = new MockResponse()
 
-      const error = {
+      error = {
         name: 'SequelizeValidationError',
         message: 'validation failed'
       }
 
-      const response = errorHandler(error, null, mockResponse)
+      receivedData = errorHandler(error, null, mockResponse)
+    })
 
-      expect(response.statusValue).toBe(400)
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
     })
 
     test('with expected error message', () => {
+      const errorInformation = receivedData.jsonValue
+      expect(errorInformation).toMatchObject({ error: error.message })
+    })
+  })
+
+  describe('if SequelizeUniqueConstraintError', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
       const mockResponse = new MockResponse()
 
-      const error = {
-        name: 'SequelizeValidationError',
-        message: 'validation failed'
+      error = {
+        name: 'SequelizeUniqueConstraintError',
+        message: 'Validation error',
+        fields: { field: 'duplicate' }
       }
 
-      const response = errorHandler(error, null, mockResponse)
+      receivedData = errorHandler(error, null, mockResponse)
+    })
 
-      expect(response.jsonValue).toMatchObject({ error: error.message })
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
+    })
+
+    test('with expected error information', () => {
+      const expectedObject = {
+        error: 'Validation error',
+        invalidProperties: {
+          field: 'EXISTS'
+        }
+      }
+
+      const errorInformation = receivedData.jsonValue
+      expect(errorInformation).toEqual(expectedObject)
+    })
+  })
+
+  describe('if RequestParameterError', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
+      const mockResponse = new MockResponse()
+
+      error = {
+        name: 'RequestParameterError',
+        message: 'Request parameter error',
+        missingParameters: 'Should have parameters'
+      }
+
+      receivedData = errorHandler(error, null, mockResponse)
+    })
+
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
+
+    })
+
+    test('with expected object', () => {
+      const expectedObject = {
+        error: 'Request parameter error',
+        missingParameters: 'Should have parameters'
+      }
+
+      const receivedObject = receivedData.jsonValue
+
+      expect(receivedObject).toEqual(expectedObject)
+    })
+  })
+
+  describe('if InvalidDataError', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
+      const mockResponse = new MockResponse()
+
+      error = {
+        name: 'InvalidDataError',
+        message: 'Invalid or missing data',
+        invalidProperties: {
+          name: 'INVALID',
+          id: 'MISSING'
+        }
+      }
+
+      receivedData = errorHandler(error, null, mockResponse)
+    })
+
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
+    })
+
+    test('with expected object', () => {
+      const expectedObject = {
+        error: 'Invalid or missing data',
+        invalidProperties: {
+          name: 'INVALID',
+          id: 'MISSING'
+        }
+      }
+
+      const receivedObject = receivedData.jsonValue
+
+      expect(receivedObject).toEqual(expectedObject)
+    })
+  })
+
+  describe('if InvalidResourceId', () => {
+    let receivedData
+    let error
+
+    beforeAll(() => {
+      const mockResponse = new MockResponse()
+
+      error = {
+        name: 'InvalidResourceId',
+        message: 'Invalid id type',
+        expectedType: 'INTEGER'
+      }
+
+      receivedData = errorHandler(error, null, mockResponse)
+    })
+
+    test('with 400', () => {
+      expect(receivedData.statusValue).toBe(400)
+    })
+
+    test('with expected object', () => {
+      const expectedObject = {
+        error: 'Invalid id type',
+        expectedType: 'INTEGER'
+      }
+
+      const receivedObject = receivedData.jsonValue
+
+      expect(receivedObject).toEqual(expectedObject)
     })
   })
 })
 
-describe('Set cards validator', () => {
-  describe('when new set cards', () => {
-    test('when set cards is valid does not raise an error and next is called once', () => {
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(validCardSetWithCards)
+describe('Validating card set object', () => {
+  describe('when new', () => {
+    describe('if valid', () => {
+      test('card set passes through', () => {
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(validCardSetWithCards)
 
-      validateNewCardSetObject(mockRequest, null, mockNext)
+        validateNewCardSetObject(mockRequest, null, mockNext)
 
-      expect(mockNext).toHaveBeenCalledTimes(1)
+        expect(mockNext).toHaveBeenCalledTimes(1)
+      })
     })
 
-    describe('when set cards is invalid', () => {
-      test('next function is not called', () => {
+    describe('if invalid', () => {
+      test('card set does not pass through', () => {
         const mockNext = jest.fn()
         const mockRequest = new MockRequest(cardSetWithoutCardsProperty)
         const mockResponse = new MockResponse()
@@ -148,926 +292,700 @@ describe('Set cards validator', () => {
         try {
           validateNewCardSetObject(mockRequest, mockResponse, mockNext)
         } catch(error) {
-          // not doing anything because we testing if next is called
+          // intentionally left empty
         }
 
         expect(mockNext).toHaveBeenCalledTimes(0)
       })
-    })
 
-    describe('when property "cards" is invalid', () => {
-      test('raises InvalidDataError when a string', () => {
-        let thrownError
-
-        const cardSet = { cardSetWithoutCardsProperty, cards: 'this is a string' }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('raises InvalidDataError when missing', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutCardsProperty)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('error object has invalidProperties property with array of length 1', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutCardsProperty)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        const properties = Object.keys(thrownError.invalidProperties)
-
-        expect(thrownError).toBeDefined()
-        expect(properties).toHaveLength(1)
-      })
-
-      test('error object has invalidProperties property with the item "cards" in it', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutCardsProperty)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.invalidProperties).toHaveProperty('cards')
-      })
-    })
-
-    describe('when property "name" is invalid', () => {
-      test('raises InvalidDataError when not a string', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards, name: [] }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      it('raises InvalidDataError when missing', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutName)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('error object has invalidProperties property with array of length 1', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutName)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        const properties = Object.keys(thrownError.invalidProperties)
-
-        expect(thrownError).toBeDefined()
-        expect(properties).toHaveLength(1)
-      })
-
-      test('error object has invalidProperties property with the item "cards" in it', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutName)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.invalidProperties).toHaveProperty('name')
-      })
-    })
-
-    describe('when property "description" is invalid', () => {
-      test('raises InvalidDataError when not a string', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards, description: {} }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('raises InvalidDataError when missing', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutDescription)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('error object has invalidProperties property with array of length 1', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutDescription)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        const properties = Object.keys(thrownError.invalidProperties)
-
-        expect(thrownError).toBeDefined()
-        expect(properties).toHaveLength(1)
-      })
-
-      test('error object has invalidProperties property with the item "description" in it', () => {
-        let thrownError
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSetWithoutDescription)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.invalidProperties).toHaveProperty('description')
-      })
-    })
-
-    describe('when multiple properties are invalid', () => {
-      test('raises InvalidDataError when the wrong type', () => {
-        let thrownError
-
-        const cardSet = {
-          name: 'this is a string',
-          description: {},
-          cards: 'this is a string'
-        }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('raises InvalidDataError when missing', () => {
-        let thrownError
-
-        const cardSet = { name: 'this is a string' }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('error object has invalidProperties property with array of length 2', () => {
-        let thrownError
-
-        const cardSet = {
-          name: 'this is a string',
-          cards: 'this is a string'
-        }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        const properties = Object.keys(thrownError.invalidProperties)
-
-        expect(thrownError).toBeDefined()
-        expect(properties).toHaveLength(2)
-      })
-
-      test('error object has expected invalid properties', () => {
-        let thrownError
-
-        const cardSet = {
-          name: 'this is a string',
-          cards: 'this is a string'
-        }
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-        const mockResponse = new MockResponse()
-
-        try {
-          validateNewCardSetObject(mockRequest, mockResponse, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.invalidProperties).toHaveProperty('description', 'MISSING')
-        expect(thrownError.invalidProperties).toHaveProperty('cards', 'INVALID')
-      })
-    })
-
-    describe('when unnecessary properties', () => {
-      test('throws InvalidDataError when object has unnecessary property', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards }
-        cardSet.extra = 'this is extra'
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-
-        try {
-          validateNewCardSetObject(mockRequest, null, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('error object has the right information', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards }
-        cardSet.extra = 'this is extra'
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-
-        try {
-          validateNewCardSetObject(mockRequest, null, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-      })
-
-      test('error object has the right information when invalid in all categories', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards, cards: [ ... validCardSetWithCards.cards ] }
-        cardSet.extra = 'this is extra'
-        cardSet.description = ['this is an array']
-        delete cardSet.name
-
-        delete cardSet.cards[3].rulesText
-        cardSet.cards[3].cardNumber = 'this is a string'
-        cardSet.cards[4].extra = 'this is extra'
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-
-        try {
-          validateNewCardSetObject(mockRequest, null, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-        expect(thrownError.invalidProperties).toHaveProperty('description', 'INVALID')
-        expect(thrownError.invalidProperties).toHaveProperty('name', 'MISSING')
-        expect(thrownError.invalidProperties).toHaveProperty('cardObjects')
-
-        const cardObjects = thrownError.invalidProperties.cardObjects
-
-        expect(cardObjects[0]).toHaveProperty('index', '3')
-        expect(cardObjects[0]).toHaveProperty('rulesText', 'MISSING')
-        expect(cardObjects[0]).toHaveProperty('cardNumber', 'INVALID')
-
-        expect(cardObjects[1]).toHaveProperty('index', '4')
-        expect(cardObjects[1]).toHaveProperty('extra', 'UNEXPECTED')
-      })
-    })
-
-    describe('when cards in the card property are invalid', () => {
-      test('throws InvalidDataError when one card is missing a property', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards, cards: [ ...validCardSetWithCards.cards ] }
-
-        delete cardSet.cards[0].name
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-
-        try {
-          validateNewCardSetObject(mockRequest, null, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError).toBeDefined()
-        expect(thrownError.name).toBe('InvalidDataError')
-      })
-
-      test('returns expected info about what is invalid when one card is missing a property', () => {
-        let thrownError
-
-        const cardSet = { ...validCardSetWithCards, cards: [ ...validCardSetWithCards.cards ] }
-        delete cardSet.cards[0].name
-
-        const mockNext = jest.fn()
-        const mockRequest = new MockRequest(cardSet)
-
-        try {
-          validateNewCardSetObject(mockRequest, null, mockNext)
-        } catch(error) {
-          thrownError = error
-        }
-
-        expect(thrownError.invalidProperties).toHaveProperty('cardObjects')
-
-        const invalidCards = thrownError.invalidProperties.cardObjects
-        const invalidCardInfo = invalidCards[0]
-
-        expect(invalidCardInfo).toHaveProperty('index', '0')
-        expect(invalidCardInfo).toHaveProperty('name', 'MISSING')
-      })
-    })
-  })
-  describe('when card set is updated', () => {
-    const existingCardSet = transformKeysFromSnakeCaseToCamelCase(testCardSetsWithId[0])
-    const cardSetCardsInSnakeCase = testCardsWithId.filter(card => card.card_set_id === 1)
-    const cardSetCards = cardSetCardsInSnakeCase
-      .map(card => transformKeysFromSnakeCaseToCamelCase(card))
-
-    describe('when valid card set', () => {
-      describe('passes through', () => {
-        test('when only set card info has been change', async() => {
-          const updatedCardSet = {
-            ...existingCardSet,
-            cards: getDeckCardUpdateObject([], [], [])
-          }
-
-          updatedCardSet.name = 'Updated name'
-
-          const mockNext = jest.fn()
-          const mockRequest = new MockRequest(updatedCardSet)
-
-          try {
-            validateUpdatedCardSetObject(mockRequest, null, mockNext)
-          } catch(error) {
-            // intentionally left empty
-          }
-
-          expect(mockNext).toHaveBeenCalledTimes(1)
-        })
-
-        test('when cards have been changed', async() => {
-          const newCard = { ...testCards[0] }
-          newCard.cardSetId = 1
-          const updatedCard = { ...cardSetCards[1] }
-          updatedCard.name = 'Changed name'
-          const deletedCard = { ...cardSetCards[2] }
-
-          const updatedCardSet = {
-            ...existingCardSet,
-            cards: getDeckCardUpdateObject([newCard], [updatedCard], [deletedCard])
-          }
-
-
-          const mockNext = jest.fn()
-          const mockRequest = new MockRequest(updatedCardSet)
-
-          try {
-            validateUpdatedCardSetObject(mockRequest, null, mockNext)
-          } catch(error) {
-            // intentionally left empty
-          }
-
-          expect(mockNext).toHaveBeenCalledTimes(1)
+      describe('when object property \'cards\' is not valid', () => {
+        describe('returns expected error information', () => {
+          test('when not an array', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { cards: 'INVALID' } }
+            const cardSet = { ...cardSetWithoutCardsProperty, cards: 'this is a string' }
+
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
+
+          test('when missing', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { cards: 'MISSING' } }
+            const cardSet = { ...cardSetWithoutCardsProperty }
+
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
         })
       })
-    })
-    describe('when invalid card set', () => {
-      describe('returns expected error information', () => {
-        test('when invalid card set info', () => {
+
+      describe('when object property \'name\' is invalid', () => {
+        describe('returns expected error information', () => {
+          test('when not a string', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { name: 'INVALID' } }
+            const cardSet = {
+              ...validCardSetWithCards,
+              cards: testCards.map(card => ({ ...card })),
+              name: ['not valid name']
+            }
+
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
+
+          test('when missing', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { name: 'MISSING' } }
+            const cardSet = {
+              ...validCardSetWithCards,
+              cards: testCards.map(card => ({ ...card })),
+            }
+
+            delete cardSet.name
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
+        })
+      })
+
+      describe('when object property \'description\' is invalid', () => {
+        describe('returns expected error information', () => {
+          test('when not a string', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { description: 'INVALID' } }
+            const cardSet = {
+              ...validCardSetWithCards,
+              cards: testCards.map(card => ({ ...card })),
+              description: { invalid: 'description' }
+            }
+
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
+
+          test('when missing', () => {
+            let thrownError
+
+            const expectedObject = { ...invalidDataErrorInformationBase, invalidProperties: { description: 'MISSING' } }
+            const cardSet = {
+              ...validCardSetWithCards,
+              cards: testCards.map(card => ({ ...card })),
+            }
+
+            delete cardSet.description
+
+            const mockNext = jest.fn()
+            const mockRequest = new MockRequest(cardSet)
+            const mockResponse = new MockResponse()
+
+            try {
+              validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+            } catch(error) {
+              thrownError = error
+            }
+
+            expect(thrownError).toBeDefined()
+            expect(thrownError.name).toEqual(expectedObject.name)
+            expect(thrownError.message).toEqual(expectedObject.message)
+            expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+          })
+        })
+      })
+
+      describe('when multiple properties are invalid', () => {
+        test('returns expected error information', () => {
           let thrownError
 
-          const invalidProperties = {
-            description: 'INVALID',
-            extra: 'UNEXPECTED'
+          const expectedObject = {
+            ...invalidDataErrorInformationBase,
+            invalidProperties: {
+              name: 'INVALID',
+              description: 'INVALID',
+              cards: 'MISSING',
+            }
           }
 
-          const invalidCardSet = {
-            ...existingCardSet,
-            description: ['this is invalid description'],
-            extra: 'this is extra',
-            cards: getDeckCardUpdateObject([], [], [])
+          const cardSet = {
+            name: [1,2,3,4],
+            description: { invalid: 'description' }
           }
 
           const mockNext = jest.fn()
-          const mockRequest = new MockRequest(invalidCardSet)
+          const mockRequest = new MockRequest(cardSet)
           const mockResponse = new MockResponse()
 
           try {
-            validateUpdatedCardSetObject(mockRequest, mockResponse, mockNext)
+            validateNewCardSetObject(mockRequest, mockResponse, mockNext)
           } catch(error) {
             thrownError = error
           }
 
-          expect(thrownError.name).toBe('InvalidDataError')
-          expect(thrownError.invalidProperties).toEqual(invalidProperties)
+          expect(thrownError).toBeDefined()
+          expect(thrownError.name).toEqual(expectedObject.name)
+          expect(thrownError.message).toEqual(expectedObject.message)
+          expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
         })
+      })
 
-        test('when invalid cards', () => {
+      describe('when unexpected properties', () => {
+        test('returns expected error information', () => {
           let thrownError
 
-          const invalidProperties = {
-            cards: 'INVALID',
-            cardObjects: {
-              added: [
+          const expectedObject = {
+            ...invalidDataErrorInformationBase,
+            invalidProperties: {
+              extra: 'UNEXPECTED',
+            }
+          }
+
+          const cardSet = {
+            ...validCardSetWithCards,
+            cards: testCards.map(card => ({ ...card })),
+            extra: 'this should not exist'
+          }
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(cardSet)
+          const mockResponse = new MockResponse()
+
+          try {
+            validateNewCardSetObject(mockRequest, mockResponse, mockNext)
+          } catch(error) {
+            thrownError = error
+          }
+
+          expect(thrownError).toBeDefined()
+          expect(thrownError.name).toEqual(expectedObject.name)
+          expect(thrownError.message).toEqual(expectedObject.message)
+          expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+        })
+      })
+
+      describe('when invalid cards', () => {
+        test('returns expected error information', () => {
+          let thrownError
+
+          const expectedObject = {
+            ...invalidDataErrorInformationBase,
+            invalidProperties: {
+              cards: 'INVALID',
+              cardObjects: [
                 {
-                  cardNumber: 'INVALID',
-                  index: '0'
+                  index: '0',
+                  name: 'MISSING'
                 },
                 {
-                  rulesText: 'INVALID',
-                  index: '2'
-                }
-              ],
-              updated: [
+                  index: '2',
+                  manaCost: 'INVALID'
+                },
                 {
-                  name: 'INVALID',
-                  index: '0'
-                }
-              ],
-              deleted: [
-                {
-                  id: 'MISSING',
-                  index: '0'
+                  index: '3',
+                  extra: 'UNEXPECTED'
                 }
               ]
             }
           }
 
-          const firstNewCard = { ...testCards[0] }
-          firstNewCard.cardNumber = 0.4
-          firstNewCard.cardSetId = 1
-          const secondNewCard = { ...testCards[1] }
-          secondNewCard.cardSetId = 1
-          const thirdNewCard = { ...testCards[2] }
-          thirdNewCard.cardSetId = 1
-          thirdNewCard.rulesText = 0.4
-          const updatedCard = { ...cardSetCards[2] }
-          updatedCard.name =  ['not valid']
-          const deletedCard = { ...cardSetCards[3] }
-          delete deletedCard.id
-
-          const addedCards = [firstNewCard, secondNewCard, thirdNewCard]
-
-          const invalidCardSet = {
-            ...existingCardSet,
-            cards: getDeckCardUpdateObject(addedCards, [updatedCard], [deletedCard])
+          const cardSet = {
+            ...validCardSetWithCards,
+            cards: testCards.map(card => ({ ...card })),
           }
 
+          delete cardSet.cards[0].name
+          cardSet.cards[2].manaCost = ['not valid']
+          cardSet.cards[3].extra = 'this is extra'
+
           const mockNext = jest.fn()
-          const mockRequest = new MockRequest(invalidCardSet)
+          const mockRequest = new MockRequest(cardSet)
           const mockResponse = new MockResponse()
 
           try {
-            validateUpdatedCardSetObject(mockRequest, mockResponse, mockNext)
+            validateNewCardSetObject(mockRequest, mockResponse, mockNext)
           } catch(error) {
             thrownError = error
           }
 
-          expect(thrownError.name).toBe('InvalidDataError')
-          expect(thrownError.invalidProperties).toEqual(invalidProperties)
+          expect(thrownError).toBeDefined()
+          expect(thrownError.name).toEqual(expectedObject.name)
+          expect(thrownError.message).toEqual(expectedObject.message)
+          expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
         })
+      })
+    })
+  })
+
+  describe('when updated', () => {
+    const existingCardSet = transformKeysFromSnakeCaseToCamelCase(testCardSetsWithId[0])
+    const cardSetCardsInSnakeCase = testCardsWithId.filter(card => card.card_set_id === 1)
+    const cardSetCards = cardSetCardsInSnakeCase
+      .map(card => transformKeysFromSnakeCaseToCamelCase(card))
+
+    describe('if valid', () => {
+      test('passes through', () => {
+        const newCard = { ...testCards[0] }
+        newCard.cardSetId = 1
+        const updatedCard = { ...cardSetCards[1] }
+        updatedCard.name = 'Changed name'
+        const deletedCard = { ...cardSetCards[2] }
+
+        const updatedCardSet = {
+          ...existingCardSet,
+          cards: getDeckCardUpdateObject([newCard], [updatedCard], [deletedCard])
+        }
+
+        updatedCardSet.name = 'Updated name'
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(updatedCardSet)
+
+        try {
+          validateUpdatedCardSetObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+
+        expect(mockNext).toHaveBeenCalledTimes(1)
+      })
+    })
+    describe('if invalid', () => {
+      test('returns expected error information', () => {
+        let thrownError
+
+        const expectedObject = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            description: 'INVALID',
+            cards: 'INVALID',
+            cardObjects: {
+              added: [
+                {
+                  index: '0',
+                  name: 'INVALID'
+                }
+              ],
+              deleted: [
+                {
+                  index: '0',
+                  id: 'MISSING'
+                }
+              ],
+              updated: [
+                {
+                  index: '0',
+                  name: 'INVALID'
+                }
+              ]
+            }
+          }
+        }
+
+        const newCard = { ...testCards[0] }
+        newCard.name = { this: 'is invalid' }
+        newCard.cardSetId = 1
+        const updatedCard = { ...cardSetCards[1] }
+        updatedCard.name = ['Changed name']
+        const deletedCard = { ...cardSetCards[2] }
+        delete deletedCard.id
+
+        const invalidCardSet = {
+          ...existingCardSet,
+          cards: getDeckCardUpdateObject([newCard], [updatedCard], [deletedCard])
+        }
+
+        invalidCardSet.description = ['invalid description']
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(invalidCardSet)
+
+
+        try {
+          validateUpdatedCardSetObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        expect(thrownError).toBeDefined()
+        expect(thrownError.name).toEqual(expectedObject.name)
+        expect(thrownError.message).toEqual(expectedObject.message)
+        expect(thrownError.invalidProperties).toEqual(expectedObject.invalidProperties)
+
       })
     })
   })
 })
 
-describe('Received card validator', () => {
-  describe('when existing card', () => {
-    test('does not raise an error when card is valid', () => {
-      const existingCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(existingCard)
-
-      try {
-        validateExistingCardObject(mockRequest, null, mockNext)
-      } catch(error) {
-        // intentionally left empty
-      }
-      expect(mockNext).toBeCalledTimes(1)
-    })
-
-    test('raises expected error when card is invalid', () => {
-      let thrownError
-      const existingCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
-      existingCard.name = []
-      delete existingCard.rulesText
-      existingCard.extra = 'this is extra'
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(existingCard)
-
-      try {
-        validateExistingCardObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
-
-      expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(3)
-      expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
-      expect(thrownError.invalidProperties).toHaveProperty('rulesText', 'MISSING')
-      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-    })
-  })
-
-  describe('when new card is added to existing a card set', () => {
-    test('does not raise an error when card is valid', () => {
-      const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
-      delete card.id
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(card)
-
-      try {
-        validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
-      } catch(error) {
-        // intentionally left empty
-      }
-
-      expect(mockNext).toBeCalledTimes(1)
-    })
-
-    test('raises expected error when card is invalid', () => {
-      let thrownError
-      const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
-      delete card.id
-
-      card.name = []
-      card.extra = 'this is extra'
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(card)
-
-      try {
-        validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
-
-      expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(2)
-      expect(thrownError.invalidProperties).toHaveProperty('name', 'INVALID')
-      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-    })
-  })
-})
-
-describe('Received user validator', () => {
-  describe('when new user is added', () => {
-    test('does not raise an error when user is valid', () => {
-      const user = testUsers[0]
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(user)
-
-      try {
-        validateNewUserObject(mockRequest, null, mockNext)
-      } catch(error) {
-        // intentionally left empty
-      }
-
-      expect(mockNext).toBeCalledTimes(1)
-    })
-
-    test('raises expected error when user is invalid', () => {
-      let thrownError
-      const user = testUsers[0]
-
-      user.username = []
-      user.extra = 'this is extra'
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(user)
-
-      try {
-        validateNewUserObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
-
-      expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(2)
-      expect(thrownError.invalidProperties).toHaveProperty('username', 'INVALID')
-      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-    })
-  })
-
-  describe('when user is updated', () => {
-    test('does not raise an error when user is valid', () => {
-      const user = { username: 'zerocool' }
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(user)
-
-      try {
-        validateUpdatedUserObject(mockRequest, null, mockNext)
-      } catch(error) {
-        // intentionally left empty
-      }
-
-      expect(mockNext).toBeCalledTimes(1)
-    })
-
-    test('raises expected error when user is invalid', () => {
-      let thrownError
-      const user = (testUsers[0])
-
-      user.username = []
-      user.extra = 'this is extra'
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(user)
-
-      try {
-        validateNewUserObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
-
-      expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(2)
-      expect(thrownError.invalidProperties).toHaveProperty('username', 'INVALID')
-      expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
-    })
-  })
-})
-
-describe('Received deck validator', () => {
-  describe('when new deck is added', () => {
-    test('does not raise an error when valid', () => {
-      const data = {
-        ...newDeck,
-        cards: newDeck.cards.map(card => ({ ...card }))
-      }
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(data)
-
-      try {
-        validateNewDeckObject(mockRequest, null, mockNext)
-      } catch(error) {
-        // intentionally left empty
-      }
-
-      expect(mockNext).toBeCalledTimes(1)
-    })
-
-    test('raise an error when invalid', () => {
-      let thrownError
-      const data = {
-        ...newDeck,
-        cards: newDeck.cards.map(card => ({ ...card }))
-      }
-
-      data.notes = []
-      data.cards[0].cardSetId = 1
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(data)
-
-      try {
-        validateNewDeckObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
-
-      expect(thrownError.name).toBe('InvalidDataError')
-      expect(invalidPropertyNames).toHaveLength(3)
-      expect(thrownError.invalidProperties).toHaveProperty('notes', 'INVALID')
-    })
-
-  })
-
-  describe('when deck is updated', () => {
-    describe('raises an error when what to updated is not defined in parameters', () => {
-      let thrownError
-      const expectedObject = { update: 'information or cards' }
-
-      const data = { ...testDecksWithId[0] }
-      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(deckInfo)
-
-      try {
-        validateUpdatedDeckObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      expect(thrownError.name).toBe('RequestParameterError')
-      expect(thrownError.message).toBe('A request parameter is needed')
-      expect(thrownError.missingParameters).toEqual(expectedObject)
-    })
-
-    describe.only('raises an error when update parameter is invalid', () => {
-      let thrownError
-      const expectedObject = { update: 'should be information or cards' }
-
-      const data = { ...testDecksWithId[0] }
-      const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
-
-      const mockNext = jest.fn()
-      const mockRequest = new MockRequest(deckInfo)
-
-      mockRequest.query = { update: 'invalid_parameter' }
-
-      try {
-        validateUpdatedDeckObject(mockRequest, null, mockNext)
-      } catch(error) {
-        thrownError = error
-      }
-
-      expect(thrownError.name).toBe('RequestParameterError')
-      expect(thrownError.message).toBe('Invalid parameter')
-      expect(thrownError.missingParameters).toEqual(expectedObject)
-    })
-
-    describe('deck information',() => {
-      test('does not raise an error when valid', () => {
-        const data = { ...testDecksWithId[0] }
-        const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
+describe('Validating card object', () => {
+  describe('when a card that is part of a card set', () => {
+    describe('if valid', () => {
+      test('passes through', () => {
+        const validCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
 
         const mockNext = jest.fn()
-        const mockRequest = new MockRequest(deckInfo)
-
-        mockRequest.query = { update: 'information' }
+        const mockRequest = new MockRequest(validCard)
 
         try {
-          validateUpdatedDeckObject(mockRequest, null, mockNext)
+          validateExistingCardObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+        expect(mockNext).toBeCalledTimes(1)
+      })
+    })
+
+    describe('if invalid', () => {
+      test('raises expected error', () => {
+        const expectedValues = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            name: 'INVALID',
+            rulesText: 'MISSING',
+            extra: 'UNEXPECTED'
+          }
+        }
+        let thrownError
+        const existingCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
+
+        existingCard.name = []
+        delete existingCard.rulesText
+        existingCard.extra = 'this is extra'
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(existingCard)
+
+        try {
+          validateExistingCardObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        expect(thrownError.name).toBe(expectedValues.name)
+        expect(thrownError.message).toBe(expectedValues.message)
+        expect(thrownError.invalidProperties).toEqual(expectedValues.invalidProperties)
+      })
+    })
+  })
+
+  describe('when new card', () => {
+    describe('if valid', () => {
+      test('passes through', () => {
+        const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
+        delete card.id
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(card)
+
+        try {
+          validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
         } catch(error) {
           // intentionally left empty
         }
 
         expect(mockNext).toBeCalledTimes(1)
       })
-
-      test('raises expected error when invalid', () => {
+    })
+    describe('if invalid', () => {
+      test('raises expected error', () => {
         let thrownError
 
-        const data = { ...testDecksWithId[0] }
-        const deckInfo = transformKeysFromSnakeCaseToCamelCase(data)
+        const expectedValues = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            name: 'INVALID',
+            extra: 'UNEXPECTED'
+          }
+        }
 
-        deckInfo.notes = []
-        deckInfo.extra = 'this is extra'
+        const card = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[0])
+        delete card.id
+
+        card.name = []
+        card.extra = 'this is extra'
 
         const mockNext = jest.fn()
-        const mockRequest = new MockRequest(deckInfo)
-
-        mockRequest.query = { update: 'information' }
+        const mockRequest = new MockRequest(card)
 
         try {
-          validateUpdatedDeckObject(mockRequest, null, mockNext)
+          validateCardObjectAddedToCardSet(mockRequest, null, mockNext)
         } catch(error) {
           thrownError = error
         }
 
-        const invalidPropertyNames = Object.keys(thrownError.invalidProperties)
+        expect(thrownError.name).toBe(expectedValues.name)
+        expect(thrownError.message).toBe(expectedValues.message)
+        expect(thrownError.invalidProperties).toEqual(expectedValues.invalidProperties)
+      })
+    })
+  })
+})
 
-        expect(thrownError.name).toBe('InvalidDataError')
-        expect(invalidPropertyNames).toHaveLength(2)
-        expect(thrownError.invalidProperties).toHaveProperty('notes', 'INVALID')
-        expect(thrownError.invalidProperties).toHaveProperty('extra', 'UNEXPECTED')
+describe('User validator', () => {
+  describe('when new user', () => {
+    describe('if valid', () => {
+      test('passes through', () => {
+        const user = { ...testUsers[0] }
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(user)
+
+        try {
+          validateNewUserObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+
+        expect(mockNext).toBeCalledTimes(1)
       })
     })
 
-    describe('when cards are updated', () => {
-      describe('when existing cards are updated', () => {
-        test('does not raise an error when cards are valid', () => {
-          const updatedCards = [
-            { ...testUpdatedCards[0] },
-            { ...testUpdatedCards[1] }
-          ]
+    describe('if invalid', () => {
+      test('raises expected error', () => {
+        let thrownError
 
-          const cardObject = {
-            'added': [],
-            'updated': updatedCards,
-            'deleted': []
+        const expectedValues = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            username: 'INVALID',
+            extra: 'UNEXPECTED'
+          }
+        }
+
+        const user = { ...testUsers[0] }
+
+        user.username = []
+        user.extra = 'this is extra'
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(user)
+
+        try {
+          validateNewUserObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        expect(thrownError.name).toBe(expectedValues.name)
+        expect(thrownError.message).toBe(expectedValues.message)
+        expect(thrownError.invalidProperties).toEqual(expectedValues.invalidProperties)
+      })
+    })
+  })
+
+  describe('when already existing user', () => {
+    describe('if valid', () => {
+      test('passes through', () => {
+        const user = { username: 'zerocool' }
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(user)
+
+        try {
+          validateUpdatedUserObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+
+        expect(mockNext).toBeCalledTimes(1)
+      })
+    })
+
+    describe('if invalid', () => {
+      test('raises expected error', () => {
+        let thrownError
+
+        const expectedValues = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            username: 'INVALID',
+            extra: 'UNEXPECTED'
+          }
+        }
+        const user = { ...testUsers[0] }
+
+        user.username = []
+        user.extra = 'this is extra'
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(user)
+
+        try {
+          validateNewUserObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        expect(thrownError.name).toBe(expectedValues.name)
+        expect(thrownError.message).toBe(expectedValues.message)
+        expect(thrownError.invalidProperties).toEqual(expectedValues.invalidProperties)
+      })
+    })
+  })
+})
+
+describe('Validating deck object', () => {
+  describe('when new deck', () => {
+    describe('if valid', () => {
+      test('passes through', () => {
+        const validDeck = {
+          ...newDeck,
+          cards: newDeck.cards.map(card => ({ ...card }))
+        }
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(validDeck)
+
+        try {
+          validateNewDeckObject(mockRequest, null, mockNext)
+        } catch(error) {
+          // intentionally left empty
+        }
+
+        expect(mockNext).toBeCalledTimes(1)
+      })
+    })
+
+    describe('if invalid', () => {
+      test('raises expected error', () => {
+        let thrownError
+
+        const expectedValues = {
+          ...invalidDataErrorInformationBase,
+          invalidProperties: {
+            notes: 'INVALID',
+            cards: 'INVALID',
+            cardObject: [
+              {
+                index: '0',
+                name: 'INVALID'
+              },
+              {
+                index: '3',
+                manaCost: 'MISSING'
+              }
+            ]
+          }
+        }
+
+        const invalidDeck = {
+          ...newDeck,
+          cards: newDeck.cards.map(card => ({ ...card }))
+        }
+
+        invalidDeck.notes = ['this is']
+        invalidDeck.cards[0].name = ['invalid name']
+        delete invalidDeck.cards[3].manaCost
+
+        const mockNext = jest.fn()
+        const mockRequest = new MockRequest(invalidDeck)
+
+        try {
+          validateNewDeckObject(mockRequest, null, mockNext)
+        } catch(error) {
+          thrownError = error
+        }
+
+        expect(thrownError.name).toBe(expectedValues.name)
+        expect(thrownError.message).toBe(expectedValues.message)
+        expect(thrownError.invalidProperties).toEqual(expectedValues.invalidProperties)
+      })
+    })
+  })
+
+  describe('when updated deck', () => {
+    describe('request parameter', () => {
+      describe('if \'information\'', () => {
+        test('passes through', () => {
+          const deckInfo = { ...testDecksWithId[0] }
+          const validDeckInfo = transformKeysFromSnakeCaseToCamelCase(deckInfo)
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(validDeckInfo)
+
+          mockRequest.query = { update: 'information' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            // intentionally left empty
           }
 
+          expect(mockNext).toBeCalledTimes(1)
+        })
+      })
+
+      describe('if \'cards\'', () => {
+        test('passes through', () => {
+          const cardObject = {
+            'added': [],
+            'updated': [],
+            'deleted': []
+          }
           const mockNext = jest.fn()
           const mockRequest = new MockRequest(cardObject)
 
@@ -1081,26 +999,198 @@ describe('Received deck validator', () => {
 
           expect(mockNext).toBeCalledTimes(1)
         })
+      })
 
-        test('raises expected errors when cards are valid', () => {
+      describe('if missing', () => {
+        test('raises expected error', () => {
           let thrownError
 
-          const updatedCards = [
-            { ...testUpdatedCards[0] },
-            { ...testUpdatedCards[1] }
-          ]
+          const expectedError = {
+            ...invalidRequestParameterErrorInformationBase,
+            message: 'A request parameter is required',
+            missingParameters: { update: 'information or cards' }
+          }
 
-          updatedCards[0].sideboard = 4
-          delete updatedCards[1].nInDeck
+          const deckInfo = { ...testDecksWithId[0] }
+          const validDeckInfo = transformKeysFromSnakeCaseToCamelCase(deckInfo)
 
-          const cardObject = {
-            'added': [],
-            'updated': updatedCards,
-            'deleted': []
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(validDeckInfo)
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            thrownError = error
+          }
+
+          expect(thrownError.name).toBe(expectedError.name)
+          expect(thrownError.message).toBe(expectedError.message)
+          expect(thrownError.missingParameters).toEqual(expectedError.missingParameters)
+        })
+      })
+
+      describe('if invalid', () => {
+        test('raises expected error', () => {
+          let thrownError
+
+          const expectedError = {
+            ...invalidRequestParameterErrorInformationBase,
+            message: 'Invalid request parameter',
+            missingParameters: { update: 'information or cards' }
+          }
+
+          const deckInfo = { ...testDecksWithId[0] }
+          const validDeckInfo = transformKeysFromSnakeCaseToCamelCase(deckInfo)
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(validDeckInfo)
+
+          mockRequest.query = { update: 'invalid' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            thrownError = error
+          }
+
+          expect(thrownError.name).toBe(expectedError.name)
+          expect(thrownError.message).toBe(expectedError.message)
+          expect(thrownError.missingParameters).toEqual(expectedError.missingParameters)
+        })
+      })
+    })
+    describe('when deck information is updated', () => {
+      describe('if valid', () => {
+        test('passes through', () => {
+          const deckInformation = { ...testDecksWithId[0] }
+          const validDeckinformation = transformKeysFromSnakeCaseToCamelCase(deckInformation)
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(validDeckinformation)
+
+          mockRequest.query = { update: 'information' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            // intentionally left empty
+          }
+
+          expect(mockNext).toBeCalledTimes(1)
+        })
+      })
+
+      describe('if invalid', () => {
+        test('raises expected error', () => {
+          let thrownError
+
+          const expectedError = {
+            ...invalidDataErrorInformationBase,
+            invalidProperties: {
+              notes: 'INVALID',
+              extra: 'UNEXPECTED'
+            }
+
+          }
+
+          const deckInformation = { ...testDecksWithId[0] }
+          const invalidDeckInformation = transformKeysFromSnakeCaseToCamelCase(deckInformation)
+
+          invalidDeckInformation.notes = []
+          invalidDeckInformation.extra = 'this is extra'
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(invalidDeckInformation)
+
+          mockRequest.query = { update: 'information' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            thrownError = error
+          }
+
+          expect(thrownError.name).toBe(expectedError.name)
+          expect(thrownError.message).toBe(expectedError.message)
+          expect(thrownError.invalidProperties).toEqual(expectedError.invalidProperties)
+        })
+      })
+    })
+    describe('when cards are modified', () => {
+      describe('if valid', () => {
+        test('passes through', () => {
+          const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
+
+          const validCardObject = {
+            'added': added.map(card => ({ ...card })),
+            'deleted': deleted.map(card => ({ ...card })),
+            'updated': updated.map(card => ({ ...card })),
           }
 
           const mockNext = jest.fn()
-          const mockRequest = new MockRequest(cardObject)
+          const mockRequest = new MockRequest(validCardObject)
+
+          mockRequest.query = { update: 'cards' }
+
+          try {
+            validateUpdatedDeckObject(mockRequest, null, mockNext)
+          } catch(error) {
+            // intentionally left empty
+          }
+
+          expect(mockNext).toBeCalledTimes(1)
+        })
+      })
+      describe('if invalid', () => {
+        test('raises expected error', () => {
+          let thrownError
+
+          const expectedError = {
+            ...invalidDataErrorInformationBase,
+            invalidProperties: {
+              added: [
+                {
+                  index: '0',
+                  name: 'INVALID'
+                }
+              ],
+              deleted: [
+                {
+                  index: '1',
+                  name: 'MISSING'
+                }
+              ],
+              updated: [
+                {
+                  index: '0',
+                  nInDeck: 'MISSING'
+                },
+                {
+                  index: '1',
+                  extra: 'UNEXPECTED',
+                  sideboard: 'INVALID'
+                }
+              ]
+            }
+
+          }
+
+          const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
+
+          const invalidCardObject = {
+            'added': added.map(card => ({ ...card })),
+            'deleted': deleted.map(card => ({ ...card })),
+            'updated': updated.map(card => ({ ...card })),
+          }
+
+          invalidCardObject.added[0].name = ['not valid']
+          delete invalidCardObject.deleted[1].name
+          delete invalidCardObject.updated[0].nInDeck
+          invalidCardObject.updated[1].extra = 'this is extra'
+          invalidCardObject.updated[1].sideboard = 2
+
+          const mockNext = jest.fn()
+          const mockRequest = new MockRequest(invalidCardObject)
 
           mockRequest.query = { update: 'cards' }
 
@@ -1110,24 +1200,9 @@ describe('Received deck validator', () => {
             thrownError = error
           }
 
-          const invalidCards = getAllInvalidCardsFromUpdatedCards(thrownError.invalidProperties)
-
-          const firstInvalidCard = thrownError.invalidProperties.updated[0]
-          const secondInvalidCard = thrownError.invalidProperties.updated[1]
-
-          const keysOfFirstErrorInfo = Object.keys(firstInvalidCard)
-          const keysOfSecondErrorInfo = Object.keys(firstInvalidCard)
-
-          expect(thrownError.name).toBe('InvalidDataError')
-          expect(invalidCards).toHaveLength(2)
-
-          expect(firstInvalidCard).toHaveProperty('index', '0')
-          expect(firstInvalidCard).toHaveProperty('sideboard', 'INVALID')
-          expect(keysOfFirstErrorInfo).toHaveLength(2)
-
-          expect(secondInvalidCard).toHaveProperty('index', '1')
-          expect(secondInvalidCard).toHaveProperty('nInDeck', 'MISSING')
-          expect(keysOfSecondErrorInfo).toHaveLength(2)
+          expect(thrownError.name).toBe(expectedError.name)
+          expect(thrownError.message).toBe(expectedError.message)
+          expect(thrownError.invalidProperties).toEqual(expectedError.invalidProperties)
         })
       })
     })
