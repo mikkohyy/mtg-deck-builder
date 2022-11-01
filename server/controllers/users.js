@@ -5,7 +5,7 @@ const {
   validateNewUserObject,
   validateUpdatedUserObject,
   validateIdWhichIsInteger
-} = require('../utils/middleware')
+} = require('../utils/validation_middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 
 const HASH_ROUNDS = 10

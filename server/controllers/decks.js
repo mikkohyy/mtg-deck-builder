@@ -6,7 +6,7 @@ const {
   validateIdWhichIsInteger,
   validateUpdatedDeckObject,
   validateNewDeckObject
-} = require('../utils/middleware')
+} = require('../utils/validation_middleware')
 
 const {
   extractInformationOnUpdatedObject,

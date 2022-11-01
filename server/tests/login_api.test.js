@@ -9,6 +9,9 @@ const api = supertest(app)
 
 let response
 
+// Logging SQL commands while testing is set off, to enable set this too true
+sequelize.options.logging = false
+
 const hashPasswords = async(userData) => {
   const users = []
 
@@ -26,7 +29,6 @@ const hashPasswords = async(userData) => {
 
   return users
 }
-
 
 beforeAll(async () => {
   const usersWithHashedPassword = await hashPasswords(testUsersWithId)

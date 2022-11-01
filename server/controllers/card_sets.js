@@ -5,7 +5,7 @@ const {
   validateNewCardSetObject,
   validateIdWhichIsInteger,
   validateUpdatedCardSetObject
-} = require('../utils/middleware')
+} = require('../utils/validation_middleware')
 
 cardSetsRouter.get('/', async (request, response, next) => {
   try {

@@ -5,7 +5,7 @@ const app = express()
 const { QueryTypes, DataTypes } = require('sequelize')
 const { sequelize, connectToDatabase } = require('./utils/db')
 const queryInterface = sequelize.getQueryInterface()
-const { errorHandler } = require('./utils/middleware')
+const { errorHandler } = require('./utils/error_middleware')
 
 connectToDatabase()
 

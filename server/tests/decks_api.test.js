@@ -524,7 +524,7 @@ describe('/api/decks', () => {
 
         test('responds with expected error information', () => {
           const expectedObject = {
-            error: 'A request parameter is needed',
+            error: 'A request parameter is required',
             missingParameters: { update: 'information or cards' }
           }
 
@@ -552,9 +552,9 @@ describe('/api/decks', () => {
 
         test('responds with expected error information', () => {
           const expectedObject = {
-            error: 'Invalid parameter',
+            error: 'Invalid request parameter',
             missingParameters: {
-              update: 'should be information or cards'
+              update: 'information or cards'
             }
           }
 

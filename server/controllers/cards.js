@@ -3,7 +3,7 @@ const {
   validateIdWhichIsInteger,
   validateExistingCardObject,
   validateCardObjectAddedToCardSet
-} = require('../utils/middleware')
+} = require('../utils/validation_middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 const { Card } = require('../models')
 

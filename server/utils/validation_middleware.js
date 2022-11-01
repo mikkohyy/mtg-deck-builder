@@ -1,54 +1,15 @@
-const { InvalidDataError, InvalidResourceId, RequestParameterError } = require('./errors')
-const Validator = require('./validator')
-
 const NAMES_OF_NEW_CARD_SET_PROPERTIES = ['cards', 'name', 'description']
 const NAMES_OF_UPDATED_CARD_SET_PROPERTIES = ['id', 'date', 'cards', 'name', 'description']
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
+const Validator = require('./validator')
+const { InvalidDataError, InvalidResourceId, RequestParameterError } = require('./errors')
 
-  if (error.name === 'SequelizeValidationError') {
-    return response.status(400).json({ error: error.message })
-  } else if (error.name === 'SequelizeDatabaseError') {
-    return response.status(400).json({ error: error.message })
-  } else if (error.name === 'SequelizeUniqueConstraintError') {
-    const invalidProperties = {}
-
-    for (const duplicate of Object.keys(error.fields)) {
-      invalidProperties[duplicate] = 'EXISTS'
-    }
-
-    const errorInfo = {
-      error: error.message,
-      invalidProperties: invalidProperties
-    }
-
-    return response.status(400).json(errorInfo)
-  } else if (error.name === 'RequestParameterError') {
-    const errorInfo = {
-      error: error.message,
-      missingParameters: error.missingParameters
-    }
-
-    return response.status(400).json(errorInfo)
-  } else if (error.name === 'InvalidDataError') {
-    const errorInfo = {
-      error: error.message,
-      invalidProperties: error.invalidProperties
-    }
-    return response.status(400).json(errorInfo)
-  } else if (error.name === 'InvalidResourceId') {
-    const errorInfo = {
-      error: error.message,
-      expectedType: error.expectedType
-    }
-
-    return response.status(400).json(errorInfo)
+const validateIdWhichIsInteger = (request, response, next) => {
+  if (!Validator.checkIfInteger(request.params.id)) {
+    throw new InvalidResourceId('Invalid id type', 'INTEGER')
   } else {
-    response.status(500).json({ error: error.errorInfo })
+    next()
   }
-
-  next(error)
 }
 
 const validateNewCardSetObject = (request, response, next) => {
@@ -117,9 +78,25 @@ const validateUpdatedCardSetObject = (request, response, next) => {
   }
 }
 
-const validateIdWhichIsInteger = (request, response, next) => {
-  if (!Validator.checkIfInteger(request.params.id)) {
-    throw new InvalidResourceId('Invalid id type', 'INTEGER')
+const validateNewUserObject = (request, respons, next) => {
+  const user = request.body
+
+  const invalidProperties = Validator.checkIfUserIsValid(user, 'new')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
+  } else {
+    next()
+  }
+}
+
+const validateUpdatedUserObject = (request, respons, next) => {
+  const user = request.body
+
+  const invalidProperties = Validator.checkIfUserIsValid(user, 'updated')
+
+  if (Object.keys(invalidProperties).length !== 0) {
+    throw new InvalidDataError('Invalid or missing data', invalidProperties)
   } else {
     next()
   }
@@ -141,30 +118,6 @@ const validateCardObjectAddedToCardSet = (request, response, next) => {
   const card = request.body
 
   const invalidProperties = Validator.checkIfCardIsValid(card, 'addedToCardSet')
-
-  if (Object.keys(invalidProperties).length !== 0) {
-    throw new InvalidDataError('Invalid or missing data', invalidProperties)
-  } else {
-    next()
-  }
-}
-
-const validateNewUserObject = (request, respons, next) => {
-  const user = request.body
-
-  const invalidProperties = Validator.checkIfUserIsValid(user, 'new')
-
-  if (Object.keys(invalidProperties).length !== 0) {
-    throw new InvalidDataError('Invalid or missing data', invalidProperties)
-  } else {
-    next()
-  }
-}
-
-const validateUpdatedUserObject = (request, respons, next) => {
-  const user = request.body
-
-  const invalidProperties = Validator.checkIfUserIsValid(user, 'updated')
 
   if (Object.keys(invalidProperties).length !== 0) {
     throw new InvalidDataError('Invalid or missing data', invalidProperties)
@@ -296,7 +249,6 @@ const getMissingOrInvalid = (data) => {
 }
 
 module.exports = {
-  errorHandler,
   validateNewCardSetObject,
   validateUpdatedCardSetObject,
   validateIdWhichIsInteger,
