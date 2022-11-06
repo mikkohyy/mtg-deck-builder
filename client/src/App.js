@@ -7,7 +7,7 @@ const App = () => {
 
   const fetchFromDb = async () => {
     try {
-      const response = await axios.get('/api')
+      const response = await axios.get('/api/tester')
       setTestThings(response.data)
     } catch (error) {
       console.log(error)
