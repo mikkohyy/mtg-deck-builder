@@ -46,7 +46,7 @@ if (process.env.NODE_ENV === 'test') {
   })
 }
 
-app.get('/api', async (req, res) => {
+app.get('/api/tester', async (req, res) => {
   try {
     const users = await sequelize.query('SELECT * FROM test_table', { type: QueryTypes.SELECT })
     res.json(users)
