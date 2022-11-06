@@ -11,7 +11,8 @@ const {
   testUsersWithId,
   newDeck,
   newDeckCards,
-  testCardUpdatesOnDeckWithIdOne
+  testCardUpdatesOnDeckWithIdOne,
+  testDeckCardsTableRowsWithIdOne
 } = require('./test_data')
 
 const supertest = require('supertest')
@@ -166,7 +167,11 @@ describe('/api/decks', () => {
           await prepareDatabase()
           const newDeckWithoutCards = {
             ...newDeck,
-            cards: []
+            cards: {
+              added: [],
+              deleted: [],
+              updated: []
+            }
           }
 
           decksTableBeforeAdd = await queryTableContent('decks')
@@ -190,7 +195,11 @@ describe('/api/decks', () => {
             userId: newDeck.userId,
             name: newDeck.name,
             notes: newDeck.notes,
-            cards: []
+            cards: {
+              added: [],
+              deleted: [],
+              updated: []
+            }
           }
 
           const responseObject = responseData.body
@@ -231,7 +240,11 @@ describe('/api/decks', () => {
           await prepareDatabase()
           const newDeckWithCards = {
             ...newDeck,
-            cards: newDeck.cards.map(card => ({ ...card }))
+            cards: {
+              added: newDeck.cards.map(card => ({ ...card })),
+              deleted: [],
+              updated: []
+            }
           }
 
           decksTableBeforeAdd = await queryTableContent('decks')
@@ -254,7 +267,11 @@ describe('/api/decks', () => {
             userId: newDeck.userId,
             name: newDeck.name,
             notes: newDeck.notes,
-            cards: newDeck.cards.map(card => ({ ...card }) )
+            cards: {
+              added: newDeck.cards.map(card => ({ ...card }) ),
+              deleted: [],
+              updated: []
+            }
           }
 
           const responseObject = responseData.body
@@ -326,10 +343,17 @@ describe('/api/decks', () => {
       describe('when invalid cards', () => {
         let responseData
 
-        const invalidDeck = { ...newDeck, cards: newDeck.cards.map(card => ({ ...card })) }
-        invalidDeck.cards[0].name = ['invalid']
-        invalidDeck.cards[0].extra = 'extra'
-        delete invalidDeck.cards[2].name
+        const invalidDeck = {
+          ...newDeck,
+          cards: {
+            added: newDeck.cards.map(card => ({ ...card })),
+            deleted: [],
+            updated: []
+          }
+        }
+        invalidDeck.cards.added[0].name = ['invalid']
+        invalidDeck.cards.added[0].extra = 'extra'
+        delete invalidDeck.cards.added[2].name
 
         beforeAll(async () => {
           responseData = await api
@@ -346,17 +370,21 @@ describe('/api/decks', () => {
             error: 'Invalid or missing data',
             invalidProperties: {
               cards: 'INVALID',
-              cardObject: [
-                {
-                  index: '0',
-                  name: 'INVALID',
-                  extra: 'UNEXPECTED'
-                },
-                {
-                  index: '2',
-                  name: 'MISSING'
-                }
-              ]
+              cardObjects: {
+                added: [
+                  {
+                    index: '0',
+                    name: 'INVALID',
+                    extra: 'UNEXPECTED'
+                  },
+                  {
+                    index: '2',
+                    name: 'MISSING'
+                  }
+                ],
+                deleted: [],
+                updated: []
+              }
             }
           }
 
@@ -446,7 +474,14 @@ describe('/api/decks', () => {
 
       describe('if non-existing id', () => {
         let receivedData
-        const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+        const updatedDeck = {
+          ...transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1]),
+          cards: {
+            added: [],
+            deleted: [],
+            updated: []
+          }
+        }
         updatedDeck.name = 'Updated name'
 
         beforeAll(async () => {
@@ -460,102 +495,153 @@ describe('/api/decks', () => {
           expect(receivedData.statusCode).toEqual(404)
         })
       })
-
-      describe('when non-existing id', () => {
-        let responseData
-
-        beforeAll(async () => {
-          await prepareDatabase()
-          responseData = await api
-            .delete('/api/decks/1234')
-        })
-
-        test('responds with 404', () => {
-          expect(responseData.statusCode).toBe(404)
-        })
-      })
     })
   })
-
   describe('When user updates deck', () => {
     const deckId = 1
-    describe('if invalid id', () => {
+    describe('if successful', () => {
       let receivedData
-      const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
-      updatedDeck.name = 'Updated name'
+      let decksTableBeforeUpdate
+      let decksTableAfterUpdate
+      let deckCardsTableBeforeUpdate
+      let deckCardsTableAfterUpdate
+
+      const originalDeck = { ...testDecksWithId[deckId - 1] }
+      const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
+      updatedDeckSnakeCase.name = 'Updated name'
+      const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
+
+      const updatedDeck = {
+        ...transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase),
+        cards: {
+          added: added.map(card => ({ ...card })),
+          deleted: deleted.map(card => ({ ...card })),
+          updated: updated.map(card => ({ ...card }))
+        }
+      }
 
       beforeAll(async () => {
         await prepareDatabase()
+
+        decksTableBeforeUpdate = await queryTableContent('decks')
+        deckCardsTableBeforeUpdate = await queryTableContent('deck_cards')
+
         receivedData = await api
-          .put('/api/decks/1_invalid?update=information')
+          .put(`/api/decks/${deckId}`)
           .send(updatedDeck)
+
+        decksTableAfterUpdate = await queryTableContent('decks')
+        deckCardsTableAfterUpdate = await queryTableContent('deck_cards')
       })
 
-      test('responds with 400', () => {
-        expect(receivedData.statusCode).toEqual(400)
+      test('responds with 200', () => {
+        expect(receivedData.statusCode).toBe(200)
       })
 
-      test('responds with expected error information', () => {
+      test('responds with expected object', () => {
         const expectedObject = {
-          error: 'Invalid id type',
-          expectedType: 'INTEGER'
+          id: 1,
+          name: 'Updated name',
+          notes: 'A very basic Blue/Green ramp deck',
+          userId: 1,
+          cards: {
+            added: added.map(card => ({ ...card })),
+            deleted: 2,
+            updated: updated.map(card => ({ ...card })),
+          }
         }
 
         const receivedObject = receivedData.body
 
         expect(receivedObject).toEqual(expectedObject)
       })
-    })
-    describe('if request parameter on what to update is invalid', () => {
-      describe('when missing', () => {
-        let receivedData
-        const updatedDeck = { ...testDecksWithId[deckId - 1] }
-        updatedDeck.name = 'Updated name'
 
-        beforeAll(async () => {
-          receivedData = await api
-            .put(`/api/decks/${deckId}`)
-            .send(updatedDeck)
+      describe('in database', () => {
+        describe('in \'decks\' table', () => {
+          test('number of rows stays the same', () => {
+            expect(decksTableAfterUpdate).toHaveLength(decksTableBeforeUpdate.length)
+          })
+          test('expected row is updated', () => {
+            expect(decksTableAfterUpdate).not.toContainEqual(originalDeck)
+            expect(decksTableAfterUpdate).toContainEqual(updatedDeckSnakeCase)
+          })
         })
+        describe('in \'deck_cards\' table', () => {
+          test('number of rows increases by one (3 added, 2 deleted, 2 updated)', () => {
+            expect(deckCardsTableAfterUpdate).toHaveLength(deckCardsTableBeforeUpdate.length + 1)
+          })
+          test('expected cards are added', () => {
+            for (const card of testDeckCardsTableRowsWithIdOne.added) {
+              expect(deckCardsTableBeforeUpdate).not.toContainEqual(card)
+            }
 
-        test('responds with 400', () => {
-          expect(receivedData.statusCode).toBe(400)
-        })
+            for (const card of testDeckCardsTableRowsWithIdOne.added) {
+              expect(deckCardsTableAfterUpdate).toContainEqual(card)
+            }
 
-        test('responds with expected error information', () => {
-          const expectedObject = {
-            error: 'A request parameter is required',
-            missingParameters: { update: 'information or cards' }
-          }
+          })
+          test('expected cards are deleted', () => {
+            for (const card of testDeckCardsTableRowsWithIdOne.deleted) {
+              expect(deckCardsTableBeforeUpdate).toContainEqual(card)
+            }
 
-          const receivedObject = receivedData.body
+            for (const card of testDeckCardsTableRowsWithIdOne.deleted) {
+              expect(deckCardsTableAfterUpdate).not.toContainEqual(card)
+            }
+          })
+          test('expected cards are updated', () => {
+            const identificationInDatabase = deckCardsTableBeforeUpdate.map(card => (
+              {
+                deck_id: card.deck_id,
+                card_id: card.card_id
+              }
+            ))
 
-          expect(receivedObject).toEqual(expectedObject)
+            for (const card of testDeckCardsTableRowsWithIdOne.updated) {
+              const identificationInCard = {
+                deck_id: card.deck_id,
+                card_id: card.card_id
+              }
+
+              expect(identificationInDatabase).toContainEqual(identificationInCard)
+              expect(deckCardsTableBeforeUpdate).not.toContainEqual(card)
+            }
+
+            for (const card of testDeckCardsTableRowsWithIdOne.updated) {
+              expect(deckCardsTableAfterUpdate).toContainEqual(card)
+            }
+          })
         })
       })
-
-      describe('when not \'information\' or \'missing\'', () => {
+    })
+    describe('if unsuccesful', () => {
+      describe('when invalid id', () => {
         let receivedData
-        const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
+        const updatedDeck = {
+          ...transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1]),
+          cards: {
+            added: [],
+            deleted: [],
+            updated: []
+          }
+        }
         updatedDeck.name = 'Updated name'
 
         beforeAll(async () => {
           await prepareDatabase()
           receivedData = await api
-            .put('/api/decks/1?update=invalid_parameter')
+            .put('/api/decks/1_invalid')
             .send(updatedDeck)
         })
 
         test('responds with 400', () => {
-          expect(receivedData.statusCode).toBe(400)
+          expect(receivedData.statusCode).toEqual(400)
         })
 
         test('responds with expected error information', () => {
           const expectedObject = {
-            error: 'Invalid request parameter',
-            missingParameters: {
-              update: 'information or cards'
-            }
+            error: 'Invalid id type',
+            expectedType: 'INTEGER'
           }
 
           const receivedObject = receivedData.body
@@ -563,295 +649,121 @@ describe('/api/decks', () => {
           expect(receivedObject).toEqual(expectedObject)
         })
       })
-    })
-    describe('when deck information is changed', () => {
-      describe('if successful', () => {
+      describe('when non-existing id', () => {
         let receivedData
-        let decksTableBeforeUpdate
-        let decksTableAfterUpdate
-        const originalDeck = { ...testDecksWithId[deckId - 1] }
+
+        const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
         const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
         updatedDeckSnakeCase.name = 'Updated name'
 
-        const updatedDeckCamelCase = transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase)
+        const updatedDeck = {
+          ...transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase),
+          cards: {
+            added: added.map(card => ({ ...card })),
+            deleted: deleted.map(card => ({ ...card })),
+            updated: updated.map(card => ({ ...card }))
+          }
+        }
+
+        beforeAll(async () => {
+          await prepareDatabase()
+          receivedData = await api
+            .put('/api/decks/1234')
+            .send(updatedDeck)
+        })
+        test('responds with 404', () => {
+          expect(receivedData.statusCode).toBe(404)
+        })
+      })
+      describe('when sent data is invalid', () => {
+        let receivedData
+        let decksTableBeforeUpdate
+        let decksTableAfterUpdate
+        let deckCardsTableBeforeUpdate
+        let deckCardsTableAfterUpdate
+
+        const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
+        updatedDeckSnakeCase.name = 'Updated name'
+        const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
+
+        const updatedDeck = {
+          ...transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase),
+          cards: {
+            added: added.map(card => ({ ...card })),
+            deleted: deleted.map(card => ({ ...card })),
+            updated: updated.map(card => ({ ...card }))
+          }
+        }
+
+        delete updatedDeck.name
+        updatedDeck.extra = 'this is extra'
+        updatedDeck.notes = ['this is invalid', 'notes']
+
+        delete updatedDeck.cards.added[0].name
+        updatedDeck.cards.added[1].extra = 'this is unnecessary'
+        updatedDeck.cards.deleted[0].name = ['this', 'is', 'invalid']
+        updatedDeck.cards.deleted[0].extra = 'this is unnecessary'
 
         beforeAll(async () => {
           await prepareDatabase()
 
           decksTableBeforeUpdate = await queryTableContent('decks')
+          deckCardsTableBeforeUpdate = await queryTableContent('deck_cards')
 
           receivedData = await api
-            .put(`/api/decks/${deckId}?update=information`)
-            .send(updatedDeckCamelCase)
+            .put(`/api/decks/${deckId}`)
+            .send(updatedDeck)
 
           decksTableAfterUpdate = await queryTableContent('decks')
+          deckCardsTableAfterUpdate = await queryTableContent('deck_cards')
+        })
+        test('responds with 400', () => {
+          expect(receivedData.statusCode).toBe(400)
         })
 
-        test('responds with 200', () => {
-          expect(receivedData.statusCode).toBe(200)
-        })
-
-        test('returns updated deck info', () => {
-          const receivedObject = receivedData.body
-          expect(receivedObject).toEqual(updatedDeckCamelCase)
-        })
-
-        test('deck table in the database is modified', () => {
-          expect(decksTableAfterUpdate).toHaveLength(decksTableBeforeUpdate.length)
-          expect(decksTableAfterUpdate).not.toContainEqual(originalDeck)
-          expect(decksTableAfterUpdate).toContainEqual(updatedDeckSnakeCase)
-        })
-      })
-
-      describe('if unsuccessful', () => {
-        describe('when invalid value in the update information', () => {
-          let receivedData
-          const updatedDeck = transformKeysFromSnakeCaseToCamelCase(testDecksWithId[deckId - 1])
-          updatedDeck.name = ['Updated name']
-
-          beforeAll(async () => {
-            await prepareDatabase()
-            receivedData = await api
-              .put(`/api/decks/${deckId}?update=information`)
-              .send(updatedDeck)
-          })
-
-          test('responds with 400', () => {
-            expect(receivedData.statusCode).toEqual(400)
-          })
-
-          test('responds with expected error information', () => {
-            const expectedObject = {
-              error: 'Invalid or missing data',
-              invalidProperties: {
-                name: 'INVALID'
+        test('returns expected information', () => {
+          const expectedObject = {
+            error: 'Invalid or missing data',
+            invalidProperties: {
+              name: 'MISSING',
+              notes: 'INVALID',
+              cards: 'INVALID',
+              extra: 'UNEXPECTED',
+              cardObjects: {
+                added: [
+                  {
+                    index: '0',
+                    name: 'MISSING'
+                  },
+                  {
+                    index: '1',
+                    extra: 'UNEXPECTED'
+                  }
+                ],
+                deleted: [
+                  {
+                    index: '0',
+                    name: 'INVALID',
+                    extra: 'UNEXPECTED'
+                  }
+                ],
+                updated: []
               }
             }
-
-            const receivedObject = receivedData.body
-
-            expect(receivedObject).toEqual(expectedObject)
-          })
-        })
-      })
-    })
-
-    describe('when deck\'s cards are modified', () => {
-      describe('if successful', () => {
-        let receivedData
-        let deckCardsTableBeforeModification
-        let deckCardsTableAfterModification
-        beforeAll(async () => {
-          await prepareDatabase()
-
-          deckCardsTableBeforeModification = await queryTableContent('deck_cards')
-          receivedData = await api
-            .put(`/api/decks/${deckId}?update=cards`)
-            .send(testCardUpdatesOnDeckWithIdOne)
-          deckCardsTableAfterModification = await queryTableContent('deck_cards')
-
-        })
-
-        test('responds with 200', () => {
-          expect(receivedData.statusCode).toBe(200)
-        })
-
-        test('returns expected object', () => {
-          const expectedObject = {
-            added: [
-              { ...testCardUpdatesOnDeckWithIdOne.added[0] },
-              { ...testCardUpdatesOnDeckWithIdOne.added[1] },
-              { ...testCardUpdatesOnDeckWithIdOne.added[2] }
-            ],
-            deleted: 2,
-            updated: [
-              { ...testCardUpdatesOnDeckWithIdOne.updated[0] },
-              { ...testCardUpdatesOnDeckWithIdOne.updated[1] }
-            ]
           }
 
           const receivedObject = receivedData.body
 
           expect(receivedObject).toEqual(expectedObject)
         })
-
-        describe('deck_cards table in the database is modified', () => {
-          test('number of rows increases by one (3 added, 2 deleted, 2 updated)', () => {
-            const expectedNOfDeckCards = deckCardsTableBeforeModification.length + 1
-            expect(deckCardsTableAfterModification).toHaveLength(expectedNOfDeckCards)
+        describe('in database', () => {
+          test('nothing changes in \'decks\' table', () => {
+            expect(decksTableAfterUpdate).toEqual(decksTableBeforeUpdate)
+          })
+          test('nothing changes in \'deck_cards\' table', () => {
+            expect(deckCardsTableAfterUpdate).toEqual(deckCardsTableBeforeUpdate)
           })
 
-          test('expected rows are added', () => {
-            const expectedAddedRows = [
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.added[0].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[0].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.added[0].sideboard
-              },
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.added[1].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[1].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.added[1].sideboard
-              },
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.added[1].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.added[1].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.added[1].sideboard
-              }
-            ]
-
-            for (const row of expectedAddedRows) {
-              expect(deckCardsTableBeforeModification).not.toContainEqual(row)
-            }
-
-            for (const row of expectedAddedRows) {
-              expect(deckCardsTableAfterModification).toContainEqual(row)
-            }
-          })
-
-          test('expected rows are deleted', () => {
-            const rowsThatShouldNotExist = [
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.deleted[0].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.deleted[0].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.deleted[0].sideboard
-              },
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.deleted[1].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.deleted[1].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.deleted[1].sideboard
-              }
-            ]
-
-            for (const row of rowsThatShouldNotExist) {
-              expect(deckCardsTableBeforeModification).toContainEqual(row)
-            }
-
-            for (const row of rowsThatShouldNotExist) {
-              expect(deckCardsTableAfterModification).not.toContainEqual(row)
-            }
-          })
-
-          test('expected rows are updated', () => {
-            const expectedRowsBeforeUpdate = [
-              {
-                deck_id: 1,
-                card_id: 6,
-                n_in_deck: 1,
-                sideboard: false
-              },
-              {
-                deck_id: 1,
-                card_id: 8,
-                n_in_deck: 3,
-                sideboard: false
-              }
-            ]
-
-            const expectedRowsAfterUpdate = [
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.updated[0].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.updated[0].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.updated[0].sideboard
-              },
-              {
-                deck_id: deckId,
-                card_id: testCardUpdatesOnDeckWithIdOne.updated[1].id,
-                n_in_deck: testCardUpdatesOnDeckWithIdOne.updated[1].nInDeck,
-                sideboard: testCardUpdatesOnDeckWithIdOne.updated[1].sideboard
-              }
-            ]
-
-            for (const row of expectedRowsBeforeUpdate) {
-              expect(deckCardsTableAfterModification).not.toContainEqual(row)
-            }
-
-            for (const row of expectedRowsAfterUpdate) {
-              expect(deckCardsTableAfterModification).toContainEqual(row)
-            }
-          })
-        })
-      })
-      describe('if unsuccessful', () => {
-        let receivedData
-        let deckCardsTableBeforeModification
-        let deckCardsTableAfterModification
-
-        describe('when invalid values in modified cards', () => {
-          const addedCards = testCardUpdatesOnDeckWithIdOne.added.map(card => ({ ...card }))
-          delete addedCards[0].nInDeck
-
-          const deletedCards = testCardUpdatesOnDeckWithIdOne.deleted.map(card => ({ ...card }))
-          deletedCards[1].id = [12]
-
-          const updatedCards = testCardUpdatesOnDeckWithIdOne.updated.map(card => ({ ...card }))
-          updatedCards[0].sideboard = [true]
-          updatedCards[1].id = 'moi'
-
-          const invalidCardModifications = {
-            added: addedCards,
-            deleted: deletedCards,
-            updated: updatedCards
-          }
-
-          beforeAll(async () => {
-            await prepareDatabase()
-            deckCardsTableBeforeModification = await queryTableContent('deck_cards')
-
-            receivedData = await api
-              .put(`/api/decks/${deckId}?update=cards`)
-              .send(invalidCardModifications)
-
-            deckCardsTableAfterModification = await queryTableContent('deck_cards')
-          })
-
-          test('responds with 400', () => {
-            expect(receivedData.statusCode).toBe(400)
-          })
-
-          test('responds with expected error information', () => {
-            const expectedObject = {
-              error: 'Invalid or missing data',
-              invalidProperties: {
-                added: [
-                  {
-                    index: '0',
-                    nInDeck: 'MISSING'
-                  }
-                ],
-                deleted: [
-                  {
-                    index: '1',
-                    id: 'INVALID'
-                  }
-                ],
-                updated: [
-                  {
-                    index: '0',
-                    sideboard: 'INVALID'
-                  },
-                  {
-                    index: '1',
-                    id: 'INVALID'
-                  }
-                ]
-              }
-            }
-
-            const receivedObject = receivedData.body
-
-            expect(receivedObject).toEqual(expectedObject)
-          })
-
-          test('deck_cards table in the database is not modified', () => {
-            expect(deckCardsTableAfterModification).toEqual(deckCardsTableBeforeModification)
-          })
         })
       })
     })

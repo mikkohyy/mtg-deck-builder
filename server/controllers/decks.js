@@ -18,7 +18,11 @@ decksRouter.post('/', validateNewDeckObject, async (request, response, next) => 
 
   try {
     const { userId, name, notes, cards } = newDeck
-    let addedCards = []
+    let addedCards = {
+      added: [],
+      deleted: [],
+      updated: []
+    }
 
     const newDeckObject = {
       userId: userId,
@@ -28,9 +32,9 @@ decksRouter.post('/', validateNewDeckObject, async (request, response, next) => 
 
     const createdDeck = await Deck.create(newDeckObject)
 
-    if (areThereCards(cards) === true) {
+    if (areThereCardsInModifiedCardsObject(cards) === true) {
       const deckId = createdDeck.id
-      addedCards = await addCardsToDeck(deckId, cards)
+      addedCards = await modifyCardsInDeck(deckId, cards)
     }
 
     createdDeck.setDataValue('cards', addedCards)
@@ -101,8 +105,8 @@ decksRouter.put(
   validateUpdatedDeckObject,
   async (request, response, next) => {
     const deckId = request.params.id
-    const whatToUpdate = request.query.update
     const updatedContent = request.body
+    const { cards, ...deckInformation } = updatedContent
 
     const queryResult = await Deck.findByPk(deckId)
 
@@ -110,21 +114,17 @@ decksRouter.put(
       return response.status(404).end()
     }
 
-    if (whatToUpdate === 'information') {
-      try {
-        const updatedDeckInformation = await updateDeckInformation(deckId, updatedContent)
-        response.json(updatedDeckInformation)
-      } catch(error) {
-        next(error)
-      }
+    try {
+      const updatedDeckInformation = await updateDeckInformation(deckId, deckInformation)
+      const changesInCards = await modifyCardsInDeck(deckId, cards)
 
-    } else if (whatToUpdate === 'cards') {
-      try {
-        const changesInCards = await modifyCardsInDeck(deckId, updatedContent)
-        response.json(changesInCards)
-      } catch(error) {
-        next(error)
+      const updateResults = {
+        ...updatedDeckInformation,
+        cards: changesInCards
       }
+      response.json(updateResults)
+    } catch(error) {
+      next(error)
     }
   })
 
@@ -148,6 +148,19 @@ const wasDeckFound = (queryResults) => {
   return deckWasFound
 }
 
+
+const areThereCardsInModifiedCardsObject = (modifiedCardsObject) => {
+  let hasCards = false
+
+  for (const cardArray of Object.values(modifiedCardsObject)) {
+    if (areThereCards(cardArray) === true) {
+      hasCards = true
+      break
+    }
+  }
+
+  return hasCards
+}
 
 const areThereCards = (cards) => {
   let hasCards = false

@@ -796,8 +796,44 @@ const testCardUpdatesOnDeckWithIdOne = {
   ]
 }
 
+const testDeckCardsTableRowsWithIdOne = {
+  added: testCardUpdatesOnDeckWithIdOne.added.map(card => ({
+    card_id: card.id,
+    deck_id: 1,
+    n_in_deck: card.nInDeck,
+    sideboard: card.sideboard
+  })),
+  deleted: testCardUpdatesOnDeckWithIdOne.deleted.map(card => ({
+    card_id: card.id,
+    deck_id: 1,
+    n_in_deck: card.nInDeck,
+    sideboard: card.sideboard
+  })),
+  updated: testCardUpdatesOnDeckWithIdOne.updated.map(card => ({
+    card_id: card.id,
+    deck_id: 1,
+    n_in_deck: card.nInDeck,
+    sideboard: card.sideboard
+  }))
+}
+
+const camelCaseTestDeckObjects = {
+  withoutId: {
+    userId: 1,
+    name: 'Blue/red/green/white draft deck',
+    notes: 'Ended up with a deck that has too many colors. Not a winner.'
+  },
+  withId: {
+    id: 1,
+    userId: 1,
+    name: 'Blue/red/green/white draft deck',
+    notes: 'Ended up with a deck that has too many colors. Not a winner.'
+  }
+}
+
 module.exports = {
   addExpectedIdsAndAddProperties,
+  camelCaseTestDeckObjects,
   testCardSets,
   testCardSetsWithId,
   invalidCardSet,
@@ -812,5 +848,6 @@ module.exports = {
   newCard,
   newDeck,
   newDeckCards,
-  testCardUpdatesOnDeckWithIdOne
+  testCardUpdatesOnDeckWithIdOne,
+  testDeckCardsTableRowsWithIdOne
 }

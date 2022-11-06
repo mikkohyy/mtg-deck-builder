@@ -2,8 +2,7 @@ const {
   testCardSetsWithId,
   testCardsWithId,
   testCards,
-  addExpectedIdsAndAddProperties,
-  newCard
+  addExpectedIdsAndAddProperties
 } = require('./test_data')
 
 const {
@@ -340,37 +339,24 @@ describe('/api/card_sets', () => {
       let modifiedCardSet
       let cardSetsInDatabaseBefore
       let cardSetsInDatabaseAfter
-      let setsCardsInDatabaseBefore
-      let setsCardsInDatabaseAfter
       let originalCardSet
 
       beforeAll(async () => {
         await prepareDatabase()
-        const updatedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[4])
-        const firstDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[5])
-        const secondDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[6])
-        const addedCard = { ...newCard, cardSetId: cardSetId }
         originalCardSet = { ...testCardSetsWithId[0] }
         modifiedCardSet = { ...originalCardSet, name: 'Updated name' }
 
         updatedCardSet = {
-          ...modifiedCardSet,
-          cards: {
-            added: [ addedCard ],
-            deleted: [ firstDeletedCard, secondDeletedCard ],
-            updated: [ updatedCard ]
-          }
+          ...modifiedCardSet
         }
 
         cardSetsInDatabaseBefore = await queryTableContent('card_sets')
-        setsCardsInDatabaseBefore = await queryTableContentWithFieldValue('cards', 'card_set_id', cardSetId)
 
         receivedData = await api
           .put(`/api/card_sets/${cardSetId}`)
           .send(updatedCardSet)
 
         cardSetsInDatabaseAfter = await queryTableContent('card_sets')
-        setsCardsInDatabaseAfter = await queryTableContentWithFieldValue('cards', 'card_set_id', cardSetId)
       })
 
       test('responds with json', () => {
@@ -382,10 +368,8 @@ describe('/api/card_sets', () => {
       })
 
       test('returns expected object', () => {
-        const expectedObject = { ...updatedCardSet, cards: { ...updatedCardSet.cards } }
-        expectedObject.cards.added[0].id = lastIdOfTestCards() + 1
+        const expectedObject = { ...updatedCardSet }
         expectedObject.date = expectedObject.date.toISOString()
-        expectedObject.cards.deleted = 2
         const receivedObject = receivedData.body
 
         expect(receivedObject).toEqual(expectedObject)
@@ -400,41 +384,9 @@ describe('/api/card_sets', () => {
           expect(cardSetsInDatabaseAfter).not.toContainEqual(originalCardSetInSnakeCase)
         })
 
-        test('expected card is added', () => {
-          const addedCards = updatedCardSet.cards.added
-          const addedCardsInSnakeCase = addedCards.map(card => transformKeysFromCamelCaseToSnakeCase(card))
-
-          for (const card of addedCardsInSnakeCase) {
-            expect(setsCardsInDatabaseAfter).toContainEqual(card)
-          }
-        })
-
-        test('expected card is updated', () => {
-          const updatedCards = updatedCardSet.cards.updated
-          const updatedCardsInSnakeCase = updatedCards.map(card => transformKeysFromCamelCaseToSnakeCase(card))
-
-          for (const card of updatedCardsInSnakeCase) {
-            expect(setsCardsInDatabaseAfter).toContainEqual(card)
-          }
-        })
-
-        test('expected cards are deleted', () => {
-          const deletedCards = updatedCardSet.cards.deleted
-          const deletedCardsInSnakeCase = deletedCards.map(card => transformKeysFromCamelCaseToSnakeCase(card))
-
-          for (const card of deletedCardsInSnakeCase) {
-            expect(setsCardsInDatabaseAfter).not.toContainEqual(card)
-          }
-        })
-
         test('number of card sets in the database does not change', () => {
           const nOfCardSets = cardSetsInDatabaseBefore.length
           expect(cardSetsInDatabaseAfter).toHaveLength(nOfCardSets)
-        })
-
-        test('number of cards associated with the card set changes', () => {
-          const nOfAssociatedCardsAfter = setsCardsInDatabaseAfter.length
-          expect(nOfAssociatedCardsAfter).toBe(setsCardsInDatabaseBefore.length - 1)
         })
       })
     })
@@ -447,20 +399,11 @@ describe('/api/card_sets', () => {
 
       beforeAll(async () => {
         await prepareDatabase()
-        const updatedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[4])
-        const firstDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[5])
-        const secondDeletedCard = transformKeysFromSnakeCaseToCamelCase(testCardsWithId[6])
-        const addedCard = { ...newCard, cardSetId: cardSetId }
         originalCardSet = { ...testCardSetsWithId[0] }
         modifiedCardSet = { ...originalCardSet, name: 'Updated name' }
 
         updatedCardSet = {
-          ...modifiedCardSet,
-          cards: {
-            added: [ addedCard ],
-            deleted: [ firstDeletedCard, secondDeletedCard ],
-            updated: [ updatedCard ]
-          }
+          ...modifiedCardSet
         }
       })
 
@@ -507,7 +450,7 @@ describe('/api/card_sets', () => {
           let cardSetsInDatabaseBefore
           let cardSetsInDatabaseAfter
           beforeAll(async () => {
-            invalidCardSet = { ...updatedCardSet, cards: { ...updatedCardSet.cards } }
+            invalidCardSet = { ...updatedCardSet }
 
             delete invalidCardSet.date
             invalidCardSet.description = ['this is invalid']
@@ -540,71 +483,6 @@ describe('/api/card_sets', () => {
 
           test('database is not modified', () => {
             expect(cardSetsInDatabaseAfter).toEqual(cardSetsInDatabaseBefore)
-          })
-        })
-
-        describe('when cards are invalid', () => {
-          let invalidCards
-          let cardSetUpdateWithInvalidCards
-          let receivedData
-          let setsCardsInDatabaseBefore
-          let setsCardsInDatabaseAfter
-
-          beforeAll(async () => {
-            invalidCards = { ...updatedCardSet.cards }
-            invalidCards.added[0].cardNumber = 'invalid'
-            invalidCards.deleted[1].rulesText = 1234
-            delete invalidCards.deleted[1].cardNumber
-
-            cardSetUpdateWithInvalidCards = {
-              ...updatedCardSet,
-              cards: invalidCards
-            }
-
-            setsCardsInDatabaseBefore = queryTableContent('card_sets')
-
-            receivedData = await api
-              .put(`/api/card_sets/${cardSetId}`)
-              .send(cardSetUpdateWithInvalidCards)
-
-            setsCardsInDatabaseAfter = queryTableContent('card_sets')
-          })
-
-          test('responds with 400', () => {
-            expect(receivedData.statusCode).toBe(400)
-          })
-
-          test('responds with expected error information', () => {
-            const expectedObject = {
-              error: 'Invalid or missing data',
-              invalidProperties: {
-                cards: 'INVALID',
-                cardObjects: {
-                  added: [
-                    {
-                      index: '0',
-                      cardNumber: 'INVALID'
-                    }
-                  ],
-                  deleted: [
-                    {
-                      index: '1',
-                      rulesText: 'INVALID',
-                      cardNumber: 'MISSING'
-                    }
-                  ],
-                  updated: []
-                }
-              }
-            }
-
-            const receivedObject = receivedData.body
-
-            expect(receivedObject).toEqual(expectedObject)
-          })
-
-          test('cards in the database are not modified', () => {
-            expect(setsCardsInDatabaseAfter).toEqual(setsCardsInDatabaseBefore)
           })
         })
       })

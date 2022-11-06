@@ -335,7 +335,6 @@ describe('/api/cards', () => {
         receivedData = await api
           .post('/api/cards')
           .send(newCard)
-
       })
 
       test('responds with 201', () => {

@@ -1,8 +1,8 @@
 const cardsRouter = require('express').Router()
 const {
   validateIdWhichIsInteger,
-  validateExistingCardObject,
-  validateCardObjectAddedToCardSet
+  validateUpdatedCardObject,
+  validateNewCardObject
 } = require('../utils/validation_middleware')
 const { extractInformationOnUpdatedObject } = require('../utils/query_handling')
 const { Card } = require('../models')
@@ -53,7 +53,7 @@ cardsRouter.get('/:id', validateIdWhichIsInteger, async(request, response, next)
  * @returns {Card} The created card in the body of the response
  */
 
-cardsRouter.post('/', validateCardObjectAddedToCardSet, async(request, response, next) => {
+cardsRouter.post('/', validateNewCardObject, async(request, response, next) => {
   try {
     const newCard = request.body
     const addedCard = await Card.create(newCard)
@@ -72,7 +72,7 @@ cardsRouter.post('/', validateCardObjectAddedToCardSet, async(request, response,
 cardsRouter.put(
   '/:id',
   validateIdWhichIsInteger,
-  validateExistingCardObject,
+  validateUpdatedCardObject,
   async (request, response, next) => {
     try {
       const cardId = request.params.id

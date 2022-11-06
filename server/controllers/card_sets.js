@@ -85,7 +85,7 @@ cardSetsRouter.put(
 
     try {
       const cardSetId = request.params.id
-      const { name, description, date, cards } = request.body
+      const { name, description, date  } = request.body
 
       const updateRequestResponse = await CardSet.update(
         {
@@ -100,7 +100,7 @@ cardSetsRouter.put(
       )
 
       if (wasCardSetUpdated(updateRequestResponse)) {
-        updatedObject = await createUpdateResponseObject(updateRequestResponse, cards)
+        updatedObject = extractInformationOnUpdatedObject(updateRequestResponse)
         response.status(200).json(updatedObject)
       } else {
         response.status(404).end()
@@ -112,69 +112,9 @@ cardSetsRouter.put(
   }
 )
 
-const modifyCardsInDb = async (cards) => {
-  const { added, deleted, updated } = cards
-  const addedCards = await addCardsToDb(added)
-  const deletedCards = await deleteCardsFromDb(deleted)
-  const updatedCards = await updateCardsInDb(updated)
-
-  const modificationResults = {
-    added: addedCards,
-    deleted: deletedCards,
-    updated: updatedCards
-  }
-
-  return modificationResults
-}
-
-const addCardsToDb = async (cardsToAdd) => {
-  let addedCards = []
-  if (cardsToAdd.length > 0) {
-    const returnedCards = await Card.bulkCreate(cardsToAdd, { validate: true })
-    addedCards = returnedCards.map(card => card.dataValues)
-  }
-
-  return addedCards
-}
-
-const deleteCardsFromDb = async (cardsToDelete) => {
-  let nOfDeletedCards = 0
-
-  if (cardsToDelete.length > 0) {
-    const cardIds = cardsToDelete.map(card => card.id)
-    nOfDeletedCards = await Card.destroy({ where: { id: cardIds } })
-  }
-
-  return nOfDeletedCards
-}
-
-const updateCardsInDb = async (cardsToUpdate) => {
-  let updatedCards = []
-
-  if (cardsToUpdate.length > 0) {
-    const columnsToBeUpdated = ['name', 'cardNumber', 'manaCost', 'price', 'rulesText', 'rarity']
-
-    const updateInfo = await Card.bulkCreate(cardsToUpdate, {
-      updateOnDuplicate: columnsToBeUpdated
-    })
-    updatedCards = updateInfo.map(card => card.dataValues)
-  }
-
-  return updatedCards
-}
-
 const addCardSetIdToCards = (cards, cardSetId) => {
   const cardsWithCardSetId = cards.map(card => ({ ...card, cardSetId: cardSetId }))
   return  cardsWithCardSetId
-}
-
-const createUpdateResponseObject = async (requestResponse, cards) => {
-  const updateResponse = extractInformationOnUpdatedObject(requestResponse)
-  const cardModificationResults = await modifyCardsInDb(cards)
-
-  updateResponse.cards = cardModificationResults
-
-  return updateResponse
 }
 
 const didCardSetHaveCards = (cards) => {
