@@ -16,7 +16,7 @@ const decksRouter = require('./controllers/decks')
 const loginRouter = require('./controllers/login')
 
 app.use(cors())
-app.use(express.static('build'))
+app.use(express.static(__dirname + 'build'))
 app.use(express.json())
 
 app.use('/api/card_sets', cardSetsRouter)
