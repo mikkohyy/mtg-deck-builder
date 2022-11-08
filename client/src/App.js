@@ -8,7 +8,7 @@ const App = () => {
     <MainView>
       <ControlsRow>
         <ViewButtonRow />
-        <button>Logout</button>
+        <button>Logout button</button>
       </ControlsRow>
       <DeckBuildingView />
     </MainView>
