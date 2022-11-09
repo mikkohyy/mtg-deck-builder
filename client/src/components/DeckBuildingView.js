@@ -2,8 +2,7 @@ import styled from 'styled-components'
 import CardSetsList from './CardSetsList'
 import DeckBuilder from './DeckBuilder'
 import DeckBuilderButtonRow from './DeckBuilderButtonRow'
-import cardSetServices from '../services/card_sets'
-import { useState } from 'react'
+import useCardSetsSelection from '../hooks/useCardSetsSelection'
 
 const DeckBuildingContainer = styled.div`
   display: flex;
@@ -11,18 +10,25 @@ const DeckBuildingContainer = styled.div`
 `
 
 const DeckBuildingView = () => {
-  const [ cardSets, setCardSets ] = useState([])
-  const [ cardSetsIsOpen, setCardSetsIsOpen ] = useState(false)
+  const {
+    openCardSetsIsActive,
+    cardSetsList,
+    clickOpenCardSets,
+    changeOpenCardSetActivity
+  } = useCardSetsSelection()
 
   const openCardSetList = async () => {
-    const foundCardSets = await cardSetServices.getAllCardSets()
-    setCardSets(foundCardSets)
-    setCardSetsIsOpen(!cardSetsIsOpen)
+    clickOpenCardSets()
   }
 
   return(
     <div>
-      { cardSetsIsOpen ? <CardSetsList cardSets={cardSets} /> : null }
+      { openCardSetsIsActive === true
+        ? <CardSetsList
+          cardSets={cardSetsList}
+          changeActivity={changeOpenCardSetActivity}
+        />
+        : null}
       <DeckBuildingContainer>
         <DeckBuilderButtonRow openCardSets={openCardSetList}/>
         <DeckBuilder />

@@ -2,17 +2,18 @@ import axios from 'axios'
 const baseRoute ='/api/card_sets'
 
 const getAllCardSets = async () => {
-  let fetchedData
+  let fetchedDataWithDate
 
   try {
     const requestResponse = await axios.get(baseRoute)
-    fetchedData = requestResponse.data
+    const fetchedData = requestResponse.data
+
+    fetchedDataWithDate = fetchedData.map(cardSet => ({ ...cardSet, date: new Date(cardSet.date) }))
   } catch(error) {
     console.log(error)
-    fetchedData = error
   }
 
-  return fetchedData
+  return fetchedDataWithDate
 }
 
 export default { getAllCardSets }
