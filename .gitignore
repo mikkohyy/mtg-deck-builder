@@ -5,3 +5,4 @@ todo.txt
 random.txt
 documentation/colorscheme.jpg
 server/Dockerfile
+node_modules/

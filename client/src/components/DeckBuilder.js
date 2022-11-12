@@ -1,5 +1,5 @@
 import styled from  'styled-components'
-import SetCardsTable from './SetCardsTable'
+import SetCardsTable from './CardLibraryView/CardLibraryTable'
 import DeckInformation from './DeckInformation'
 import DeckTable from './DeckTable'
 

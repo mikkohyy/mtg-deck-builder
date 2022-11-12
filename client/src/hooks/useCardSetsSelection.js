@@ -5,7 +5,7 @@ const useCardSetsSelection = () => {
   // NOTE: Fetches the card set list each time clickOpenCardSets() is run
   // perhaps could be improved by fetching it only once
 
-  const [ openCardSetsIsActive, setOpenCardSetsIsActive ] = useState(false)
+  const [ isOpen, setIsOpen ] = useState(false)
   const [ cardSetsList, setCardSetsList ] = useState([])
 
   const fetchCardSetList = async () => {
@@ -27,12 +27,12 @@ const useCardSetsSelection = () => {
   }
 
   const changeOpenCardSetActivity = () => {
-    setOpenCardSetsIsActive(!openCardSetsIsActive)
+    setIsOpen(!isOpen)
   }
 
   return {
-    changeOpenCardSetActivity,
-    openCardSetsIsActive,
+    setIsOpen,
+    isOpen,
     cardSetsList,
     clickOpenCardSets
   }

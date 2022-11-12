@@ -11,6 +11,7 @@ const CardSetsTableHead = () => {
       <tr>
         <HeadCell>Card set</HeadCell>
         <HeadCell>Added</HeadCell>
+        <HeadCell>Description</HeadCell>
       </tr>
     </thead>
   )

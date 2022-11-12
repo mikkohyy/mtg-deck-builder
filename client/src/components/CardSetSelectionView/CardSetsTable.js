@@ -1,9 +1,7 @@
 import CardSetsTableHead from './CardSetsTableHead'
 import CardSetsTableRow from './CardSetsTableRow'
-import useCardSetsRowSelection from '../hooks/useCardSetRowSelection'
 
-const CardSetsTable = ({ cardSets }) => {
-  const { selectCardSetRow, selectedCardSet, isRowSelected } = useCardSetsRowSelection()
+const CardSetsTable = ({ cardSets, selectCardSetRow, selectedCardSet, isRowSelected }) => {
 
   return(
     <table>

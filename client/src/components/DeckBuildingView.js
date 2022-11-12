@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import CardSetsList from './CardSetsList'
+import CardSetsList from './CardSetSelectionView/CardSetsList'
 import DeckBuilder from './DeckBuilder'
 import DeckBuilderButtonRow from './DeckBuilderButtonRow'
 import useCardSetsSelection from '../hooks/useCardSetsSelection'
@@ -11,10 +11,10 @@ const DeckBuildingContainer = styled.div`
 
 const DeckBuildingView = () => {
   const {
-    openCardSetsIsActive,
+    isOpen,
     cardSetsList,
     clickOpenCardSets,
-    changeOpenCardSetActivity
+    setIsOpen
   } = useCardSetsSelection()
 
   const openCardSetList = async () => {
@@ -23,10 +23,10 @@ const DeckBuildingView = () => {
 
   return(
     <div>
-      { openCardSetsIsActive === true
+      { isOpen === true
         ? <CardSetsList
           cardSets={cardSetsList}
-          changeActivity={changeOpenCardSetActivity}
+          setIsOpen={setIsOpen}
         />
         : null}
       <DeckBuildingContainer>

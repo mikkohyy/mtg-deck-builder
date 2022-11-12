@@ -1,7 +1,7 @@
 import axios from 'axios'
 const baseRoute ='/api/card_sets'
 
-const getAllCardSets = async () => {
+const getAllCardSets = async() => {
   let fetchedDataWithDate
 
   try {
@@ -16,4 +16,18 @@ const getAllCardSets = async () => {
   return fetchedDataWithDate
 }
 
-export default { getAllCardSets }
+const getCardSetWithId = async(id) => {
+  let fetchedCardSet
+
+  try {
+    const requestResponse = await axios.get(`${baseRoute}/${id}`)
+    const fetchedData = requestResponse.data
+    fetchedCardSet = { ...fetchedData, date: new Date(fetchedData.date) }
+  } catch(error) {
+    console.log(error)
+  }
+
+  return fetchedCardSet
+}
+
+export default { getAllCardSets, getCardSetWithId }
