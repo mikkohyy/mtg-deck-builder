@@ -1,5 +1,9 @@
 import axios from 'axios'
 const baseRoute ='/api/card_sets'
+import {
+  getCardColor,
+  getManaSymbols
+} from '../utils/card_property_utils'
 
 const getAllCardSets = async() => {
   let fetchedDataWithDate
@@ -22,7 +26,17 @@ const getCardSetWithId = async(id) => {
   try {
     const requestResponse = await axios.get(`${baseRoute}/${id}`)
     const fetchedData = requestResponse.data
-    fetchedCardSet = { ...fetchedData, date: new Date(fetchedData.date) }
+    const cardsWithColor = fetchedData.cards
+      .map(card => (
+        { ...card,
+          cardColor: getCardColor(card),
+          manaSymbols: getManaSymbols(card)
+        }))
+    fetchedCardSet = {
+      ...fetchedData,
+      date: new Date(fetchedData.date),
+      cards: cardsWithColor
+    }
   } catch(error) {
     console.log(error)
   }
@@ -30,4 +44,15 @@ const getCardSetWithId = async(id) => {
   return fetchedCardSet
 }
 
-export default { getAllCardSets, getCardSetWithId }
+const addCardSet = async(newCardSet) => {
+  const requestResponse = await axios.post(baseRoute, newCardSet)
+  const returnedData = requestResponse.data
+
+  return returnedData
+}
+
+export {
+  getAllCardSets,
+  getCardSetWithId,
+  addCardSet
+}

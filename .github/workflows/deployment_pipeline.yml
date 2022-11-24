@@ -33,7 +33,7 @@ jobs:
       - name: lint client code
         working-directory: ./client
         run: npm run lint
-      - name: run component tests
+      - name: run component and functional tests
         working-directory: ./client
         run: npm run test:component
       - name: build frontend and copy to server

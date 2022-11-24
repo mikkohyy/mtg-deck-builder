@@ -1,18 +1,18 @@
 import { useState } from 'react'
-import cardSetServices from '../services/card_sets'
+import { getAllCardSets } from '../services/card_sets'
 
 const useCardSetsSelection = () => {
   // NOTE: Fetches the card set list each time clickOpenCardSets() is run
   // perhaps could be improved by fetching it only once
 
-  const [ isOpen, setIsOpen ] = useState(false)
+  const [ cardSetIsOpen, setCardSetIsOpen ] = useState(false)
   const [ cardSetsList, setCardSetsList ] = useState([])
 
   const fetchCardSetList = async () => {
     let fetchedCardSets
 
     try {
-      fetchedCardSets = await cardSetServices.getAllCardSets()
+      fetchedCardSets = await getAllCardSets()
     } catch(error) {
       console.log(error)
     }
@@ -27,12 +27,12 @@ const useCardSetsSelection = () => {
   }
 
   const changeOpenCardSetActivity = () => {
-    setIsOpen(!isOpen)
+    setCardSetIsOpen(!cardSetIsOpen)
   }
 
   return {
-    setIsOpen,
-    isOpen,
+    setCardSetIsOpen,
+    cardSetIsOpen,
     cardSetsList,
     clickOpenCardSets
   }

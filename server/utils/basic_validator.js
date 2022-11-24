@@ -1,19 +1,4 @@
 class BasicValidator {
-  static #basicCardPropertyNames = [
-    'name',
-    'cardNumber',
-    'manaCost',
-    'rulesText',
-    'price',
-    'rarity'
-  ]
-
-  static #basicDeckPropertyNames = [
-    'userId',
-    'name',
-    'notes',
-  ]
-
   static checkIfString(data) {
     if (!data || !this.#isItString(data)) {
       return false
@@ -76,6 +61,111 @@ class BasicValidator {
     } else {
       return true
     }
+  }
+
+  static checkIfManaCost(data) {
+    let isManaCost = true
+
+    if (data === undefined || typeof data !== 'string' || this.#isValidManaCost(data) === false) {
+      isManaCost = false
+    }
+
+    return isManaCost
+  }
+
+  static #isValidManaCost = (data) => {
+    let isValidManaCost = true
+
+    const manaCostAsArray = data.split(' ')
+
+    if (manaCostAsArray.length === 1 && this.#isLandNumberColorOrX(data) === false) {
+      isValidManaCost = false
+    } else if (manaCostAsArray.length > 1) {
+      isValidManaCost = this.#isValidManaCostStructure(manaCostAsArray)
+    }
+
+    return isValidManaCost
+  }
+
+  static #isValidManaCostStructure(data) {
+    let isValidStructure = true
+    const seen = {
+      number: false,
+      color: false
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const part = data[i]
+
+      if (part === 'x') {
+        if (this.#isBeforeNumberOrColor(seen) === false) {
+          isValidStructure = false
+        }
+      } else if (this.checkIfInteger(part) === true) {
+        if (seen.number === true || this.#isBeforeColor(seen) === false) {
+          isValidStructure = false
+        }
+        seen.number = true
+      } else if (this.#isColor(part) === true) {
+        seen.color = true
+      } else {
+        isValidStructure = false
+      }
+
+      if (isValidStructure === false) {
+        break
+      }
+    }
+    return isValidStructure
+  }
+
+  static #isBeforeNumberOrColor(seen) {
+    let isBefore = true
+
+    if (seen.number !== false) {
+      isBefore = false
+    } else if (seen.color !== false) {
+      isBefore = false
+    }
+
+    return isBefore
+  }
+
+  static #isBeforeColor(seen) {
+    let isBefore = true
+
+    if (seen.color === true) {
+      isBefore = false
+    }
+
+    return isBefore
+  }
+
+  static #isLandNumberColorOrX(data) {
+    let isOneOfThem = false
+
+    if (data === '') {
+      isOneOfThem = true
+    } else if (this.#isColor(data) === true) {
+      isOneOfThem = true
+    } else if (this.checkIfInteger(data) === true) {
+      isOneOfThem = true
+    } else if (data === 'x') {
+      isOneOfThem = true
+    }
+
+    return isOneOfThem
+  }
+
+  static #isColor(data) {
+    let color = false
+    const manaColors = ['black', 'blue', 'green', 'red', 'white']
+
+    if (manaColors.includes(data)) {
+      color = true
+    }
+
+    return color
   }
 
   static #isItString(data) {

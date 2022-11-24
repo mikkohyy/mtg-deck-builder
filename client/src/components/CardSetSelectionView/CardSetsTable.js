@@ -10,7 +10,7 @@ const CardSetsTable = ({ cardSets, selectCardSetRow, selectedCardSet, isRowSelec
         { cardSets.map(cardSet => {
           return(
             <CardSetsTableRow
-              key={cardSet.name}
+              key={`${cardSet.name}-${cardSet.id}`}
               cardSet={cardSet}
               selectCardSetRow={selectCardSetRow}
               selectedCardSet={selectedCardSet}

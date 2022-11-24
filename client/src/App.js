@@ -1,19 +1,18 @@
-import { MainView, ControlsRow } from './components/FlexComponents'
-import ViewButtonRow from './components/ViewButtonRow'
-import DeckBuildingView from './components/DeckBuildingView'
 import { CardSetProvider } from './contexts/cardSetContext'
+import { NotificationMessageProvider } from './contexts/notificationMessageContext'
+import { ThemeProvider } from 'styled-components'
+import theme from './theme'
+import MainView from './components/MainView'
 
 const App = () => {
   return(
-    <CardSetProvider>
-      <MainView>
-        <ControlsRow>
-          <ViewButtonRow />
-          <button>Logout button</button>
-        </ControlsRow>
-        <DeckBuildingView />
-      </MainView>
-    </CardSetProvider>
+    <ThemeProvider theme={theme}>
+      <CardSetProvider>
+        <NotificationMessageProvider>
+          <MainView />
+        </NotificationMessageProvider>
+      </CardSetProvider>
+    </ThemeProvider>
   )
 }
 

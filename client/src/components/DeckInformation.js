@@ -1,14 +1,19 @@
 import styled from 'styled-components'
 
 const DeckInformationContainer = styled.div`
-  width: 10%;
-  border-style: solid;
-  border-color: orange;
+  align-items: start;
+  border: solid 2px blue;
 `
+
+const InnerDiv = styled.div`
+`
+
 const SetCardsTable = () => {
   return(
     <DeckInformationContainer>
-      Deck information
+      <InnerDiv>
+        Deck information
+      </InnerDiv>
     </DeckInformationContainer>
   )
 }

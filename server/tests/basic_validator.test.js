@@ -272,4 +272,134 @@ describe('BasicValidator', () => {
       })
     })
   })
+  describe('checkIfManaCost()', () => {
+    describe('returns true', () => {
+      test('when \'\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'2\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'black\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('black')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'blue\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('blue')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'green\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('green')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'red\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('red')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'white\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('white')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'2 white\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2 white')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'2 white blue\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2 white blue')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'blue blue white\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2 white blue')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x green\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x green')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'0\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('0')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x x\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x x')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x x blue\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x x blue')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x 2 black\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x 2 black')
+        expect(validationResult).toBe(true)
+      })
+      test('when \'x 2\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x 2')
+        expect(validationResult).toBe(true)
+      })
+    })
+    describe('returns false', () => {
+      test('when array', () => {
+        const validationResult = BasicValidator.checkIfManaCost(['Grizzly Bears'])
+        expect(validationResult).toBe(false)
+      })
+      test('when an object', () => {
+        const validationResult = BasicValidator.checkIfManaCost({ 'Grizzly': 'Bears' })
+        expect(validationResult).toBe(false)
+      })
+      test('when a string', () => {
+        const validationResult = BasicValidator.checkIfManaCost('multicolor')
+        expect(validationResult).toBe(false)
+      })
+      test('when a float', () => {
+        const validationResult = BasicValidator.checkIfManaCost(5.245)
+        expect(validationResult).toBe(false)
+      })
+      test('when undefined', () => {
+        const validationResult = BasicValidator.checkIfManaCost(undefined)
+        expect(validationResult).toBe(false)
+      })
+      test('when boolean', () => {
+        const validationResult = BasicValidator.checkIfManaCost(false)
+        expect(validationResult).toBe(false)
+      })
+      test('when \'2.5\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2.5')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'white 2\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('white 2')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'2 3 white\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('white 2 3')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'white blu\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('white blu')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'x blue x\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x blue x')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'x blue 2 x\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('x blue 2 x')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'blue x white\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('blue x white')
+        expect(validationResult).toBe(false)
+      })
+      test('when \'2 2 2\'', () => {
+        const validationResult = BasicValidator.checkIfManaCost('2 2 2')
+        expect(validationResult).toBe(false)
+      })
+    })
+  })
 })

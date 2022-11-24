@@ -30,8 +30,8 @@ const usePopUpBox = () => {
   const fadeIn = (event) => {
     const fadeInTimeout = setTimeout(() => {
       const newPointerCoordinates = {
-        x: event.pageX,
-        y: event.pageY
+        x: event.clientX,
+        y: event.clientY
       }
 
       setPointerCoordinates(newPointerCoordinates)

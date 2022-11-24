@@ -3,3 +3,4 @@ client/build/
 client/.eslintrc.js
 server/cypress.config.js
 client/src/setupProxy.js
+client/babel.config.js

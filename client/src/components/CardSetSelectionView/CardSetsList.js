@@ -1,7 +1,7 @@
 import useCardSetsRowSelection from '../../hooks/useCardSetRowSelection'
 import CardSetsTable from './CardSetsTable'
 import styled from 'styled-components'
-import cardSetServices from '../../services/card_sets'
+import { getCardSetWithId } from '../../services/card_sets'
 import { useContext } from 'react'
 import { CardSetContext } from '../../contexts/cardSetContext'
 
@@ -9,20 +9,21 @@ const CardSets = styled.div`
   background-color: #DEF2F1;
   z-index: 1;
   position: absolute;
-  padding: 1em;2
+  padding: 1em;
   border: 2px solid;
   border-color: #2B7A78;
   border-radius: 0.2em;
 `
 
-const CardSetsList = ({ cardSets, setIsOpen }) => {
+const CardSetsList = ({ cardSets, setCardSetIsOpen }) => {
   const { selectCardSetRow, selectedCardSet, isRowSelected } = useCardSetsRowSelection()
   const { setOpenedCardSet } = useContext(CardSetContext)
 
   const openCardSet = async() => {
-    const data = await cardSetServices.getCardSetWithId(1)
+    const cardSetId = selectedCardSet.id
+    const data = await getCardSetWithId(cardSetId)
     setOpenedCardSet(data)
-    setIsOpen()
+    setCardSetIsOpen()
   }
 
   return(
@@ -34,7 +35,7 @@ const CardSetsList = ({ cardSets, setIsOpen }) => {
         isRowSelected={isRowSelected}
       />
       <button onClick={openCardSet}>Open</button>
-      <button onClick={setIsOpen}>Close</button>
+      <button onClick={setCardSetIsOpen}>Close</button>
     </CardSets>
   )
 }
