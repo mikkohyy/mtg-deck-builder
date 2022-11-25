@@ -1,32 +1,37 @@
-import { useState } from 'react'
-import { getAllCardSets } from '../services/card_sets'
+import { useState, useReducer } from 'react'
+
 
 const useCardSetsSelection = () => {
-  // NOTE: Fetches the card set list each time clickOpenCardSets() is run
-  // perhaps could be improved by fetching it only once
+  const cardSetListReducer = (state, action) => {
+    switch (action.type) {
+    case 'SET_CARD_SET_LIST':
+      return action.payload
+    case 'ADD_CARD_SET': {
+      console.log(action)
+      const newCardSet = action.payload
+      return ([
+        ...state,
+        newCardSet
+      ])
+    }
+    case 'DELETE_CARD_SET': {
+      const deletedCardSetId = action.payload.id
+      const filteredCardSets = state.filter((cardSet) => cardSet.id !== deletedCardSetId)
+      return [...filteredCardSets]
+    }
+    default:
+      return state
+    }
+  }
 
   const [ cardSetIsOpen, setCardSetIsOpen ] = useState(false)
-  const [ cardSetsList, setCardSetsList ] = useState([])
-
-  const fetchCardSetList = async () => {
-    let fetchedCardSets
-
-    try {
-      fetchedCardSets = await getAllCardSets()
-    } catch(error) {
-      console.log(error)
-    }
-
-    return fetchedCardSets
-  }
+  const [ cardSetsList, dispatchCardSetsList ] = useReducer(cardSetListReducer, [])
 
   const clickOpenCardSets = async () => {
-    changeOpenCardSetActivity()
-    const foundCardSets = await fetchCardSetList()
-    setCardSetsList(foundCardSets)
+    toggleOpenCardSetActivity()
   }
 
-  const changeOpenCardSetActivity = () => {
+  const toggleOpenCardSetActivity = () => {
     setCardSetIsOpen(!cardSetIsOpen)
   }
 
@@ -34,7 +39,9 @@ const useCardSetsSelection = () => {
     setCardSetIsOpen,
     cardSetIsOpen,
     cardSetsList,
-    clickOpenCardSets
+    clickOpenCardSets,
+    toggleOpenCardSetActivity,
+    dispatchCardSetsList
   }
 }
 

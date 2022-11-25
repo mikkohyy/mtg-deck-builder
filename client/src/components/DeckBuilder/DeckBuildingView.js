@@ -1,10 +1,11 @@
 import styled from 'styled-components'
-import CardSetsList from '../CardSetSelectionView/CardSetsList'
+import CardSetsList from './CardSetSelectionView/CardSetsList'
 import DeckBuilder from './DeckBuilder'
 import DeckBuilderButtonRow from './DeckBuilderButtonRow'
 import useCardSetsSelection from '../../hooks/useCardSetsSelection'
-import AddCardSetView from './AddCardSetView/AddCardSetWindow'
-import { useState } from 'react'
+import AddCardSetWindow from './AddCardSetView/AddCardSetWindow'
+import { useState, useEffect } from 'react'
+import { getAllCardSets } from '../../services/card_sets'
 
 const DeckBuildingContainer = styled.div`
   display: flex;
@@ -18,9 +19,26 @@ const DeckBuildingView = () => {
   const {
     cardSetIsOpen,
     cardSetsList,
+    dispatchCardSetsList,
     clickOpenCardSets,
-    setCardSetIsOpen
+    setCardSetIsOpen,
+    toggleOpenCardSetActivity
   } = useCardSetsSelection()
+
+  useEffect(() => {
+    const getCardSets = async () => {
+      try {
+        const foundCardSets = await getAllCardSets()
+        dispatchCardSetsList({
+          type: 'SET_CARD_SET_LIST',
+          payload: foundCardSets
+        })
+      } catch(error) {
+        console.log(error)
+      }
+    }
+    getCardSets()
+  }, [])
 
   const openCardSetList = async () => {
     clickOpenCardSets()
@@ -36,12 +54,17 @@ const DeckBuildingView = () => {
         ? <CardSetsList
           cardSets={cardSetsList}
           setCardSetIsOpen={setCardSetIsOpen}
+          toggleOpenCardSetActivity={toggleOpenCardSetActivity}
+          dispatchCardSetsList={dispatchCardSetsList}
         />
         : null
       }
 
       { addCardSetViewIsVisible === true
-        ? <AddCardSetView toggleAddCardSet={toggleAddCardSet} />
+        ? <AddCardSetWindow
+          toggleAddCardSet={toggleAddCardSet}
+          dispatchCardSetsList={dispatchCardSetsList}
+        />
         : null
       }
 

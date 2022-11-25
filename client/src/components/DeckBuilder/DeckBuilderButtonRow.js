@@ -11,7 +11,7 @@ const DeckBuilderButtonRow = ({ openCardSets, toggleAddCardSet }) => {
     <ButtonContainer>
       <div>
         <button onClick={openCardSets}>Open card set</button>
-        <button onClick={toggleAddCardSet}>Add card set</button>
+        <button onClick={toggleAddCardSet} >Add card set</button>
         <button>Edit card set</button>
       </div>
       <div>

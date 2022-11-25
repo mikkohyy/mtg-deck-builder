@@ -37,7 +37,7 @@ const PassiveButton = styled.button`
   ${props => props.theme.components.buttons.secondaryButton.passive}
 `
 
-const AddCardSetWindow = ({ toggleAddCardSet }) => {
+const AddCardSetWindow = ({ toggleAddCardSet, dispatchCardSetsList }) => {
   const nOfPages = 4
   const CARD_SET_INFORMATION_PAGE_NUMBER = 1
   const OPEN_CARDS_JSON_PAGE_NUMBER = 2
@@ -88,6 +88,11 @@ const AddCardSetWindow = ({ toggleAddCardSet }) => {
       if (openAddedCardSet === true) {
         setOpenedCardSet(addedCardSet)
       }
+
+      dispatchCardSetsList({
+        type: 'ADD_CARD_SET',
+        payload: addedCardSet
+      })
     } catch(error) {
       console.log(error.response.data)
     }

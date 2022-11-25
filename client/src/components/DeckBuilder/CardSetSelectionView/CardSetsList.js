@@ -1,9 +1,9 @@
-import useCardSetsRowSelection from '../../hooks/useCardSetRowSelection'
+import useCardSetsRowSelection from '../../../hooks/useCardSetRowSelection'
 import CardSetsTable from './CardSetsTable'
 import styled from 'styled-components'
-import { getCardSetWithId } from '../../services/card_sets'
+import { getCardSetWithId } from '../../../services/card_sets'
 import { useContext } from 'react'
-import { CardSetContext } from '../../contexts/cardSetContext'
+import { CardSetContext } from '../../../contexts/cardSetContext'
 
 const CardSets = styled.div`
   background-color: #DEF2F1;
@@ -15,7 +15,12 @@ const CardSets = styled.div`
   border-radius: 0.2em;
 `
 
-const CardSetsList = ({ cardSets, setCardSetIsOpen }) => {
+const CardSetsList = ({
+  cardSets,
+  setCardSetIsOpen,
+  toggleOpenCardSetActivity,
+  dispatchCardSetsList
+}) => {
   const { selectCardSetRow, selectedCardSet, isRowSelected } = useCardSetsRowSelection()
   const { setOpenedCardSet } = useContext(CardSetContext)
 
@@ -33,9 +38,10 @@ const CardSetsList = ({ cardSets, setCardSetIsOpen }) => {
         selectCardSetRow={selectCardSetRow}
         selectedCardSet={selectedCardSet}
         isRowSelected={isRowSelected}
+        dispatchCardSetsList={dispatchCardSetsList}
       />
       <button onClick={openCardSet}>Open</button>
-      <button onClick={setCardSetIsOpen}>Close</button>
+      <button onClick={toggleOpenCardSetActivity}>Close</button>
     </CardSets>
   )
 }

@@ -44,15 +44,26 @@ const getCardSetWithId = async(id) => {
   return fetchedCardSet
 }
 
-const addCardSet = async(newCardSet) => {
+const addCardSet = async (newCardSet) => {
   const requestResponse = await axios.post(baseRoute, newCardSet)
   const returnedData = requestResponse.data
 
-  return returnedData
+  const addedCardSet = {
+    ...returnedData,
+    date: new Date(returnedData.date)
+  }
+
+  return addedCardSet
 }
+
+const deleteCardSet = async (cardSetId) => {
+  await axios.delete(`${baseRoute}/${cardSetId}`)
+}
+
 
 export {
   getAllCardSets,
   getCardSetWithId,
-  addCardSet
+  addCardSet,
+  deleteCardSet
 }

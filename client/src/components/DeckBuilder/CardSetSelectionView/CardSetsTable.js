@@ -1,7 +1,12 @@
 import CardSetsTableHead from './CardSetsTableHead'
 import CardSetsTableRow from './CardSetsTableRow'
 
-const CardSetsTable = ({ cardSets, selectCardSetRow, selectedCardSet, isRowSelected }) => {
+const CardSetsTable = ({
+  cardSets,
+  selectCardSetRow,
+  selectedCardSet,
+  isRowSelected,
+  dispatchCardSetsList }) => {
 
   return(
     <table>
@@ -15,6 +20,7 @@ const CardSetsTable = ({ cardSets, selectCardSetRow, selectedCardSet, isRowSelec
               selectCardSetRow={selectCardSetRow}
               selectedCardSet={selectedCardSet}
               isRowSelected={isRowSelected}
+              dispatchCardSetsList={dispatchCardSetsList}
             />
           )
         })}
