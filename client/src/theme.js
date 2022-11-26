@@ -30,6 +30,13 @@ const theme = {
   },
   components: {
     buttons: {
+      primary: {
+        textDecoration: 'none',
+        fontSize: '1.2em',
+        padding: '0.3em',
+        borderRadius: '0.5em',
+        border: 'solid 2px darkgrey'
+      },
       secondaryButton: {
         passive: {
           padding: '0.2em',
@@ -39,6 +46,9 @@ const theme = {
         active: {
           padding: '0.2em'
         }
+      },
+      hovered: {
+        backgroundColor: 'darkgrey',
       }
     },
     containers: {
