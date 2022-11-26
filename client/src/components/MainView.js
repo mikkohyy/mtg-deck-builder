@@ -3,7 +3,7 @@ import DeckBuildingView from './DeckBuilder/DeckBuildingView'
 import { useContext } from 'react'
 import { notificationMessageContext } from '../contexts/notificationMessageContext'
 import ErrorMessage from './Generic/ErrorMessage'
-import AppControls from './AppControls'
+import AppNavigation from './AppNavigation'
 import {
   BrowserRouter as Router,
   Routes, Route
@@ -30,7 +30,7 @@ const MainView = () => {
           ? null
           : <ErrorMessage />
         }
-        <AppControls />
+        <AppNavigation />
         <Routes>
           <Route path='/builder' element={<DeckBuildingView />} />
           <Route path='/tester' element={<DeckTester />} />

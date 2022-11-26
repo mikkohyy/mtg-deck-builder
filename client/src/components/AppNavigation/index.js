@@ -2,19 +2,19 @@ import styled from 'styled-components'
 import FunctionalitySelectionButton from '../Generic/FunctionalitySelectionButton'
 import FunctionalitySelection from './FunctionalitySelection'
 
-const ControlsContainer = styled.div`
+const AppControlsContainer = styled.div`
   display: flex;  
   justify-content: space-between;
   border: dotted 2px black;
 `
 
-const AppControls = () => {
+const AppNavigation = () => {
   return(
-    <ControlsContainer>
+    <AppControlsContainer>
       <FunctionalitySelection />
       <FunctionalitySelectionButton text='Logout' linkTo='/' />
-    </ControlsContainer>
+    </AppControlsContainer>
   )
 }
 
-export default AppControls
+export default AppNavigation
