@@ -26,12 +26,8 @@ const getCardSetWithId = async(id) => {
   try {
     const requestResponse = await axios.get(`${baseRoute}/${id}`)
     const fetchedData = requestResponse.data
-    const cardsWithColor = fetchedData.cards
-      .map(card => (
-        { ...card,
-          cardColor: getCardColor(card),
-          manaSymbols: getManaSymbols(card)
-        }))
+    const cardsWithColor = getCardsWithCardColorAndManaSymbols(fetchedData.cards)
+
     fetchedCardSet = {
       ...fetchedData,
       date: new Date(fetchedData.date),
@@ -47,10 +43,12 @@ const getCardSetWithId = async(id) => {
 const addCardSet = async (newCardSet) => {
   const requestResponse = await axios.post(baseRoute, newCardSet)
   const returnedData = requestResponse.data
+  const cardsWithColor = getCardsWithCardColorAndManaSymbols(returnedData.cards)
 
   const addedCardSet = {
     ...returnedData,
-    date: new Date(returnedData.date)
+    date: new Date(returnedData.date),
+    cards: cardsWithColor
   }
 
   return addedCardSet
@@ -60,6 +58,16 @@ const deleteCardSet = async (cardSetId) => {
   await axios.delete(`${baseRoute}/${cardSetId}`)
 }
 
+const getCardsWithCardColorAndManaSymbols = (cards) => {
+  const modifiedCards = cards
+    .map(card => (
+      { ...card,
+        cardColor: getCardColor(card),
+        manaSymbols: getManaSymbols(card)
+      }))
+
+  return modifiedCards
+}
 
 export {
   getAllCardSets,

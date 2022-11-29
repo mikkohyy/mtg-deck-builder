@@ -1,26 +1,22 @@
+import { useContext } from 'react'
 import CardSetsTableHead from './CardSetsTableHead'
 import CardSetsTableRow from './CardSetsTableRow'
+import { CardSetsContext } from '../../../contexts/cardSetsContext'
 
-const CardSetsTable = ({
-  cardSets,
-  selectCardSetRow,
-  selectedCardSet,
-  isRowSelected,
-  dispatchCardSetsList }) => {
+const CardSetsTable = ({ selectThisCardSetRow, selectedCardSet }) => {
+  const { cardSetsState } = useContext(CardSetsContext)
 
   return(
     <table>
       <CardSetsTableHead />
       <tbody>
-        { cardSets.map(cardSet => {
+        { cardSetsState.map(cardSet => {
           return(
             <CardSetsTableRow
               key={`${cardSet.name}-${cardSet.id}`}
               cardSet={cardSet}
-              selectCardSetRow={selectCardSetRow}
+              selectThisCardSetRow={selectThisCardSetRow}
               selectedCardSet={selectedCardSet}
-              isRowSelected={isRowSelected}
-              dispatchCardSetsList={dispatchCardSetsList}
             />
           )
         })}

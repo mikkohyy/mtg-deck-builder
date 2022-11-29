@@ -71,5 +71,6 @@ const isCardDataValid = (fieldNames, card) => {
 
 export {
   checkIfCardsHaveSameKeys,
-  checkIfDataInCardsIsValid
+  checkIfDataInCardsIsValid,
+  isCardDataValid
 }

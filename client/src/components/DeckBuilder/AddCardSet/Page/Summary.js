@@ -21,11 +21,9 @@ const OpenCardSetContainer = styled.div`
 `
 
 const SummaryPage = ({
-  cardSetName,
-  cardSetDescription,
-  cardSetCards,
-  openAddedCardSet,
-  setOpenAddedCardSet
+  openCardSetAfterAddition,
+  setOpenCardSetAfterAddition,
+  newCardSetState,
 }) => {
   return(
     <SummaryContainer>
@@ -35,7 +33,7 @@ const SummaryPage = ({
           <BoldText>Name:</BoldText>
         </div>
         <div>
-          {cardSetName}
+          {newCardSetState.name}
         </div>
       </InformationRow>
       <InformationRow>
@@ -43,7 +41,7 @@ const SummaryPage = ({
           <BoldText>Description:</BoldText>
         </div>
         <div>
-          {cardSetDescription}
+          {newCardSetState.description}
         </div>
       </InformationRow>
       <InformationRow>
@@ -53,14 +51,14 @@ const SummaryPage = ({
           </BoldText>
         </div>
         <div>
-          { cardSetCards.length }
+          { newCardSetState.cards.length }
         </div>
       </InformationRow>
       <OpenCardSetContainer>
         <input
           type='checkbox'
-          checked={openAddedCardSet}
-          onChange={() => setOpenAddedCardSet(!openAddedCardSet)}
+          checked={openCardSetAfterAddition}
+          onChange={() => setOpenCardSetAfterAddition(!openCardSetAfterAddition)}
         />
         <label htmlFor='openSet'>Open the card set after adding</label>
       </OpenCardSetContainer>

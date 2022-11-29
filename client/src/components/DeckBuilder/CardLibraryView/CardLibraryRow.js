@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import usePopUpBox from '../../../hooks/usePopUpBox'
+import useHoverOnBox from '../../../hooks/useHoverOnBox'
 import CardInformation from './CardInformation'
 
 const Row = styled.div`
@@ -15,7 +15,7 @@ const CardLibraryRow = ({ card }) => {
     pointerLeft,
     pointerMoved,
     pointerEntered
-  } = usePopUpBox(card.name)
+  } = useHoverOnBox(card.name)
 
   return(
     <Row>

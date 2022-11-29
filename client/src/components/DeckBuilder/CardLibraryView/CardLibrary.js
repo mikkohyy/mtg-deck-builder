@@ -2,7 +2,7 @@ import styled from 'styled-components'
 import CardLibraryHeader from './CardLibraryHeader'
 import CardLibraryBody from './CardLibraryBody'
 import { useContext } from 'react'
-import { CardSetContext } from '../../../contexts/cardSetContext'
+import { OpenedCardSetContext } from '../../../contexts/openedCardSetContext'
 
 const CardLibraryContainer = styled.div`
   min-height: 0;
@@ -12,7 +12,7 @@ const CardLibraryContainer = styled.div`
 `
 
 const CardLibraryTable = () => {
-  const { openedCardSet } = useContext(CardSetContext)
+  const { openedCardSet } = useContext(OpenedCardSetContext)
 
   return(
     <CardLibraryContainer>

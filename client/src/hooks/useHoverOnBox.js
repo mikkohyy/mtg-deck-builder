@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const usePopUpBox = () => {
+const useHoverOnBox = () => {
   const [isVisible, setIsVisible] = useState(false)
   const [pointerCoordinates, setPointerCoordinates] = useState({ x: undefined, y: undefined })
   const [hoverTimeout, setHoverTimeout] = useState(undefined)
@@ -50,4 +50,4 @@ const usePopUpBox = () => {
   }
 }
 
-export default usePopUpBox
+export default useHoverOnBox

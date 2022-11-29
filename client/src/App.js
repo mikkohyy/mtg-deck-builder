@@ -1,17 +1,20 @@
-import { CardSetProvider } from './contexts/cardSetContext'
-import { NotificationMessageProvider } from './contexts/notificationMessageContext'
+import { OpenedCardSetProvider } from './contexts/openedCardSetContext'
+import { CardSetsProvider } from './contexts/cardSetsContext'
+import { NotificationProvider } from './contexts/notificationContext'
 import { ThemeProvider } from 'styled-components'
 import theme from './theme'
-import MainView from './components/MainView'
+import MainContainer from './components/MainContainer'
 
 const App = () => {
   return(
     <ThemeProvider theme={theme}>
-      <CardSetProvider>
-        <NotificationMessageProvider>
-          <MainView />
-        </NotificationMessageProvider>
-      </CardSetProvider>
+      <CardSetsProvider>
+        <OpenedCardSetProvider>
+          <NotificationProvider>
+            <MainContainer />
+          </NotificationProvider>
+        </OpenedCardSetProvider>
+      </CardSetsProvider>
     </ThemeProvider>
   )
 }

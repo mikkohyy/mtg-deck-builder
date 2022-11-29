@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import BasicButton from '../Generic/BasicButton'
 
 const ButtonContainer = styled.div`
   display: flex;
@@ -6,18 +7,23 @@ const ButtonContainer = styled.div`
   border: dotted 2px blue;
 `
 
+const GappedDiv = styled.div`
+  display: flex;
+  gap: ${props => props.theme.components.buttons.gapBetween};
+`
+
 const DeckBuilderButtonRow = ({ openCardSets, toggleAddCardSet }) => {
   return(
     <ButtonContainer>
-      <div>
-        <button onClick={openCardSets}>Open card set</button>
-        <button onClick={toggleAddCardSet} >Add card set</button>
-        <button>Edit card set</button>
-      </div>
-      <div>
-        <button>Save deck</button>
-        <button>Open deck</button>
-      </div>
+      <GappedDiv>
+        <BasicButton text='Open card set' onClick={openCardSets} />
+        <BasicButton text='Add card set' onClick={toggleAddCardSet} />
+        <BasicButton text='Edit card set' />
+      </GappedDiv>
+      <GappedDiv>
+        <BasicButton text='Save deck' />
+        <BasicButton text='Open deck' />
+      </GappedDiv>
     </ButtonContainer>
   )
 }

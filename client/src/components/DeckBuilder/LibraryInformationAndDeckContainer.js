@@ -3,21 +3,21 @@ import CardLibrary from './CardLibraryView/CardLibrary'
 import DeckInformation from '../DeckInformation'
 import DeckTable from '../DeckTable'
 
-const DeckBuilderContainer = styled.div`
+const DeckBuilderCompartments = styled.div`
   min-height: 0;
   display: grid;
   grid-template-columns: 2fr 1fr 2fr;
   border: solid 2px red;
 `
 
-const DeckBuilder = () => {
+const LibraryInformationAndDeckContainer = () => {
   return(
-    <DeckBuilderContainer>
+    <DeckBuilderCompartments>
       <CardLibrary />
       <DeckInformation />
       <DeckTable />
-    </DeckBuilderContainer>
+    </DeckBuilderCompartments>
   )
 }
 
-export default DeckBuilder
+export default LibraryInformationAndDeckContainer

@@ -144,10 +144,21 @@ const isColor = (data) => {
   return color
 }
 
+const isEmptyString = (string) => {
+  let emptyString = true
+
+  if (string.trim().length > 0) {
+    emptyString = false
+  }
+
+  return emptyString
+}
+
 export {
   validateString,
   validateInteger,
   validateNumber,
   validateRarityClass,
-  validateManaCost
+  validateManaCost,
+  isEmptyString
 }

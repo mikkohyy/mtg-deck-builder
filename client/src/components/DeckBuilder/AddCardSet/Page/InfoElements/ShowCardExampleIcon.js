@@ -1,4 +1,4 @@
-import usePopUpBox from '../../../hooks/usePopUpBox'
+import useHoverOnBox from '../../../../../hooks/useHoverOnBox'
 import styled from 'styled-components'
 import CardExample from './CardExample'
 
@@ -22,7 +22,7 @@ const ExampleText = styled.div`
 `
 
 const ShowCardExampleIcon = () => {
-  const { pointerLeft, isVisible, pointerCoordinates, pointerMoved, pointerEntered } = usePopUpBox()
+  const { pointerLeft, isVisible, pointerCoordinates, pointerMoved, pointerEntered } = useHoverOnBox()
   return(
     <IconContainer
       onPointerEnter={pointerEntered}

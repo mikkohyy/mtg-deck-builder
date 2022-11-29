@@ -16,7 +16,7 @@ const theme = {
     blue: 'blue',
     green: 'green',
     red: 'red',
-    white: 'white',
+    white: 'lightgrey',
     multicolor: 'yellow',
     land: 'grey'
   },
@@ -25,7 +25,7 @@ const theme = {
     U: 'blue',
     G: 'green',
     R: 'red',
-    W: 'white',
+    W: 'lightgrey',
     other: 'grey'
   },
   components: {
@@ -37,19 +37,31 @@ const theme = {
         borderRadius: '0.5em',
         border: 'solid 2px darkgrey'
       },
-      secondaryButton: {
+      secondary: {
         passive: {
-          padding: '0.2em',
+          padding: '0.3em',
+          borderRadius: '0.5em',
           color: 'grey',
-          pointerEvents: 'none'
+          border: 'solid 2px darkgrey',
+          pointerEvents: 'none',
         },
         active: {
-          padding: '0.2em'
+          padding: '0.3em',
+          borderRadius: '0.5em',
+          border: 'solid 2px darkgrey'
         }
+      },
+      tertiary: {
+        fontSize: '0.8em',
+        padding: '0.2em',
+        borderRadius: '0.5em',
+        color: 'grey',
+        border: 'solid 2px darkgrey'
       },
       hovered: {
         backgroundColor: 'darkgrey',
-      }
+      },
+      gapBetween: '0.4em'
     },
     containers: {
       addCardSetPopUpContainers: {
@@ -57,7 +69,6 @@ const theme = {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          margin: '1em 0em 0em 2em'
         }
       }
     },

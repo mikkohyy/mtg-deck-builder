@@ -3,7 +3,7 @@ import { useState } from 'react'
 const useCardSetRowSelection = () => {
   const [selectedCardSet, setSelectedCardSet] = useState(null)
 
-  const selectCardSetRow = (selected) => {
+  const selectThisCardSetRow = (selected) => {
     if (selectedCardSet === null) {
       setSelectedCardSet(selected)
     } else if (selected.id === selectedCardSet.id) {
@@ -13,20 +13,9 @@ const useCardSetRowSelection = () => {
     }
   }
 
-  const isRowSelected = (setCard) => {
-    let isSelected = false
-
-    if (selectedCardSet !== null && setCard.id === selectedCardSet.id) {
-      isSelected = true
-    }
-
-    return isSelected
-  }
-
   return {
-    selectCardSetRow,
-    selectedCardSet,
-    isRowSelected
+    selectThisCardSetRow,
+    selectedCardSet
   }
 }
 

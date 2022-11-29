@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import { useContext } from 'react'
-import { notificationMessageContext } from '../../contexts/notificationMessageContext'
+import { notificationContext } from '../contexts/notificationContext'
 
 const ErrorContainer = styled.div`
   max-width: 30em;  
@@ -18,28 +18,14 @@ const ErrorContainer = styled.div`
   justify-content: center;
 `
 
-const ErrorText = styled.div`
-  margin-bottom: 0.6em;
-`
-
-const OkButton = styled.button`
-  align-self: center;
-`
-
-const ErrorMessage = () => {
-  const {
-    notificationMessage,
-    resetNotificationMessage
-  } = useContext(notificationMessageContext)
+const NotificationContainer = () => {
+  const { notification } = useContext(notificationContext)
 
   return(
     <ErrorContainer>
-      <ErrorText>
-        {notificationMessage}
-      </ErrorText>
-      <OkButton onClick={resetNotificationMessage}>OK</OkButton>
+      {notification}
     </ErrorContainer>
   )
 }
 
-export default ErrorMessage
+export default NotificationContainer
