@@ -8,7 +8,7 @@ import { CardSetsContext } from '../../../contexts/cardSetsContext'
 import { notificationContext } from '../../../contexts/notificationContext'
 import ButtonGroup from '../../Generic/ButtonGroup'
 import SubWindowNavigationButton from '../../Generic/SubWindowNavigationButton'
-import CardSetDeletionError from './Notifications/CardSetDeletionError'
+import Notification from '../../Generic/Notification'
 
 const CardSetsContainer = styled.div`
   ${props => props.theme.components.containers.subWindow}
@@ -46,7 +46,9 @@ const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
         payload: selectedCardSet
       })
     } catch(error) {
-      showNotification(CardSetDeletionError)
+      const header = 'Was unable to delete the card set'
+      const message= 'Something went wrong'
+      showNotification(<Notification header={header} message={message} />)
       console.log(error)
     }
   }
