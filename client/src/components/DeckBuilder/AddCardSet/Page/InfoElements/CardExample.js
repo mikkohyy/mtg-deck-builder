@@ -1,5 +1,4 @@
 import styled from 'styled-components'
-
 const KeyValuePair = styled.div`
   padding-left: ${props => props.indent}em;
   display: flex;
@@ -8,6 +7,7 @@ const KeyValuePair = styled.div`
 const Key = styled.div`
   white-space: nowrap;
 `
+
 
 const Value = styled.div`
   padding-left: 0.5em;

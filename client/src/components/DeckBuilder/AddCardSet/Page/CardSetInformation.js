@@ -1,12 +1,12 @@
 import styled from 'styled-components'
 
 const InformationContainer = styled.div`
-  ${props => props.theme.components.containers.addCardSetPopUpContainers.subContainer}
+  ${props => props.theme.components.containers.verticalFlexbox}
   gap: 0.3em;
 `
 
 const GuidingText = styled.span`
-  ${props => props.theme.components.text.guidingText}
+  ${props => props.theme.components.texts.guidingText}
 `
 
 const InputContainer = styled.div`
@@ -17,6 +17,10 @@ const InputContainer = styled.div`
 
 const DescriptionTextArea = styled.textarea`
   resize: none;
+`
+
+const NameInput = styled.input`
+  ${props => props.theme.components.inputs.textInput}
 `
 
 const CardSetInformationPage = ({
@@ -42,7 +46,7 @@ const CardSetInformationPage = ({
       <h3>Card set information</h3>
       <InputContainer>
         <label htmlFor={'nameInput'}>Name: </label>
-        <input
+        <NameInput
           type={'text'}
           value={newCardSetState.name}
           onChange={handleDeckNameChange}
@@ -60,11 +64,9 @@ const CardSetInformationPage = ({
           id={'descriptionTextArea'}
         />
       </InputContainer>
-      <em>
-        <GuidingText>
-          Both fields are required
-        </GuidingText>
-      </em>
+      <GuidingText>
+        Both fields are required
+      </GuidingText>
     </InformationContainer>
   )
 }

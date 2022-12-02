@@ -14,12 +14,8 @@ import Login from './Login'
 import { getAllCardSets } from '../services/card_sets'
 
 const MainLayout = styled.div`
-  width: 95%;
-  height: 95%;
-  margin: auto;
   display: flex;
   flex-direction: column;
-  border: solid 3px lightgrey;
 `
 
 const MainContainer = () => {

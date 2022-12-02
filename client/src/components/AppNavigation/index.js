@@ -1,18 +1,19 @@
 import styled from 'styled-components'
-import FunctionalitySelectionButton from '../Generic/FunctionalitySelectionButton'
-import FunctionalitySelection from './FunctionalitySelection'
+import FunctionalitySelectionButtons from './FunctionalitySelectionButtons'
+import AppNavigationButton from './AppNavigationButton'
 
 const AppControlsContainer = styled.div`
   display: flex;  
   justify-content: space-between;
-  border: dotted 2px black;
+  background: ${props => props.theme.basicPalette.dark};
+  padding: ${props => props.theme.margins.navigationBars};
 `
 
 const AppNavigation = () => {
   return(
     <AppControlsContainer>
-      <FunctionalitySelection />
-      <FunctionalitySelectionButton text='Logout' linkTo='/' />
+      <FunctionalitySelectionButtons />
+      <AppNavigationButton text='Logout' linkTo='/' />
     </AppControlsContainer>
   )
 }

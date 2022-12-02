@@ -9,20 +9,15 @@ import { notificationContext } from '../../../contexts/notificationContext'
 import { addCardSet } from '../../../services/card_sets'
 import { OpenedCardSetContext } from '../../../contexts/openedCardSetContext'
 import { isPageInputValid  } from './page_change_utils'
+import { CardSetsContext } from '../../../contexts/cardSetsContext'
+import SubWindowNavigationButton from '../../Generic/SubWindowNavigationButton'
 
 const AddCardSetContainer = styled.div`
-  z-index: 1;
-  position: absolute;
-  background: ${props => props.theme.basicPalette.light};
-  border: solid 2px ${props => props.theme.basicPalette.dark};
-  border-radius: ${props => props.theme.boxProperties.corners};
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 50%;
-  width: 40%;
+  ${props => props.theme.components.containers.subWindow};
+  height: 24em;
+  width: 37em;
   overflow: auto;
-  padding: 0em 1.5em 1.5em 1.5em;
+  padding-top: 0.5em;
 `
 
 const ButtonRow = styled.div`
@@ -31,15 +26,7 @@ const ButtonRow = styled.div`
   margin-top: 0.5em;
 `
 
-const ActiveButton = styled.button`
-  ${props => props.theme.components.buttons.secondary.active}
-`
-
-const PassiveButton = styled.button`
-  ${props => props.theme.components.buttons.secondary.passive}
-`
-
-const AddCardSet = ({ toggleAddCardSet, cardSetsDispatch }) => {
+const AddCardSet = ({ toggleAddCardSet }) => {
   const nOfPages = 4
 
   const INFO_PAGE_NUMBER = 1
@@ -52,6 +39,7 @@ const AddCardSet = ({ toggleAddCardSet, cardSetsDispatch }) => {
   const [openCardSetAfterAddition, setOpenCardSetAfterAddition] = useState(true)
   const { setOpenedCardSet } = useContext(OpenedCardSetContext)
   const { getCardSetObject, newCardSetState, newCardSetDispatch } = useCreateCardSet()
+  const { cardSetsDispatch } = useContext(CardSetsContext)
 
   const moveToNextPage = () => {
     const invalidPartsOfInput = isPageInputValid(pageNumber, newCardSetState)
@@ -121,15 +109,22 @@ const AddCardSet = ({ toggleAddCardSet, cardSetsDispatch }) => {
         : null
       }
       <ButtonRow>
-        { isOnLastPage() === true
-          ? <PassiveButton>Next</PassiveButton>
-          : <ActiveButton onClick={moveToNextPage}>Next</ActiveButton>
-        }
-        { isOnLastPage() === true
-          ? <ActiveButton onClick={addCardSetToDatabase}>Add card set</ActiveButton>
-          : <PassiveButton>Add card set</PassiveButton>
-        }
-        <ActiveButton onClick={toggleAddCardSet}>Cancel</ActiveButton>
+        <SubWindowNavigationButton
+          text='Next'
+          onClick={moveToNextPage}
+          isActivePassive={true}
+          isActive={isOnLastPage() === false}
+        />
+        <SubWindowNavigationButton
+          text='Add card set'
+          onClick={addCardSetToDatabase}
+          isActivePassive={true}
+          isActive={isOnLastPage() === true}
+        />
+        <SubWindowNavigationButton
+          text='Cancel'
+          onClick={toggleAddCardSet}
+        />
       </ButtonRow>
     </AddCardSetContainer>
   )

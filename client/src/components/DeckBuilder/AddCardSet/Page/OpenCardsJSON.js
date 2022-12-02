@@ -1,12 +1,17 @@
 import { useState, useRef, useContext, useEffect } from 'react'
 import styled from 'styled-components'
-import AdditionalInfoIcon from '../../../Generic/AdditionalInfoIcon'
-import ShowCardExampleIcon from './InfoElements/ShowCardExampleIcon'
+import CardExample from './InfoElements/CardExample'
 import { notificationContext } from '../../../../contexts/notificationContext'
 import Notification from '../../../Generic/Notification'
+import InformationPopUpBox from '../../../Generic/InformationPopUpBox'
 
 const OpenCardsJSONContainer = styled.div`
   ${props => props.theme.components.containers.addCardSetPopUpContainers.subContainer}
+  gap: 0.5em;
+`
+
+const InstructionText = styled.p`
+  margin: 0
 `
 
 const rarityInfoText = 'Accepts values common, uncommon, rare and mythic'
@@ -93,20 +98,21 @@ const OpenCardsJSON = ({ newCardSetDispatch }) => {
   return(
     <OpenCardsJSONContainer>
       <h3>Add card file</h3>
-      <div>
+      <InstructionText>
         Add a JSON file that has all the cards you want to add.
-        Each card should have the following information
-        <ShowCardExampleIcon />:
-      </div>
+        Each card should have the following information{' '}
+        <InformationPopUpBox popUpBoxText='Example' information={<CardExample />} />
+        :
+      </InstructionText>
       <ul>
         <li>Name</li>
         <li>Price</li>
         <li>
-          Rarity<AdditionalInfoIcon infoText={rarityInfoText} />
+          Rarity{' '}<InformationPopUpBox popUpBoxText='Info' information={rarityInfoText} />
         </li>
         <li>Number of the card</li>
         <li>
-          Mana cost<AdditionalInfoIcon infoText={manaCostInfoText} />
+          Mana cost{' '}<InformationPopUpBox popUpBoxText='Info' information={manaCostInfoText} />
         </li>
         <li>Rules text</li>
       </ul>
@@ -121,3 +127,4 @@ const OpenCardsJSON = ({ newCardSetDispatch }) => {
 }
 
 export default OpenCardsJSON
+33

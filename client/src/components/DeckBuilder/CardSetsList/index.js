@@ -1,31 +1,32 @@
 import useCardSetsRowSelection from '../../../hooks/useCardSetRowSelection'
 import CardSetsTable from './CardSetsTable'
 import styled from 'styled-components'
-import { getCardSetWithId } from '../../../services/card_sets'
+import { getCardSetWithId, deleteCardSet } from '../../../services/card_sets'
 import { useContext } from 'react'
 import { OpenedCardSetContext } from '../../../contexts/openedCardSetContext'
-import BasicButton from '../../Generic/BasicButton'
+import { CardSetsContext } from '../../../contexts/cardSetsContext'
+import { notificationContext } from '../../../contexts/notificationContext'
+import ButtonGroup from '../../Generic/ButtonGroup'
+import SubWindowNavigationButton from '../../Generic/SubWindowNavigationButton'
+import CardSetDeletionError from './Notifications/CardSetDeletionError'
 
-const CardSets = styled.div`
-  background-color: #DEF2F1;
-  z-index: 1;
-  position: absolute;
-  padding: 1em;
-  border: 2px solid;
-  border-color: #2B7A78;
-  border-radius: 0.2em;
+const CardSetsContainer = styled.div`
+  ${props => props.theme.components.containers.subWindow}
 `
 
-const CardSetsList = ({ setCardSetsListIsOpen }) => {
+const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
   const { selectThisCardSetRow, selectedCardSet } = useCardSetsRowSelection()
   const { setOpenedCardSet } = useContext(OpenedCardSetContext)
+  const { showNotification } = useContext(notificationContext)
+  const { cardSetsDispatch } = useContext(CardSetsContext)
 
   const closeCardSetsList = () => {
-    setCardSetsListIsOpen(false)
+    setSelectCardSetIsOpen(false)
+    setActiveSubWindow(undefined)
   }
 
-  const openCardSet = async() => {
-    if (selectedCardSet !== null) {
+  const openSelectedCardSet = async() => {
+    if (selectedCardSet !== undefined) {
       try {
         const cardSetId = selectedCardSet.id
         const data = await getCardSetWithId(cardSetId)
@@ -37,15 +38,45 @@ const CardSetsList = ({ setCardSetsListIsOpen }) => {
     }
   }
 
+  const removeCardSet = async () => {
+    try {
+      await deleteCardSet(selectedCardSet.id)
+      cardSetsDispatch({
+        type: 'DELETE_CARD_SET',
+        payload: selectedCardSet
+      })
+    } catch(error) {
+      showNotification(CardSetDeletionError)
+      console.log(error)
+    }
+  }
+
+  const checkIfActive = () => {
+    return selectedCardSet !== undefined
+  }
+
   return(
-    <CardSets>
+    <CardSetsContainer>
       <CardSetsTable
         selectThisCardSetRow={selectThisCardSetRow}
         selectedCardSet={selectedCardSet}
       />
-      <BasicButton text='Open' onClick={openCardSet} />
-      <BasicButton text='Close' onClick={closeCardSetsList} />
-    </CardSets>
+      <ButtonGroup>
+        <SubWindowNavigationButton
+          text='Open'
+          onClick={openSelectedCardSet}
+          isActive={checkIfActive()}
+          isActivePassive={true}
+        />
+        <SubWindowNavigationButton
+          text='Delete'
+          onClick={removeCardSet}
+          isActive={checkIfActive()}
+          isActivePassive={true}
+        />
+        <SubWindowNavigationButton text='Close' onClick={closeCardSetsList} />
+      </ButtonGroup>
+    </CardSetsContainer>
   )
 }
 

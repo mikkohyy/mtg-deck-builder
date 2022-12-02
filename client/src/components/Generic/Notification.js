@@ -2,9 +2,8 @@ import styled from 'styled-components'
 import { useContext } from 'react'
 import { notificationContext } from '../../contexts/notificationContext'
 
-const NotificationContainer = styled.div`
-  display: flex;
-  flex-direction: column;
+const Container = styled.div`
+  ${props => props.theme.components.containers.verticalFlexbox}
   align-items: center;
 `
 
@@ -22,7 +21,7 @@ const DefaultControls = () => {
 
 const Notification = ({ header, message, customControls }) => {
   return(
-    <NotificationContainer>
+    <Container>
       { header === undefined
         ? <BoldText>Something went wrong</BoldText>
         : <BoldText>{header}</BoldText>
@@ -35,7 +34,7 @@ const Notification = ({ header, message, customControls }) => {
         ? <DefaultControls />
         : <div>{customControls}</div>
       }
-    </NotificationContainer>
+    </Container>
   )
 }
 

@@ -4,5 +4,6 @@ documentation.txt
 todo.txt
 random.txt
 documentation/colorscheme.jpg
+documentation/color_palette.png
 server/Dockerfile
 node_modules/

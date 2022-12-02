@@ -29,9 +29,12 @@ const useHoverOnBox = () => {
 
   const fadeIn = (event) => {
     const fadeInTimeout = setTimeout(() => {
+      const newX = pointerCoordinates.x === undefined ? event.clientX : pointerCoordinates.x
+      const newY = pointerCoordinates.y === undefined ? event.clientX : pointerCoordinates.y
+
       const newPointerCoordinates = {
-        x: event.clientX,
-        y: event.clientY
+        x: newX,
+        y: newY
       }
 
       setPointerCoordinates(newPointerCoordinates)

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
 const useCardSetRowSelection = () => {
-  const [selectedCardSet, setSelectedCardSet] = useState(null)
+  const [selectedCardSet, setSelectedCardSet] = useState(undefined)
 
   const selectThisCardSetRow = (selected) => {
-    if (selectedCardSet === null) {
+    if (selectedCardSet === undefined) {
       setSelectedCardSet(selected)
     } else if (selected.id === selectedCardSet.id) {
-      setSelectedCardSet(null)
+      setSelectedCardSet(undefined)
     } else if (selected.id !== selectedCardSet.id) {
       setSelectedCardSet(selected)
     }
