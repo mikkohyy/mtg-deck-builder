@@ -10,7 +10,7 @@ const OpenCardsJSONContainer = styled.div`
   gap: 0.5em;
 `
 
-const InstructionText = styled.p`
+const InstructionText = styled.div`
   margin: 0
 `
 
