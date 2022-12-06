@@ -6,7 +6,7 @@ const AppControlsContainer = styled.div`
   display: flex;  
   justify-content: space-between;
   background: ${props => props.theme.basicPalette.dark};
-  padding: ${props => props.theme.margins.navigationBars};
+  padding: ${props => props.theme.paddings.inMainView};
 `
 
 const AppNavigation = () => {

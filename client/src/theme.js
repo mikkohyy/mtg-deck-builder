@@ -164,8 +164,13 @@ const containers = {
 const tables = {
   head: {
     cell: {
-      padding: '0 2em 0.5em 2em',
+      padding: '0.5em 0em 0.5em 0em',
       fontWeight: 500
+    }
+  },
+  body: {
+    cell: {
+      padding: '0.5em 0em 0.5em 0em'
     }
   },
   rowColors: {
@@ -176,8 +181,8 @@ const tables = {
 
 const theme = {
   basicPalette,
-  margins: {
-    navigationBars: '0em 3em 0em 3em'
+  paddings: {
+    inMainView: '0em 3em 0em 3em'
   },
   boxProperties: {
     corners: '0.2em'

@@ -6,7 +6,7 @@ import SelectCardSetButtonAndTable from './SelectCardSetButtonAndTable'
 import AddCardSetButtonAndWindow from './AddCardSetButtonAndWindow'
 
 const ButtonContainer = styled.div`
-  padding: ${props => props.theme.margins.navigationBars};
+  padding: ${props => props.theme.paddings.inMainView};
   display: flex;
   justify-content: space-between;
   background: ${props => props.theme.basicPalette.medium};
