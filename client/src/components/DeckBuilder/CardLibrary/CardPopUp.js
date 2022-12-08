@@ -58,15 +58,15 @@ const MidRow = styled.div`
 const CardInformationBox = styled.div`
   background-color: gainsboro;
   border: 2px solid darkgrey;
-  width: 96%;
   border: 2px solid darkgrey;
+  width: 96%;
   border-radius: 5px;
   margin: 3px;
   height: 100%;
   font-size: 0.8em;
 `
 
-const CardInformation = ({ card, pointerCoordinates }) => {
+const CardPopUp = ({ card, pointerCoordinates }) => {
   const { x, y } = pointerCoordinates
   const cardInformationRef = useRef()
   const [top, setTop] = useState(y)
@@ -74,16 +74,17 @@ const CardInformation = ({ card, pointerCoordinates }) => {
 
   useEffect(() => {
     const boxDimensions = cardInformationRef.current.getBoundingClientRect()
+    console.log(boxDimensions.bottom, ' - ', window.innerHeight)
     if (boxDimensions.bottom > window.innerHeight) {
-      const difference = boxDimensions.bottom - window.innerHeight
-      const newTop = boxDimensions.top - difference
+      const newTop = window.innerHeight - boxDimensions.height
       setTop(newTop)
     }
   }, [])
 
   return(
     <CardContainer
-      ref={cardInformationRef} x={x} y={top} cardColor={card.cardColor}>
+      ref={cardInformationRef} x={x} y={top} cardColor={card.cardColor}
+    >
       <TopRow>
         <PaddedText>{card.name}</PaddedText>
         <ManaSymbols
@@ -104,4 +105,4 @@ const CardInformation = ({ card, pointerCoordinates }) => {
   )
 }
 
-export default CardInformation
+export default CardPopUp

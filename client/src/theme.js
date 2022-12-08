@@ -177,7 +177,7 @@ const tables = {
       padding: '0.5em 0em 0.5em 1em',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center3'
     }
   },
   rowColors: {
