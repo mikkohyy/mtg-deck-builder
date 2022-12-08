@@ -5,25 +5,28 @@ import GridTable from '../../Generic/GridTable'
 import CardLibraryRow from './CardLibraryRow'
 
 const CardLibraryContainer = styled.div`
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  border: solid 1px red;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
 `
 
 const CardLibrary = () => {
   const { openedCardSet } = useContext(OpenedCardSetContext)
-  const gridColumnWidths = '2fr 1fr 2fr'
+  const gridColumnWidths = '3fr 1fr 1fr'
 
   const getRows = (columnWidths) => {
     let rows = []
 
     if (openedCardSet !== undefined) {
-      rows = openedCardSet.cards.map(card =>
+      rows = openedCardSet.cards.map((card, index) =>
         <CardLibraryRow
           key={`Library-card${card.id}`}
           card={card}
           gridColumnWidths={columnWidths}
+          background={index % 2 === 0
+            ? props => props.theme.components.tables.rowColors.even
+            : props => props.theme.components.tables.rowColors.odd
+          }
         />
       )
     }

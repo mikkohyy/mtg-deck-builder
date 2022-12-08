@@ -5,8 +5,8 @@ const Symbol = styled.span`
   color: ${props => props.theme.manaSymbolColors[props.color]};
 `
 
-const ManaSymbolString = ({ manaSymbols, cardName, index }) => {
-  const getSymbol = (symbol, cardName) => {
+const ManaSymbols = ({ manaSymbols, cardName }) => {
+  const getSymbol = (symbol, cardName, index) => {
     const colorSymbols = ['B','U','G','R','W']
 
     const color = colorSymbols.includes(symbol)
@@ -30,4 +30,4 @@ const ManaSymbolString = ({ manaSymbols, cardName, index }) => {
   )
 }
 
-export default ManaSymbolString
+export default ManaSymbols

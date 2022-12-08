@@ -1,15 +1,13 @@
 import styled from 'styled-components'
 
 const Cell = styled.div`
-  ${props => props.theme.components.tables.body.cell};
-  text-align: center;
-  border: solid 2px red;
+  ${props => props.cellStyle};
 `
 
-const BodyCell = ({ content }) => {
+const BodyCell = ({ children, cellStyle }) => {
   return(
-    <Cell>
-      {content}
+    <Cell cellStyle={cellStyle}>
+      {children}
     </Cell>
   )
 }

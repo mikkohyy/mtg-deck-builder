@@ -7,6 +7,7 @@ const DeckBuilderCompartments = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 2fr;
   padding: ${props => props.theme.paddings.inMainView};
+  flex: 1 0 auto;
 `
 
 const LibraryInformationAndDeckContainer = () => {
@@ -18,5 +19,7 @@ const LibraryInformationAndDeckContainer = () => {
     </DeckBuilderCompartments>
   )
 }
+
+
 
 export default LibraryInformationAndDeckContainer

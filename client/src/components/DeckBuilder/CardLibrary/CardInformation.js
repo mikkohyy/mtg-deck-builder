@@ -52,7 +52,7 @@ const MidRow = styled.div`
   border-radius: 5px;
   margin: 3px;
   display: flex;
-  justify-content: space-between;f
+  justify-content: space-between;
 `
 
 const CardInformationBox = styled.div`

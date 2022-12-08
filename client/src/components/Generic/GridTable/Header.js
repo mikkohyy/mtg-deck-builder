@@ -4,6 +4,8 @@ import HeaderCell from './HeaderCell'
 const HeaderRow = styled.div`
   display: grid;
   grid-template-columns: ${props => props.gridColumnWidths};
+  background: ${props => props.theme.basicPalette.light};
+  border: solid 1px ${props => props.theme.basicPalette.darkest};
 `
 
 const GridTableHeader = ({ headerTexts, gridColumnWidths }) => {

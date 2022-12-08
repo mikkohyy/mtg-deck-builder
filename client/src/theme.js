@@ -169,8 +169,15 @@ const tables = {
     }
   },
   body: {
-    cell: {
-      padding: '0.5em 0em 0.5em 0em'
+    textCell: {
+      padding: '0.5em 0em 0.5em 1em',
+      display: 'flex',
+    },
+    elementCell: {
+      padding: '0.5em 0em 0.5em 1em',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }
   },
   rowColors: {

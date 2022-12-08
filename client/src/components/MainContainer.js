@@ -13,9 +13,11 @@ import DeckBuilder from './DeckBuilder'
 import Login from './Login'
 import { getAllCardSets } from '../services/card_sets'
 
-const MainLayout = styled.div`
+const FullScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: 100%;
 `
 
 const MainContainer = () => {
@@ -39,7 +41,7 @@ const MainContainer = () => {
 
   return(
     <Router>
-      <MainLayout>
+      <FullScreenContainer>
         { notificationIsVisible === false
           ? null
           : <NotificationContainer />
@@ -50,7 +52,7 @@ const MainContainer = () => {
           <Route path='/tester' element={<DeckTester />} />
           <Route path='/' element={<Login />} />
         </Routes>
-      </MainLayout>
+      </FullScreenContainer>
     </Router>
   )
 }
