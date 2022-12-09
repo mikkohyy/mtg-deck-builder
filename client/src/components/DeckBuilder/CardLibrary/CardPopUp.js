@@ -74,7 +74,6 @@ const CardPopUp = ({ card, pointerCoordinates }) => {
 
   useEffect(() => {
     const boxDimensions = cardInformationRef.current.getBoundingClientRect()
-    console.log(boxDimensions.bottom, ' - ', window.innerHeight)
     if (boxDimensions.bottom > window.innerHeight) {
       const newTop = window.innerHeight - boxDimensions.height
       setTop(newTop)
