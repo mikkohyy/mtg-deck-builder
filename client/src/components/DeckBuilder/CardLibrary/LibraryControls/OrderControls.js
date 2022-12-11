@@ -1,9 +1,28 @@
 import styled from 'styled-components'
+import RadioButton from '../../../Generic/Buttons/RadioButton'
+
+const ControlsContainer = styled.div`
+  display: flex;
+  justify-content: flex-start;
+`
 
 const RadioButtonGroup = styled.div`
   display: flex;
   gap: 0.5em;
-  padding: 0.5em;
+`
+
+const ControlElementLabel = styled.div`
+  font-size: 0.7em;
+  font-weight: 600;
+  
+`
+
+const ControlElement = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 0em 0.5em 0.5em 0.5em;
+  gap: 0.5em;
+
 `
 
 const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection }) => {
@@ -28,52 +47,52 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
   }
 
   return(
-    <div>
-      <RadioButtonGroup>
-        <label htmlFor='orderByName'>Name</label>
-        <input
-          type="radio"
-          checked={orderBy === 'name'}
-          onChange={handleNameToggle}
-          name='orderByName'
-          id='orderByName'
-        />
-        <label htmlFor='orderByManaCost'>Mana cost</label>
-        <input
-          type="radio"
-          checked={orderBy === 'manaCost'}
-          onChange={handleManaCostToggle}
-          name='orderByManaCost'
-          id='orderByManaCost'
-        />
-        <label htmlFor='orderByPrice'>Price</label>
-        <input
-          type="radio"
-          checked={orderBy === 'price'}
-          onChange={handlePriceToggle}
-          name='orderByPrice'
-          id='orderByPrice'
-        />
-      </RadioButtonGroup>
-      <RadioButtonGroup>
-        <label htmlFor='ascendingOrder'>Ascending</label>
-        <input
-          type='radio'
-          checked={orderDirection === 'ascending'}
-          onChange={handleAscendingOrderToggle}
-          name='ascendingOrder'
-          id='ascendingOrder'
-        />
-        <label htmlFor='descendingOrder'>Descending</label>
-        <input
-          type='radio'
-          checked={orderDirection === 'descending'}
-          onChange={handleDescendingOrderToggle}
-          name='descendingOrder'
-          id='descendingOrder'
-        />
-      </RadioButtonGroup>
-    </div>
+    <ControlsContainer>
+      <ControlElement>
+        <ControlElementLabel>
+          ORDER BY
+        </ControlElementLabel>
+        <RadioButtonGroup>
+          <RadioButton
+            label='Name'
+            onChange={handleNameToggle}
+            name='orderByName'
+            checked={orderBy === 'name'}
+          />
+          <RadioButton
+            label='Mana cost'
+            onChange={handleManaCostToggle}
+            name='orderByManaCost'
+            checked={orderBy === 'manaCost'}
+          />
+          <RadioButton
+            label='Price'
+            onChange={handlePriceToggle}
+            name='orderByPrice'
+            checked={orderBy === 'price'}
+          />
+        </RadioButtonGroup>
+      </ControlElement>
+      <ControlElement>
+        <ControlElementLabel>
+          DIRECTION
+        </ControlElementLabel>
+        <RadioButtonGroup>
+          <RadioButton
+            label='Ascending'
+            onChange={handleAscendingOrderToggle}
+            name='ascendingOrder'
+            checked={orderDirection === 'ascending'}
+          />
+          <RadioButton
+            label='Descending'
+            onChange={handleDescendingOrderToggle}
+            name='descendingOrder'
+            checked={orderDirection === 'descending'}
+          />
+        </RadioButtonGroup>
+      </ControlElement>
+    </ControlsContainer>
   )
 }
 
