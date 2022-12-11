@@ -153,7 +153,7 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
         .filter(card => fitsIntoMinMaxPrice(card))
         .sort((firstCard, secondCard) => comparisonFunctions[orderBy](firstCard, secondCard))
 
-      setFilteredCards(filteredCardSet)
+      setFilteredCards(orderDirection === 'ascending' ? filteredCardSet : filteredCardSet.reverse())
     }
   }, [searchWord, minPrice, maxPrice, orderBy, orderDirection])
 
