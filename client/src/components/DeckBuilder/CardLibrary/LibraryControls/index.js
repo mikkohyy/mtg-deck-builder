@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
+import OrderControls from './OrderControls'
 
 const ControlsRow = styled.div`
   display: flex;
@@ -14,21 +15,85 @@ const MinMaxRow = styled.div`
 
 const ControlsContainer = styled.div`
   display: flex;
+  flex-direction: column;
   background: ${props => props.theme.basicPalette.light};
   border-top: solid 1px ${props => props.theme.basicPalette.darkest};
   border-left: solid 1px ${props => props.theme.basicPalette.darkest};
   border-right: solid 1px ${props => props.theme.basicPalette.darkest};
 `
 
+const SearchInput = styled.input`
+  padding: 0.5em;
+  margin-left: 0.5em;
+`
+
 const MinMaxValueInput = styled.input`
   width: 2em;
-  margin-left: 0.5em  ;
+  margin-left: 0.5em;
+  padding: 0.5em;
+`
+
+const InputDiv = styled.div`
+  display: flex;
+  align-items: center;
+`
+
+const PaddedText = styled.div`
+  padding: 0.5em;
 `
 
 const Controls = ({ openedCardSet, setFilteredCards }) => {
   const [searchWord, setSearchWord] = useState('')
   const [minPrice, setMinPrice] = useState('0')
   const [maxPrice, setMaxPrice] = useState('50')
+  const [orderBy, setOrderBy] = useState('name')
+  const [orderDirection, setOrderDirection] = useState('ascending')
+
+  const compareStrings = (firstCard, secondCard, property) => {
+    let result = 0
+
+    const firstValue = firstCard[property].toLowerCase()
+    const secondValue = secondCard[property].toLowerCase()
+
+    if (firstValue < secondValue) {
+      result = -1
+    } else if (firstValue > secondValue) {
+      result = 1
+    }
+
+    return result
+  }
+
+  const getManaCostSum = (manaSymbols) => {
+    let manaCostSum = 0
+
+    if (manaSymbols.length !== 0) {
+      for (const symbol of manaSymbols) {
+        const symbolAsNumber = Number(symbol)
+        if (isNaN(symbolAsNumber)) {
+          manaCostSum = manaCostSum + 1
+        } else {
+          manaCostSum = manaCostSum + symbolAsNumber
+        }
+      }
+    }
+
+    return manaCostSum
+  }
+
+  const compareManaCosts = (firstCard, secondCard) => {
+    const firstCardManaCost = getManaCostSum(firstCard.manaSymbols)
+    const secondCardManaCost = getManaCostSum(secondCard.manaSymbols)
+
+    return firstCardManaCost - secondCardManaCost
+  }
+
+
+  const comparisonFunctions = {
+    name: (firstCard, secondCard) => compareStrings(firstCard, secondCard, 'name'),
+    price: (firstCard, secondCard) => {return firstCard.price - secondCard.price},
+    manaCost: (firstCard, secondCard) => compareManaCosts(firstCard, secondCard)
+  }
 
   const cardNameBeginsWith = (card, word) => {
     const lowerCaseSearchWord = word.toLowerCase()
@@ -65,8 +130,10 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
   }
 
   const cardsCanBeFiltered = () => {
+
     let canBeFiltered = true
-    const priceRegex = /^\d+\.?\d*$/
+    // Regex accepts e.g. 12, 0.3 and 003 but not 0.
+    const priceRegex = /^(\d*\.{1}\d*|\d*)$/
 
     if (openedCardSet === undefined) {
       canBeFiltered = false
@@ -84,10 +151,11 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
       const filteredCardSet = openedCardSet.cards
         .filter(card => cardNameBeginsWith(card, searchWord))
         .filter(card => fitsIntoMinMaxPrice(card))
+        .sort((firstCard, secondCard) => comparisonFunctions[orderBy](firstCard, secondCard))
 
       setFilteredCards(filteredCardSet)
     }
-  }, [searchWord, minPrice, maxPrice])
+  }, [searchWord, minPrice, maxPrice, orderBy, orderDirection])
 
   const changeSearchWord = (event) => {
     setSearchWord(event.target.value)
@@ -108,18 +176,20 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
   return(
     <ControlsContainer>
       <ControlsRow>
-        <label htmlFor='searchField'>Search:</label>
-        <input
-          value={searchWord}
-          onChange={changeSearchWord}
-          name='searchField'
-          id='searchField'
-        />
+        <InputDiv>
+          <label htmlFor='searchField'>Search:</label>
+          <SearchInput
+            value={searchWord}
+            onChange={changeSearchWord}
+            name='searchField'
+            id='searchField'
+          />
+        </InputDiv>
         <MinMaxRow>
-          <div>
+          <PaddedText>
             Price
-          </div>
-          <div>
+          </PaddedText>
+          <InputDiv>
             <label htmlFor='minPrice'>min:</label>
             <MinMaxValueInput
               value={minPrice}
@@ -127,8 +197,8 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
               name='minPrice'
               id='minPrice'
             />
-          </div>
-          <div>
+          </InputDiv>
+          <InputDiv>
             <label htmlFor='maxPrice'>max:</label>
             <MinMaxValueInput
               value={maxPrice}
@@ -136,9 +206,15 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
               name='maxPrice'
               id='maxPrice'
             />
-          </div>
+          </InputDiv>
         </MinMaxRow>
       </ControlsRow>
+      <OrderControls
+        orderBy={orderBy}
+        setOrderBy={setOrderBy}
+        orderDirection={orderDirection}
+        setOrderDirection={setOrderDirection}
+      />
     </ControlsContainer>
   )
 }
