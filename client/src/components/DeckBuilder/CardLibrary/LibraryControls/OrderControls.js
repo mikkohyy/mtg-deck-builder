@@ -4,6 +4,13 @@ import RadioButton from '../../../Generic/Buttons/RadioButton'
 const ControlsContainer = styled.div`
   display: flex;
   justify-content: flex-start;
+  gap: 1em;
+`
+
+const ControlElement = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
 `
 
 const RadioButtonGroup = styled.div`
@@ -11,18 +18,9 @@ const RadioButtonGroup = styled.div`
   gap: 0.5em;
 `
 
-const ControlElementLabel = styled.div`
+const Label = styled.div`
   font-size: 0.7em;
   font-weight: 600;
-  
-`
-
-const ControlElement = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 0em 0.5em 0.5em 0.5em;
-  gap: 0.5em;
-
 `
 
 const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection }) => {
@@ -49,9 +47,9 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
   return(
     <ControlsContainer>
       <ControlElement>
-        <ControlElementLabel>
+        <Label>
           ORDER BY
-        </ControlElementLabel>
+        </Label>
         <RadioButtonGroup>
           <RadioButton
             label='Name'
@@ -74,9 +72,9 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
         </RadioButtonGroup>
       </ControlElement>
       <ControlElement>
-        <ControlElementLabel>
+        <Label>
           DIRECTION
-        </ControlElementLabel>
+        </Label>
         <RadioButtonGroup>
           <RadioButton
             label='Ascending'

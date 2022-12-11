@@ -1,17 +1,7 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import OrderControls from './OrderControls'
-
-const ControlsRow = styled.div`
-  display: flex;
-  gap: 0.5em;
-  padding: 0.5em;
-`
-
-const MinMaxRow = styled.div`
-  display: flex;
-  gap: 0.5em;
-`
+import SearchAndPriceControls from './SearchAndPriceControls'
 
 const ControlsContainer = styled.div`
   display: flex;
@@ -20,26 +10,8 @@ const ControlsContainer = styled.div`
   border-top: solid 1px ${props => props.theme.basicPalette.darkest};
   border-left: solid 1px ${props => props.theme.basicPalette.darkest};
   border-right: solid 1px ${props => props.theme.basicPalette.darkest};
-`
-
-const SearchInput = styled.input`
-  padding: 0.5em;
-  margin-left: 0.5em;
-`
-
-const MinMaxValueInput = styled.input`
-  width: 2em;
-  margin-left: 0.5em;
-  padding: 0.5em;
-`
-
-const InputDiv = styled.div`
-  display: flex;
-  align-items: center;
-`
-
-const PaddedText = styled.div`
-  padding: 0.5em;
+  padding: 1em;
+  gap: 1em;
 `
 
 const Controls = ({ openedCardSet, setFilteredCards }) => {
@@ -103,19 +75,6 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
     return beginsWith
   }
 
-  const isMinMaxPrice = (value) => {
-    let isPrice = false
-    if (value === '0') {
-      isPrice = true
-    } else {
-      // regex accepts e.g. 0.1, 5, 0034 or 12.3 not 0
-      const priceRegex = /^([0]\.|[1-9][0-9]*\.?)\d*$/
-      isPrice = priceRegex.test(value)
-    }
-
-    return isPrice
-  }
-
   const fitsIntoMinMaxPrice = (card) => {
     let fits = false
 
@@ -157,58 +116,16 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
     }
   }, [searchWord, minPrice, maxPrice, orderBy, orderDirection])
 
-  const changeSearchWord = (event) => {
-    setSearchWord(event.target.value)
-  }
-
-  const changeMinPrice = (event) => {
-    if ( event.target.value === '' || isMinMaxPrice(event.target.value) === true) {
-      setMinPrice(event.target.value)
-    }
-  }
-
-  const changeMaxPrice = (event) => {
-    if ( event.target.value === '' || isMinMaxPrice(event.target.value) === true) {
-      setMaxPrice(event.target.value)
-    }
-  }
-
   return(
     <ControlsContainer>
-      <ControlsRow>
-        <InputDiv>
-          <label htmlFor='searchField'>Search:</label>
-          <SearchInput
-            value={searchWord}
-            onChange={changeSearchWord}
-            name='searchField'
-            id='searchField'
-          />
-        </InputDiv>
-        <MinMaxRow>
-          <PaddedText>
-            Price
-          </PaddedText>
-          <InputDiv>
-            <label htmlFor='minPrice'>min:</label>
-            <MinMaxValueInput
-              value={minPrice}
-              onChange={changeMinPrice}
-              name='minPrice'
-              id='minPrice'
-            />
-          </InputDiv>
-          <InputDiv>
-            <label htmlFor='maxPrice'>max:</label>
-            <MinMaxValueInput
-              value={maxPrice}
-              onChange={changeMaxPrice}
-              name='maxPrice'
-              id='maxPrice'
-            />
-          </InputDiv>
-        </MinMaxRow>
-      </ControlsRow>
+      <SearchAndPriceControls
+        searchWord={searchWord}
+        setSearchWord={setSearchWord}
+        minPrice={minPrice}
+        setMinPrice={setMinPrice}
+        maxPrice={maxPrice}
+        setMaxPrice={setMaxPrice}
+      />
       <OrderControls
         orderBy={orderBy}
         setOrderBy={setOrderBy}
