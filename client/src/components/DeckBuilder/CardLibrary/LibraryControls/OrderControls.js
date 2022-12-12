@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import RadioButton from '../../../Generic/Buttons/RadioButton'
+import RadioButton from '../../../Generic/FormElements/RadioButton'
 
 const ControlsContainer = styled.div`
   display: flex;
@@ -18,7 +18,7 @@ const RadioButtonGroup = styled.div`
   gap: 0.5em;
 `
 
-const Label = styled.div`
+const FunctionalityDescriptionText = styled.div`
   font-size: 0.7em;
   font-weight: 600;
 `
@@ -47,9 +47,9 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
   return(
     <ControlsContainer>
       <ControlElement>
-        <Label>
+        <FunctionalityDescriptionText>
           ORDER BY
-        </Label>
+        </FunctionalityDescriptionText>
         <RadioButtonGroup>
           <RadioButton
             label='Name'
@@ -72,9 +72,9 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
         </RadioButtonGroup>
       </ControlElement>
       <ControlElement>
-        <Label>
+        <FunctionalityDescriptionText>
           DIRECTION
-        </Label>
+        </FunctionalityDescriptionText>
         <RadioButtonGroup>
           <RadioButton
             label='Ascending'

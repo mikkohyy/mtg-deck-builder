@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import OrderControls from './OrderControls'
 import SearchAndPriceControls from './SearchAndPriceControls'
+import TypeFilterControls from './TypeFilterControls'
 
 const ControlsContainer = styled.div`
   display: flex;
@@ -20,6 +21,49 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
   const [maxPrice, setMaxPrice] = useState('50')
   const [orderBy, setOrderBy] = useState('name')
   const [orderDirection, setOrderDirection] = useState('ascending')
+  const [selectedTypes, setSelectedTypes] = useState({
+    colorless: true,
+    black: true,
+    blue: true,
+    green: true,
+    red: true,
+    white: true,
+    land: true,
+  })
+
+  const areCardColorsSelected = (card) => {
+    let areSelected = true
+    const manaCostAsArray = card.manaCost.split(' ')
+
+    for (const cost of manaCostAsArray) {
+      if (isNaN(Number(cost)) === true && cost !== 'x') {
+        if (selectedTypes[cost] === false) {
+          areSelected = false
+          break
+        }
+      }
+    }
+
+    return areSelected
+  }
+
+  const isTypeSelected = (card) => {
+    let isSelected = false
+
+    if (card.cardColor === 'land') {
+      isSelected = selectedTypes.land === true
+        ? true
+        : false
+    } else if (card.cardColor === 'multicolor') {
+      isSelected = areCardColorsSelected(card)
+    } else {
+      if (selectedTypes[card.cardColor] === true) {
+        isSelected = true
+      }
+    }
+
+    return isSelected
+  }
 
   const compareStrings = (firstCard, secondCard, property) => {
     let result = 0
@@ -59,7 +103,6 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
 
     return firstCardManaCost - secondCardManaCost
   }
-
 
   const comparisonFunctions = {
     name: (firstCard, secondCard) => compareStrings(firstCard, secondCard, 'name'),
@@ -108,13 +151,14 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
   useEffect(() => {
     if (cardsCanBeFiltered()) {
       const filteredCardSet = openedCardSet.cards
+        .filter(card => isTypeSelected(card))
         .filter(card => cardNameBeginsWith(card, searchWord))
         .filter(card => fitsIntoMinMaxPrice(card))
         .sort((firstCard, secondCard) => comparisonFunctions[orderBy](firstCard, secondCard))
 
       setFilteredCards(orderDirection === 'ascending' ? filteredCardSet : filteredCardSet.reverse())
     }
-  }, [searchWord, minPrice, maxPrice, orderBy, orderDirection])
+  }, [searchWord, minPrice, maxPrice, orderBy, orderDirection, selectedTypes])
 
   return(
     <ControlsContainer>
@@ -132,6 +176,7 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
         orderDirection={orderDirection}
         setOrderDirection={setOrderDirection}
       />
+      <TypeFilterControls selectedTypes={selectedTypes} setSelectedTypes={setSelectedTypes} />
     </ControlsContainer>
   )
 }
