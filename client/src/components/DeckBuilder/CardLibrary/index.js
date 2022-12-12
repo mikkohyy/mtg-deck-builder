@@ -16,9 +16,33 @@ const CardLibrary = () => {
   const [filteredCards, setFilteredCards] = useState(undefined)
   const gridColumnWidths = '3fr 1fr 1fr'
 
+  const compareCardNames = (firstCard, secondCard) => {
+    let result
+
+    const firstCardName = firstCard.name.toUpperCase()
+    const secondCardName = secondCard.name.toUpperCase()
+
+    if (firstCardName > secondCardName) {
+      result = 1
+    } else if (firstCardName < secondCardName) {
+      result = -1
+    } else {
+      result = 0
+    }
+
+    return result
+  }
+
+  const orderCardsAlphabetically = (cards) => {
+    const cardsCopy = [...cards]
+    cardsCopy.sort(compareCardNames)
+
+    return cardsCopy
+  }
+
   useEffect(() => {
     if (openedCardSet !== undefined) {
-      setFilteredCards(openedCardSet.cards)
+      setFilteredCards(orderCardsAlphabetically(openedCardSet.cards))
     }
   }, [openedCardSet])
 
