@@ -2,9 +2,7 @@ import styled from 'styled-components'
 import CheckBox from '../../../Generic/FormElements/CheckBox'
 
 const TypeFiltersContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
+  ${props => props.theme.components.containers.cardTableControlsElementsColumn};
 `
 
 const UpperRow = styled.div`
@@ -14,8 +12,7 @@ const UpperRow = styled.div`
 `
 
 const Text = styled.div`
-  font-size: 0.7em;
-  font-weight: 600;
+  ${props => props.theme.components.texts.cardTableControlsNameText}
 `
 
 const Filters = styled.div`

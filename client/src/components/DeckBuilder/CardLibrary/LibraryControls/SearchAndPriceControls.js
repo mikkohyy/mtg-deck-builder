@@ -1,9 +1,7 @@
 import styled from 'styled-components'
 
-const MainContainer = styled.div`
-  display: flex;
-  justify-content: flex-start;
-  gap: 1em;
+const SearchAndPriceControlsContainer = styled.div`
+  ${props => props.theme.components.containers.cardTableControlsElementsRow};
 `
 
 const SearchFieldDiv = styled.div`
@@ -39,13 +37,11 @@ const SearchInput = styled.input`
 `
 
 const Label = styled.label`
-  font-weight: 600;
-  font-size: 0.7em;
+  ${props => props.theme.components.texts.cardTableControlsNameText}
 `
 
 const WeightedText = styled.div`
-  font-weight: 600;
-  font-size: 0.7em;
+  ${props => props.theme.components.texts.cardTableControlsNameText}
 `
 
 const SearchAndPriceControls = ({
@@ -87,7 +83,7 @@ const SearchAndPriceControls = ({
   }
 
   return(
-    <MainContainer>
+    <SearchAndPriceControlsContainer>
       <SearchFieldDiv>
         <Label htmlFor='searchField'>SEARCH</Label>
         <SearchInput
@@ -120,7 +116,7 @@ const SearchAndPriceControls = ({
           </PriceContainer>
         </MinMaxPricesRow>
       </PriceRangeControlsContainer>
-    </MainContainer>
+    </SearchAndPriceControlsContainer>
   )
 }
 

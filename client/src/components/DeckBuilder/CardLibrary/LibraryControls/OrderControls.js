@@ -1,10 +1,8 @@
 import styled from 'styled-components'
 import RadioButton from '../../../Generic/FormElements/RadioButton'
 
-const ControlsContainer = styled.div`
-  display: flex;
-  justify-content: flex-start;
-  gap: 1em;
+const OrderControlsContainer = styled.div`
+  ${props => props.theme.components.containers.cardTableControlsElementsRow};
 `
 
 const ControlElement = styled.div`
@@ -19,8 +17,7 @@ const RadioButtonGroup = styled.div`
 `
 
 const FunctionalityDescriptionText = styled.div`
-  font-size: 0.7em;
-  font-weight: 600;
+  ${props => props.theme.components.texts.cardTableControlsNameText}
 `
 
 const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection }) => {
@@ -45,7 +42,7 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
   }
 
   return(
-    <ControlsContainer>
+    <OrderControlsContainer>
       <ControlElement>
         <FunctionalityDescriptionText>
           ORDER BY
@@ -90,7 +87,7 @@ const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection 
           />
         </RadioButtonGroup>
       </ControlElement>
-    </ControlsContainer>
+    </OrderControlsContainer>
   )
 }
 

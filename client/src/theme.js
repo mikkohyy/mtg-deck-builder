@@ -95,6 +95,10 @@ const texts = {
   guidingText: {
     fontSize: '0.9em',
     fontStyle: 'italic'
+  },
+  cardTableControlsNameText: {
+    fontSize: '0.8em',
+    fontWeight: '600'
   }
 }
 
@@ -158,6 +162,25 @@ const containers = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center'
+  },
+  cardTableControls: {
+    display: 'flex',
+    flexDirection: 'column',
+    background: basicPalette.light,
+    borderTop: `solid 1px ${basicPalette.darkest}`,
+    borderLeft: `solid 1px ${basicPalette.darkest}`,
+    borderRight: `solid 1px ${basicPalette.darkest}`,
+    padding: '1em',
+    gap: '1em'
+  },
+  cardTableControlsElementsRow: {
+    display: 'flex',
+    gap: '1em'
+  },
+  cardTableControlsElementsColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5em'
   }
 }
 

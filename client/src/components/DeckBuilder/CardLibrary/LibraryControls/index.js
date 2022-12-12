@@ -5,14 +5,7 @@ import SearchAndPriceControls from './SearchAndPriceControls'
 import TypeFilterControls from './TypeFilterControls'
 
 const ControlsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  background: ${props => props.theme.basicPalette.light};
-  border-top: solid 1px ${props => props.theme.basicPalette.darkest};
-  border-left: solid 1px ${props => props.theme.basicPalette.darkest};
-  border-right: solid 1px ${props => props.theme.basicPalette.darkest};
-  padding: 1em;
-  gap: 1em;
+  ${props => props.theme.components.containers.cardTableControls}
 `
 
 const Controls = ({ openedCardSet, setFilteredCards }) => {
