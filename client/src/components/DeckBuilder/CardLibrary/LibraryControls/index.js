@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import OrderControls from './OrderControls'
 import SearchAndPriceControls from './SearchAndPriceControls'
 import TypeFilterControls from './TypeFilterControls'
+import { comparisonFunctions } from '../../../../utils/comparison_utils'
 
 const ControlsContainer = styled.div`
   ${props => props.theme.components.containers.cardTableControls}
@@ -56,51 +57,6 @@ const Controls = ({ openedCardSet, setFilteredCards }) => {
     }
 
     return isSelected
-  }
-
-  const compareStrings = (firstCard, secondCard, property) => {
-    let result = 0
-
-    const firstValue = firstCard[property].toLowerCase()
-    const secondValue = secondCard[property].toLowerCase()
-
-    if (firstValue < secondValue) {
-      result = -1
-    } else if (firstValue > secondValue) {
-      result = 1
-    }
-
-    return result
-  }
-
-  const getManaCostSum = (manaSymbols) => {
-    let manaCostSum = 0
-
-    if (manaSymbols.length !== 0) {
-      for (const symbol of manaSymbols) {
-        const symbolAsNumber = Number(symbol)
-        if (isNaN(symbolAsNumber)) {
-          manaCostSum = manaCostSum + 1
-        } else {
-          manaCostSum = manaCostSum + symbolAsNumber
-        }
-      }
-    }
-
-    return manaCostSum
-  }
-
-  const compareManaCosts = (firstCard, secondCard) => {
-    const firstCardManaCost = getManaCostSum(firstCard.manaSymbols)
-    const secondCardManaCost = getManaCostSum(secondCard.manaSymbols)
-
-    return firstCardManaCost - secondCardManaCost
-  }
-
-  const comparisonFunctions = {
-    name: (firstCard, secondCard) => compareStrings(firstCard, secondCard, 'name'),
-    price: (firstCard, secondCard) => {return firstCard.price - secondCard.price},
-    manaCost: (firstCard, secondCard) => compareManaCosts(firstCard, secondCard)
   }
 
   const cardNameBeginsWith = (card, word) => {

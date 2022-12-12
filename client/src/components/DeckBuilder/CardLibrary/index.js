@@ -4,6 +4,7 @@ import { OpenedCardSetContext } from '../../../contexts/openedCardSetContext'
 import GridTable from '../../Generic/GridTable'
 import CardLibraryRow from './CardLibraryRow'
 import LibraryControls from './LibraryControls'
+import { comparisonFunctions } from '../../../utils/comparison_utils'
 
 const CardLibraryContainer = styled.div`
   display: flex;
@@ -16,26 +17,9 @@ const CardLibrary = () => {
   const [filteredCards, setFilteredCards] = useState(undefined)
   const gridColumnWidths = '3fr 1fr 1fr'
 
-  const compareCardNames = (firstCard, secondCard) => {
-    let result
-
-    const firstCardName = firstCard.name.toUpperCase()
-    const secondCardName = secondCard.name.toUpperCase()
-
-    if (firstCardName > secondCardName) {
-      result = 1
-    } else if (firstCardName < secondCardName) {
-      result = -1
-    } else {
-      result = 0
-    }
-
-    return result
-  }
-
   const orderCardsAlphabetically = (cards) => {
     const cardsCopy = [...cards]
-    cardsCopy.sort(compareCardNames)
+    cardsCopy.sort((firstCard, secondCard) => comparisonFunctions['name'](firstCard, secondCard))
 
     return cardsCopy
   }
