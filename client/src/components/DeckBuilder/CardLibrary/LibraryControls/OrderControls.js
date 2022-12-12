@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import RadioButton from '../../../Generic/FormElements/RadioButton'
+import RadioButton from '../../../Generic/CardTableControls/RadioButton'
 
 const OrderControlsContainer = styled.div`
   ${props => props.theme.components.containers.cardTableControlsElementsRow};

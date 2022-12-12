@@ -19,7 +19,6 @@ const CheckBox = ({ name, type, label, checked, handleChange }) => {
 
   return(
     <CheckBoxContainer>
-      <StyledLabel htmlFor={name}>{label}</StyledLabel>
       <StyledCheckbox
         type='checkbox'
         name={name}
@@ -27,6 +26,7 @@ const CheckBox = ({ name, type, label, checked, handleChange }) => {
         checked={checked}
         onChange={() => handleChange(type)}
       />
+      <StyledLabel htmlFor={name}>{label}</StyledLabel>
     </CheckBoxContainer>
   )
 }

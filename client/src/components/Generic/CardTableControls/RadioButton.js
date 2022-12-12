@@ -18,7 +18,6 @@ const StyledRadioButton = styled.input`
 const RadioButton = ({ label, onChange, name, checked }) => {
   return(
     <RadioButtonContainer>
-      <StyledLabel htmlFor={name}>{label}</StyledLabel>
       <StyledRadioButton
         type="radio"
         checked={checked}
@@ -26,6 +25,7 @@ const RadioButton = ({ label, onChange, name, checked }) => {
         name={name}
         id={name}
       />
+      <StyledLabel htmlFor={name}>{label}</StyledLabel>
     </RadioButtonContainer>
   )
 }

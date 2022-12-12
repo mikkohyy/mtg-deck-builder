@@ -88,7 +88,8 @@ const buttons = {
   hovered: {
     backgroundColor: 'darkgrey',
   },
-  gapBetween: '0.5em'
+  gapBetween: '0.5em',
+  corners: '0.3em'
 }
 
 const texts = {

@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import CheckBox from '../../../Generic/FormElements/CheckBox'
+import CheckBox from '../../../Generic/CardTableControls/CheckBox'
 
 const TypeFiltersContainer = styled.div`
   ${props => props.theme.components.containers.cardTableControlsElementsColumn};
@@ -23,9 +23,10 @@ const Filters = styled.div`
 const MassSelectionButton = styled.button`
   background: ${props => props.theme.basicPalette.medium};
   border: solid 1px ${props => props.theme.basicPalette.darkest};
-  border-radius: 0.2em;
+  border-radius: ${props => props.theme.components.buttons.corners};
   &:hover {
     background: ${props => props.theme.basicPalette.darker};
+    cursor: pointer;
   }
 `
 
