@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import styled from 'styled-components'
-import ManaSymbols from './ManaSymbols'
+import ManaSymbols from '../../Generic/ManaSymbols'
 import { transformCardTextToArray } from '../../../utils/card_property_utils'
 
 const PaddedText = styled.span`

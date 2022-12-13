@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { OpenedDeckContext } from '../../../contexts/openedDeckContext'
+import { useState, useContext } from 'react'
 import styled from 'styled-components'
 
 const Container = styled.div`
@@ -24,7 +25,8 @@ const AddButtonText = styled.span`
   font-weight: 550;
 `
 
-const AddToDeckWidget = () => {
+const AddToDeckWidget = ({ card }) => {
+  const { addCardToDeck } = useContext(OpenedDeckContext)
   const [nOfCards, setNOfCards] = useState(1)
 
   const preventInvalidKeyPress = (event) => {
@@ -42,6 +44,10 @@ const AddToDeckWidget = () => {
     }
   }
 
+  const handleClick = () => {
+    addCardToDeck(card, nOfCards)
+  }
+
   return(
     <Container>
       <NOfCardsInput
@@ -51,7 +57,7 @@ const AddToDeckWidget = () => {
         maxLength='2'
         onKeyDown={preventInvalidKeyPress}
       />
-      <AddButton>
+      <AddButton onClick={handleClick}>
         <AddButtonText>
           Add
         </AddButtonText>

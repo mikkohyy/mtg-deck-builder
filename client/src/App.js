@@ -2,6 +2,7 @@ import { OpenedCardSetProvider } from './contexts/openedCardSetContext'
 import { CardSetsProvider } from './contexts/cardSetsContext'
 import { NotificationProvider } from './contexts/notificationContext'
 import { ThemeProvider } from 'styled-components'
+import { OpenedDeckProvider } from './contexts/openedDeckContext'
 import theme from './theme'
 import MainContainer from './components/MainContainer'
 
@@ -11,7 +12,9 @@ const App = () => {
       <CardSetsProvider>
         <OpenedCardSetProvider>
           <NotificationProvider>
-            <MainContainer />
+            <OpenedDeckProvider>
+              <MainContainer />
+            </OpenedDeckProvider>
           </NotificationProvider>
         </OpenedCardSetProvider>
       </CardSetsProvider>

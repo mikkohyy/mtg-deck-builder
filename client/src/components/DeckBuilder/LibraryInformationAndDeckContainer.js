@@ -1,7 +1,7 @@
 import styled from  'styled-components'
 import CardLibrary from './CardLibrary'
 import DeckInformation from '../DeckInformation'
-import DeckTable from '../DeckTable'
+import DeckTable from './DeckTable'
 
 const DeckBuilderCompartments = styled.div`
   display: grid;
