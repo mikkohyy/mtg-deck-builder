@@ -30,6 +30,7 @@ const PriceContainer = styled.div`
 const PriceInput = styled.input`
   width: 2em;
   padding: 0.5em;
+  text-align: center;
 `
 
 const SearchInput = styled.input`

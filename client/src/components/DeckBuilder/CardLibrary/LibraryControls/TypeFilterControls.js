@@ -21,19 +21,14 @@ const Filters = styled.div`
 `
 
 const MassSelectionButton = styled.button`
-  background: ${props => props.theme.basicPalette.medium};
-  border: solid 1px ${props => props.theme.basicPalette.darkest};
-  border-radius: ${props => props.theme.components.buttons.corners};
+  ${props => props.theme.components.buttons.tableButton.normal};
   &:hover {
-    background: ${props => props.theme.basicPalette.darker};
-    cursor: pointer;
+    ${props => props.theme.components.buttons.tableButton.hovered};
   }
 `
 
 const MassSelectionButtonText = styled.div`
-  font-size: 0.8em;
-  font-weight: 600;
-  margin: auto;
+  ${props => props.theme.components.texts.tableButtonText};
 `
 
 const TypeFilterControls = ({ selectedTypes, setSelectedTypes }) => {

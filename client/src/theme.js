@@ -88,6 +88,17 @@ const buttons = {
   hovered: {
     backgroundColor: 'darkgrey',
   },
+  tableButton: {
+    normal: {
+      background: basicPalette.medium,
+      border: `solid 1px ${basicPalette.darkest}`,
+      borderRadius: '0.3em'
+    },
+    hovered: {
+      background: basicPalette.darker,
+      cursor: 'pointer'
+    }
+  },
   gapBetween: '0.5em',
   corners: '0.3em'
 }
@@ -100,6 +111,11 @@ const texts = {
   cardTableControlsNameText: {
     fontSize: '0.8em',
     fontWeight: '600'
+  },
+  tableButtonText: {
+    fontSize: '0.8em',
+    fontWeight: '600',
+    margin: 'auto'
   }
 }
 
@@ -198,7 +214,7 @@ const tables = {
       display: 'flex',
     },
     elementCell: {
-      padding: '0.5em 0em 0.5em 1em',
+      padding: '0.5em 0em 0.5em 0em',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'

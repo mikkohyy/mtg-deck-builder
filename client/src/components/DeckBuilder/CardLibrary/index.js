@@ -15,7 +15,7 @@ const CardLibraryContainer = styled.div`
 const CardLibrary = () => {
   const { openedCardSet } = useContext(OpenedCardSetContext)
   const [filteredCards, setFilteredCards] = useState(undefined)
-  const gridColumnWidths = '3fr 1fr 1fr'
+  const gridColumnWidths = '8fr 2fr 2fr 2fr'
 
   const orderCardsAlphabetically = (cards) => {
     const cardsCopy = [...cards]
@@ -58,7 +58,7 @@ const CardLibrary = () => {
       />
       <GridTable
         gridColumnWidths={gridColumnWidths}
-        headerTexts={['Name', 'Mana cost', 'Price']}
+        headerTexts={['Name', 'Mana cost', 'Price', '']}
         rows={getRows(gridColumnWidths)}
       />
     </CardLibraryContainer>

@@ -3,6 +3,7 @@ import ManaSymbols from './ManaSymbols'
 import CardPopUp from './CardPopUp'
 import Row from '../../Generic/GridTable/Row'
 import useHoverOnBox from '../../../hooks/useHoverOnBox'
+import AddToDeckWidget from './AddToDeckWidget'
 
 const CardLibraryRow = ({ card, gridColumnWidths, background }) => {
   const {
@@ -28,6 +29,9 @@ const CardLibraryRow = ({ card, gridColumnWidths, background }) => {
       </BodyCell>
       <BodyCell cellStyle={props => props.theme.components.tables.body.elementCell}>
         {card.price}
+      </BodyCell>
+      <BodyCell cellStyle={props => props.theme.components.tables.body.elementCell}>
+        <AddToDeckWidget />
       </BodyCell>
     </Row>
   )
