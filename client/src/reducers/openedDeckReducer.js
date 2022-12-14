@@ -6,51 +6,47 @@ const createOpenedDeckReducer = (state, action) => {
     })
   }
   case 'ADD_CARD': {
-    let modifiedCards
-    let modifiedChanges
+    let updatedCards
+    let updatedChanges
     const { card, nOfCards } = action.payload
 
-    if (cardIsAlreadyIncluded(state.cards, action.payload.card)) {
-      const updatedCard = createCardWithUpdatedN(state.cards, card.id, nOfCards, 'add')
-      const typeOfChange = addOrUpdate(state.changes, action.payload.card)
+    if (cardIsAlreadyInTheDeck(state.cards, card)) {
+      const updatedCard = getCardWithUpdatedN(state.cards, card.id, nOfCards, 'add')
+      const typeOfChange = getTypeOfChange(state.changes, action.payload.card)
 
-      modifiedCards = state.cards.map(card => card.id === updatedCard.id ? updatedCard : card)
-      modifiedChanges = typeOfChange === 'add'
-        ? setChanges(state.changes, updatedCard, 'add')
-        : setChanges(state.changes, updatedCard, 'update')
-
+      updatedCards = state.cards.map(card => card.id === updatedCard.id ? updatedCard : card)
+      updatedChanges = updateChanges(state.changes, updatedCard, typeOfChange)
     } else {
-      const addedCard = {
-        ...action.payload.card,
-        nInDeck: action.payload.nOfCards,
+      const newCard = {
+        ...card,
+        nInDeck: nOfCards,
         sideboard: false
       }
 
-      modifiedCards = [...state.cards, addedCard]
-      modifiedChanges = {
-        added: [ ...state.changes.added, addedCard],
+      updatedCards = [...state.cards, newCard]
+      updatedChanges = {
+        added: [...state.changes.added, newCard],
         deleted: [...state.changes.deleted],
         updated: [...state.changes.updated]
       }
     }
 
     return ({
-      cards: modifiedCards,
-      changes: modifiedChanges
+      cards: updatedCards,
+      changes: updatedChanges
     })
   }
   case 'REMOVE_CARD': {
     let modifiedCards
     let modifiedChanges
     const { card, nOfCards } = action.payload
-
-    const updatedCard = createCardWithUpdatedN(state.cards, card.id, nOfCards, 'remove')
+    const updatedCard = getCardWithUpdatedN(state.cards, card.id, nOfCards, 'remove')
 
     if (isCardNewCard(state.changes.added, card)) {
       modifiedCards = removeCard(state.cards, updatedCard)
       modifiedChanges = removeFromChanges(state.changes, updatedCard)
     } else {
-      console.log('oldie')
+      console.log('this can be implemented only after there is the possibility of adding a deck to the database..')
     }
 
     return ({
@@ -64,13 +60,12 @@ const createOpenedDeckReducer = (state, action) => {
   }
 }
 
-const addOrUpdate = (changes, addedCard) => {
-  const which = changes.added.some(card => card.id === addedCard.id) ? 'add' : 'update'
-
-  return which
+const getTypeOfChange = (changes, addedCard) => {
+  const type = changes.added.some(card => card.id === addedCard.id) ? 'add' : 'update'
+  return type
 }
 
-const cardIsAlreadyIncluded = (cardsArray, payloadCard) => {
+const cardIsAlreadyInTheDeck = (cardsArray, payloadCard) => {
   let cardIsInDeck = false
 
   if (cardsArray.some((card) => card.id === payloadCard.id)) {
@@ -90,7 +85,7 @@ const isCardNewCard = (addedArray, payloadCard) => {
   return cardIsNew
 }
 
-const setChanges = (changes, modifiedCard, typeOfChange) => {
+const updateChanges = (changes, modifiedCard, typeOfChange) => {
   const { added, deleted, updated } = changes
 
   const modifiedChanges = {
@@ -108,7 +103,7 @@ const setChanges = (changes, modifiedCard, typeOfChange) => {
   return modifiedChanges
 }
 
-const createCardWithUpdatedN = (cards, addedCardId, changeInN, typeOfChange) => {
+const getCardWithUpdatedN = (cards, addedCardId, changeInN, typeOfChange) => {
   const existingCard = cards.find(card => card.id === addedCardId)
   const updatedNInDeck = typeOfChange === 'add'
     ? existingCard.nInDeck + changeInN
@@ -140,6 +135,7 @@ const removeFromChanges = (changes, updatedCard) => {
   } else {
     updatedAdded = added.map(card => card.id === updatedCard.id ? updatedCard : card)
   }
+
 
   return {
     added: updatedAdded,
