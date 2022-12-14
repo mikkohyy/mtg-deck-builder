@@ -21,7 +21,7 @@ const AddButton = styled.button`
 
 const AddButtonText = styled.span`
   ${props => props.theme.components.texts.tableButtonText};
-  font-size: 0.9em;
+  font-size: 1em;
   font-weight: 550;
 `
 

@@ -6,6 +6,13 @@ const OpenedDeckContext = createContext(undefined)
 const OpenedDeckProvider = ({ children }) => {
   const [openedDeck, openedDeckDispatch] = useReducer(openedDeckReducer, undefined)
 
+  const setOpenedDeck = useCallback((deck) => {
+    openedDeckDispatch({
+      type: 'SET_DECK',
+      payload: deck
+    })
+  }, [openedDeckDispatch])
+
   const addCardToDeck = useCallback((card, nOfCards) => {
     openedDeckDispatch({
       type: 'ADD_CARD',
@@ -16,15 +23,20 @@ const OpenedDeckProvider = ({ children }) => {
     })
   }, [openedDeckDispatch])
 
-  const setOpenedDeck = useCallback((deck) => {
+  const removeCardFromDeck = useCallback((card, nOfCards) => {
     openedDeckDispatch({
-      type: 'SET_DECK',
-      payload: deck
+      type: 'REMOVE_CARD',
+      payload: {
+        card,
+        nOfCards
+      }
     })
-  }, [openedDeckDispatch])
+  })
 
   return(
-    <OpenedDeckContext.Provider value={{ openedDeck, setOpenedDeck, addCardToDeck }}>
+    <OpenedDeckContext.Provider
+      value={{ openedDeck, setOpenedDeck, addCardToDeck, removeCardFromDeck }}
+    >
       {children}
     </OpenedDeckContext.Provider>
   )

@@ -10,8 +10,8 @@ const createOpenedDeckReducer = (state, action) => {
     let modifiedChanges
     const { card, nOfCards } = action.payload
 
-    if (cardIsAlrereadyIncluded(state.cards, action.payload.card)) {
-      const updatedCard = createCardWithUpdatedN(state.cards, card.id, nOfCards)
+    if (cardIsAlreadyIncluded(state.cards, action.payload.card)) {
+      const updatedCard = createCardWithUpdatedN(state.cards, card.id, nOfCards, 'add')
       const typeOfChange = addOrUpdate(state.changes, action.payload.card)
 
       modifiedCards = state.cards.map(card => card.id === updatedCard.id ? updatedCard : card)
@@ -38,7 +38,28 @@ const createOpenedDeckReducer = (state, action) => {
       cards: modifiedCards,
       changes: modifiedChanges
     })
-  } default:
+  }
+  case 'REMOVE_CARD': {
+    let modifiedCards
+    let modifiedChanges
+    const { card, nOfCards } = action.payload
+
+    const updatedCard = createCardWithUpdatedN(state.cards, card.id, nOfCards, 'remove')
+
+    if (isCardNewCard(state.changes.added, card)) {
+      modifiedCards = removeCard(state.cards, updatedCard)
+      modifiedChanges = removeFromChanges(state.changes, updatedCard)
+    } else {
+      console.log('oldie')
+    }
+
+    return ({
+      cards: modifiedCards,
+      changes: modifiedChanges
+    })
+  }
+
+  default:
     return state
   }
 }
@@ -49,7 +70,7 @@ const addOrUpdate = (changes, addedCard) => {
   return which
 }
 
-const cardIsAlrereadyIncluded = (cardsArray, payloadCard) => {
+const cardIsAlreadyIncluded = (cardsArray, payloadCard) => {
   let cardIsInDeck = false
 
   if (cardsArray.some((card) => card.id === payloadCard.id)) {
@@ -57,6 +78,16 @@ const cardIsAlrereadyIncluded = (cardsArray, payloadCard) => {
   }
 
   return cardIsInDeck
+}
+
+const isCardNewCard = (addedArray, payloadCard) => {
+  let cardIsNew = false
+
+  if (addedArray.some((card) => card.id === payloadCard.id)) {
+    cardIsNew = true
+  }
+
+  return cardIsNew
 }
 
 const setChanges = (changes, modifiedCard, typeOfChange) => {
@@ -77,11 +108,44 @@ const setChanges = (changes, modifiedCard, typeOfChange) => {
   return modifiedChanges
 }
 
-const createCardWithUpdatedN = (cards, addedCardId, changeInN) => {
+const createCardWithUpdatedN = (cards, addedCardId, changeInN, typeOfChange) => {
   const existingCard = cards.find(card => card.id === addedCardId)
-  const updatedCard = { ...existingCard, nInDeck: existingCard.nInDeck + changeInN }
+  const updatedNInDeck = typeOfChange === 'add'
+    ? existingCard.nInDeck + changeInN
+    : existingCard.nInDeck - changeInN
+
+  const updatedCard = { ...existingCard, nInDeck: updatedNInDeck }
 
   return updatedCard
+}
+
+const removeCard = (cards, updatedCard) => {
+  let updatedCards
+
+  if (updatedCard.nInDeck < 0) {
+    updatedCards = cards.filter(card => card.id !== updatedCard.id)
+  } else {
+    updatedCards = cards.map(card => card.id === updatedCard.id ? updatedCard : card)
+  }
+
+  return updatedCards
+}
+
+const removeFromChanges = (changes, updatedCard) => {
+  const { added, deleted, updated } = changes
+  let updatedAdded
+
+  if (updatedCard.nInDeck < 0) {
+    updatedAdded = added.filter(card => card.id !== updatedCard.id)
+  } else {
+    updatedAdded = added.map(card => card.id === updatedCard.id ? updatedCard : card)
+  }
+
+  return {
+    added: updatedAdded,
+    deleted: deleted,
+    updated: updated
+  }
 }
 
 export default createOpenedDeckReducer
