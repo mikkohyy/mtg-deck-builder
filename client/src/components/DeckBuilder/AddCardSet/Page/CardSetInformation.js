@@ -52,6 +52,7 @@ const CardSetInformationPage = ({
           onChange={handleDeckNameChange}
           maxLength={50}
           id={'nameInput'}
+          name={'nameInput'}
         />
       </InputContainer>
       <InputContainer>
@@ -62,6 +63,7 @@ const CardSetInformationPage = ({
           cols={30}
           rows={10}
           id={'descriptionTextArea'}
+          name={'descriptionTextArea'}
         />
       </InputContainer>
       <GuidingText>

@@ -4,6 +4,7 @@ import FunctionalityNavButton from '../../Generic/FunctionalityNavButton'
 import ButtonGroup from '../../Generic/ButtonGroup'
 import SelectCardSetButtonAndTable from './SelectCardSetButtonAndTable'
 import AddCardSetButtonAndWindow from './AddCardSetButtonAndWindow'
+import SaveDeckButtonAndWindow from './SaveDeckButtonAndWindow'
 
 const ButtonContainer = styled.div`
   padding: ${props => props.theme.paddings.inMainView};
@@ -29,7 +30,10 @@ const NavigationBar = () => {
         <FunctionalityNavButton text='Edit card set' />
       </ButtonGroup>
       <ButtonGroup>
-        <FunctionalityNavButton text='Save deck' />
+        <SaveDeckButtonAndWindow
+          activeSubWindow={activeSubWindow}
+          setActiveSubWindow={setActiveSubWindow}
+        />
         <FunctionalityNavButton text='Open deck' />
       </ButtonGroup>
     </ButtonContainer>

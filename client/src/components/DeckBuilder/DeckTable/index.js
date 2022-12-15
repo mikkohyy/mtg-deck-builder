@@ -18,6 +18,10 @@ const DeckTable = () => {
   useEffect(() => {
     if (openedDeck === undefined) {
       setOpenedDeck({
+        id: undefined,
+        userId: undefined,
+        name: '',
+        notes: '',
         cards: [],
         changes: {
           added: [],

@@ -255,7 +255,8 @@ describe('/api/decks', () => {
             .send(newDeckWithCards)
 
           decksTableAfterAdd = await queryTableContent('decks')
-          deckCardsTableAfterAdd = await queryTableContent('deck_cards')        })
+          deckCardsTableAfterAdd = await queryTableContent('deck_cards')
+        })
 
         test('responds with 201', () => {
           expect(responseData.statusCode).toBe(201)

@@ -55,7 +55,8 @@ const buttons = {
       pointerEvents: 'none'
     },
     hovered: {
-      background: basicPalette.darker
+      background: basicPalette.darker,
+      cursor: 'pointer'
     }
   },
   popUpBoxButton: {
@@ -229,7 +230,8 @@ const tables = {
 const theme = {
   basicPalette,
   paddings: {
-    inMainView: '0em 3em 0em 3em'
+    inMainView: '0em 3em 0em 3em',
+    fromSides: '3em'
   },
   boxProperties: {
     corners: '0.2em'

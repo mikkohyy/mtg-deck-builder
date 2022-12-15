@@ -5,6 +5,26 @@ const createOpenedDeckReducer = (state, action) => {
       ...action.payload
     })
   }
+  case 'SET_NAME':
+    return {
+      ...state,
+      name: action.payload.name
+    }
+  case 'SET_NOTES':
+    return {
+      ...state,
+      notes: action.payload.notes
+    }
+  case 'SET_DECK_ID':
+    return {
+      ...state,
+      id: action.payload.id
+    }
+  case 'SET_OWNER_ID':
+    return {
+      ...state,
+      userId: action.payload.userId
+    }
   case 'ADD_CARD': {
     let updatedCards
     let updatedChanges
@@ -32,6 +52,7 @@ const createOpenedDeckReducer = (state, action) => {
     }
 
     return ({
+      ...state,
       cards: updatedCards,
       changes: updatedChanges
     })
@@ -50,6 +71,7 @@ const createOpenedDeckReducer = (state, action) => {
     }
 
     return ({
+      ...state,
       cards: modifiedCards,
       changes: modifiedChanges
     })

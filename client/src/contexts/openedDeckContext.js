@@ -69,6 +69,21 @@ const OpenedDeckProvider = ({ children }) => {
     })
   }, [openedDeckDispatch])
 
+  const getDeckForSavingAsNew = (userId, name, notes) => {
+    const deckForSaving = {
+      userId: userId,
+      name: name,
+      notes: notes.trim(),
+      cards: {
+        added: openedDeck.cards,
+        updated: [],
+        deleted: []
+      }
+    }
+
+    return deckForSaving
+  }
+
   return(
     <OpenedDeckContext.Provider
       value={{
@@ -79,7 +94,8 @@ const OpenedDeckProvider = ({ children }) => {
         setDeckName,
         setDeckNotes,
         setDeckId,
-        setOwnerId
+        setOwnerId,
+        getDeckForSavingAsNew
       }}
     >
       {children}
