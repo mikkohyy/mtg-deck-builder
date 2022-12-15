@@ -526,7 +526,7 @@ const newDeck = {
   cards: [
     {
       'id': 3,
-      'nInDeck': 1, 
+      'nInDeck': 1,
       'sideboard': true,
       'name': 'Ludevic, Necrogenius',
       'cardNumber': 233,
