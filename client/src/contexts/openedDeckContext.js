@@ -31,11 +31,56 @@ const OpenedDeckProvider = ({ children }) => {
         nOfCards
       }
     })
-  })
+  }, [openedDeckDispatch])
+
+  const setDeckName = useCallback((name) => {
+    openedDeckDispatch({
+      type: 'SET_NAME',
+      payload: {
+        name
+      }
+    })
+  }, [openedDeckDispatch])
+
+  const setDeckNotes = useCallback((notes) => {
+    openedDeckDispatch({
+      type: 'SET_NOTES',
+      payload: {
+        notes
+      }
+    })
+  }, [openedDeckDispatch])
+
+  const setDeckId = useCallback((id) => {
+    openedDeckDispatch({
+      type: 'SET_DECK_ID',
+      payload: {
+        id
+      }
+    })
+  }, [openedDeckDispatch])
+
+  const setOwnerId = useCallback((userId) => {
+    openedDeckDispatch({
+      type: 'SET_OWNER_ID',
+      payload: {
+        userId
+      }
+    })
+  }, [openedDeckDispatch])
 
   return(
     <OpenedDeckContext.Provider
-      value={{ openedDeck, setOpenedDeck, addCardToDeck, removeCardFromDeck }}
+      value={{
+        openedDeck,
+        setOpenedDeck,
+        addCardToDeck,
+        removeCardFromDeck,
+        setDeckName,
+        setDeckNotes,
+        setDeckId,
+        setOwnerId
+      }}
     >
       {children}
     </OpenedDeckContext.Provider>
