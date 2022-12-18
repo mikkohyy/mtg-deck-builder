@@ -8,7 +8,9 @@ const basicPalette = {
   lightest: '#ffffff',
   highlight: '#bfa8bb',
   background: '#ffffff',
-  subWindowBackground: '#def2f1'
+  subWindowBackground: '#def2f1',
+  errorBackground: '#ffcccb',
+  errorBorder: 'red'
 }
 
 const sharedProperties = {
@@ -26,7 +28,8 @@ const buttons = {
       color: 'black'
     },
     hovered: {
-      background: basicPalette.darker
+      background: basicPalette.darker,
+      cursor: 'pointer'
     }
   },
   functionalityNavigation: {
@@ -37,7 +40,8 @@ const buttons = {
       padding: '0.5em',
     },
     hovered: {
-      background: basicPalette.darker
+      background: basicPalette.darker,
+      cursor: 'pointer'
     }
   },
   subWindow: {
@@ -94,6 +98,19 @@ const buttons = {
       background: basicPalette.medium,
       border: `solid 1px ${basicPalette.darkest}`,
       borderRadius: '0.3em'
+    },
+    hovered: {
+      background: basicPalette.darker,
+      cursor: 'pointer'
+    }
+  },
+  mainWindow: {
+    active: {
+      background: basicPalette.medium,
+      border: `solid 1px ${basicPalette.darkest}`,
+      borderRadius: '0.3em',
+      fontSize: '1em',
+      padding: '0.5em'
     },
     hovered: {
       background: basicPalette.darker,
@@ -199,6 +216,16 @@ const containers = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5em'
+  },
+  horizontalButtonContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '0.5em'
+  },
+  verticalButtonContainer: {
+    display: 'flex',
+    gap: '0.5em',
+    flexDirection: 'row'
   }
 }
 

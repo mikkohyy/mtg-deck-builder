@@ -8,12 +8,21 @@ const StyledLink = styled(Link)`
   }
 `
 
-const AppNavigationButton = ({ text, linkTo }) => {
-  return(
-    <StyledLink to={linkTo}>
-      {text}
-    </StyledLink>
-  )
+const AppNavigationButton = ({ text, linkTo, onClick = undefined }) => {
+  if (onClick !== undefined) {
+    return(
+      <StyledLink to={linkTo} onClick={onClick}>
+        {text}
+      </StyledLink>
+    )
+  } else {
+    return(
+      <StyledLink to={linkTo}>
+        {text}
+      </StyledLink>
+    )
+  }
+
 }
 
 export default AppNavigationButton

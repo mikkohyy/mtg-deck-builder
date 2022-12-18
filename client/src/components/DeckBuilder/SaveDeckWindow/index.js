@@ -57,8 +57,8 @@ const SaveDeckWindow = ({ toggleSaveDeck }) => {
       />)
     } else {
       try {
-        // NOTE: hard coded user id for now
-        const newDeck = getDeckForSavingAsNew(1, name, notes)
+        // NOTE: hard coded user id for now (username: cerealkiller, password: password)
+        const newDeck = getDeckForSavingAsNew(3, name, notes)
         addDeck(newDeck)
       } catch (error) {
         showNotification(<Notification

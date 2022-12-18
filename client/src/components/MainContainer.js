@@ -10,7 +10,8 @@ import {
 } from 'react-router-dom'
 import DeckTester from './DeckTester'
 import DeckBuilder from './DeckBuilder'
-import Login from './Login'
+import FirstPage from './FirstPage'
+import Login from  './Login'
 import { getAllCardSets } from '../services/card_sets'
 
 const FullScreenContainer = styled.div`
@@ -50,7 +51,8 @@ const MainContainer = () => {
         <Routes>
           <Route path='/builder' element={<DeckBuilder />} />
           <Route path='/tester' element={<DeckTester />} />
-          <Route path='/' element={<Login />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/' element={<FirstPage />} />
         </Routes>
       </FullScreenContainer>
     </Router>

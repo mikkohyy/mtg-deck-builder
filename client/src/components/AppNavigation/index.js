@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import FunctionalitySelectionButtons from './FunctionalitySelectionButtons'
-import AppNavigationButton from './AppNavigationButton'
+import LoginFunctionalityButtons from './LoginFunctionalityButtons'
 
 const AppControlsContainer = styled.div`
   display: flex;  
@@ -13,7 +13,7 @@ const AppNavigation = () => {
   return(
     <AppControlsContainer>
       <FunctionalitySelectionButtons />
-      <AppNavigationButton text='Logout' linkTo='/' />
+      <LoginFunctionalityButtons />
     </AppControlsContainer>
   )
 }

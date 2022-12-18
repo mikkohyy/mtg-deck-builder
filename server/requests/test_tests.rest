@@ -13,3 +13,23 @@ Content-Type: application/json
     "sideboard": false
   }
 ]
+
+###
+
+POST http://localhost:3001/api/users
+Content-Type: application/json
+
+{ 
+  "username": "cerealkiller",
+  "password": "password"
+}
+
+###
+
+POST http://localhost:3001/api/login
+Content-Type: application/json
+
+{ 
+  "username": "cerealkiller",
+  "password": "password"
+}
