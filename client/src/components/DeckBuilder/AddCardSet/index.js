@@ -78,7 +78,6 @@ const AddCardSet = ({ toggleAddCardSet }) => {
   const addCardSetToDatabase = async () => {
     const cardSetObject = getCardSetObject()
     try {
-      console.log(cardSetObject)
       const addedCardSet = await addCardSet(cardSetObject)
 
       cardSetsDispatch({

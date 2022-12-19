@@ -39,6 +39,7 @@ const errorHandler = (error, request, response, next) => {
 
     return response.status(400).json(errorInfo)
   } else {
+    console.log(error)
     response.status(500).json({ error: error.errorInfo })
   }
 
