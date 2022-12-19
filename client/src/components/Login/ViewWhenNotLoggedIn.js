@@ -50,6 +50,7 @@ const ViewWhenNotLoggedIn = () => {
         setErrorMessage(undefined)
       }
     } catch(error) {
+      console.log(error)
       setErrorMessage(error.response.data.message)
     }
   }
