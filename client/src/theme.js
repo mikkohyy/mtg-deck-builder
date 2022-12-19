@@ -19,6 +19,11 @@ const sharedProperties = {
   }
 }
 
+const paddings =  {
+  inMainView: '0em 3em 0em 3em',
+  fromSides: '3em'
+}
+
 const buttons = {
   appNavigation: {
     basic: {
@@ -118,7 +123,22 @@ const buttons = {
     }
   },
   gapBetween: '0.5em',
-  corners: '0.3em'
+  corners: '0.3em',
+  mainWindowLink: {
+    active: {
+      textDecoration: 'none',
+      color: 'black',
+      background: basicPalette.medium,
+      border: `solid 1px ${basicPalette.darkest}`,
+      borderRadius: '0.3em',
+      fontSize: '1em',
+      padding: '0.5em'
+    },
+    hovered: {
+      background: basicPalette.darker,
+      cursor: 'pointer'
+    }
+  }
 }
 
 const texts = {
@@ -140,6 +160,12 @@ const texts = {
 const inputs = {
   textInput: {
     height: '2em'
+  },
+  mainWindow: {
+    text: {
+      height: '2.5em',
+      defaultMaxLength: 16
+    },
   }
 }
 
@@ -226,6 +252,14 @@ const containers = {
     display: 'flex',
     gap: '0.5em',
     flexDirection: 'row'
+  },
+  mainWindow: {
+    withCenteredItems: {
+      display: 'flex',
+      flexDirection: 'column',
+      padding: paddings.inMainView,
+      alignItems: 'center'
+    }
   }
 }
 
@@ -256,10 +290,7 @@ const tables = {
 
 const theme = {
   basicPalette,
-  paddings: {
-    inMainView: '0em 3em 0em 3em',
-    fromSides: '3em'
-  },
+  paddings,
   boxProperties: {
     corners: '0.2em'
   },

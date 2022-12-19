@@ -5,7 +5,7 @@ const LoggedOutUserButtons = () => {
   return(
     <ButtonGroup>
       <AppNavigationButton text='Login' linkTo='/login' />
-      <AppNavigationButton text='Sign up' linkTo='/' />
+      <AppNavigationButton text='Sign up' linkTo='/signup' />
     </ButtonGroup>
   )
 }

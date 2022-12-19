@@ -1,7 +1,9 @@
+import { MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH } from '../../utils/constants'
 import { loginUser } from '../../services/login'
 import { LoggedInUserContext } from '../../contexts/loggedInUserContext'
 import { useState, useContext } from 'react'
 import styled from 'styled-components'
+import MainWindowInput from '../Generic/FormElements/MainWindowInput'
 
 const CentralContainer = styled.div`
   width: 30em;
@@ -14,16 +16,6 @@ const TitleContainer = styled.div`
 
 const GappedForm = styled.form`
   row-gap: 0.5em;
-`
-
-const LabelAndInput = styled.div`
-  ${props => props.theme.components.containers.verticalFlexbox};
-  margin-top: 0.5em;
-  gap: 0.5em;
-`
-
-const StyledInput = styled.input`
-  ${props => props.theme.components.inputs.textInput};
 `
 
 const StyledButton = styled.button`
@@ -49,14 +41,6 @@ const ViewWhenNotLoggedIn = () => {
   const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState(undefined)
 
-  const handleUsernameChange = (event) => {
-    setUsernameField(event.target.value)
-  }
-
-  const handlePasswordChange = (event) => {
-    setPassword(event.target.value)
-  }
-
   const handleLogin = async (event) => {
     event.preventDefault()
     try {
@@ -76,26 +60,22 @@ const ViewWhenNotLoggedIn = () => {
         <h1>Login</h1>
       </TitleContainer>
       <GappedForm onSubmit={handleLogin}>
-        <LabelAndInput>
-          <label htmlFor='loginUsername'>Username</label>
-          <StyledInput
-            type='text'
-            value={usernameField}
-            onChange={handleUsernameChange}
-            id='loginUsername'
-            name='loginUsername'
-          />
-        </LabelAndInput>
-        <LabelAndInput>
-          <label htmlFor='loginPassword'>Password</label>
-          <StyledInput
-            type='password'
-            value={password}
-            onChange={handlePasswordChange}
-            id='loginPassword'
-            name='loginPassword'
-          />
-        </LabelAndInput>
+        <MainWindowInput
+          name='loginUsername'
+          type='text'
+          label='Username'
+          value={usernameField}
+          setValue={setUsernameField}
+          maxLength={MAX_USERNAME_LENGTH}
+        />
+        <MainWindowInput
+          name='loginPassword'
+          type='password'
+          label='Password'
+          value={password}
+          setValue={setPassword}
+          maxLength={MAX_PASSWORD_LENGTH}
+        />
         { errorMessage === undefined
           ? null
           : <LoginErrorContainer>{errorMessage}</LoginErrorContainer>}

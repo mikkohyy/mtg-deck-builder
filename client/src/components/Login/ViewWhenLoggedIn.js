@@ -4,28 +4,26 @@ import { LoggedInUserContext } from '../../contexts/loggedInUserContext'
 import { useContext } from 'react'
 import ButtonGroup from '../Generic/ButtonGroup'
 
+const Container = styled.div`
+  ${props => props.theme.components.containers.verticalFlexbox};
+  align-items: center;
+  gap: 1em;
+  padding-top: 2em;
+`
+
+const StyledText = styled.span`
+  font-size: 1.5em;  
+`
+
+const StyledLink = styled(Link)`
+  ${props => props.theme.components.buttons.mainWindowLink.active};
+  :hover {
+    ${props => props.theme.components.buttons.mainWindowLink.hovered};
+  };
+`
+
 const ViewWhenLoggedIn = () => {
   const { username } = useContext(LoggedInUserContext)
-
-  const Container = styled.div`
-    ${props => props.theme.components.containers.verticalFlexbox};
-    align-items: center;
-    gap: 1em;
-    padding-top: 2em;
-  `
-
-  const StyledText = styled.span`
-    font-size: 1.5em;  
-  `
-
-  const StyledLink = styled(Link)`
-    text-decoration: none;
-    color: black;
-    ${props => props.theme.components.buttons.mainWindow.active};
-    :hover {
-      ${props => props.theme.components.buttons.mainWindow.hovered};
-    }
-  `
 
   return(
     <Container>

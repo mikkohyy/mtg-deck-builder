@@ -11,6 +11,7 @@ import {
 import DeckTester from './DeckTester'
 import DeckBuilder from './DeckBuilder'
 import FirstPage from './FirstPage'
+import SignUp from './SingUp'
 import Login from  './Login'
 import { getAllCardSets } from '../services/card_sets'
 
@@ -52,6 +53,7 @@ const MainContainer = () => {
           <Route path='/builder' element={<DeckBuilder />} />
           <Route path='/tester' element={<DeckTester />} />
           <Route path='/login' element={<Login />} />
+          <Route path='/signup' element={<SignUp />} />
           <Route path='/' element={<FirstPage />} />
         </Routes>
       </FullScreenContainer>

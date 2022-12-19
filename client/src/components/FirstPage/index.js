@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 
 const FrontPageContainer = styled.div`
@@ -10,10 +11,10 @@ const ButtonContainer = styled.div`
   ${props => props.theme.components.containers.horizontalButtonContainer};
 `
 
-const StyledButton = styled.button`
-  ${props => props.theme.components.buttons.subWindow.active};
+const StyledLink = styled(Link)`
+  ${props => props.theme.components.buttons.mainWindowLink.active};
   :hover {
-    ${props => props.theme.components.buttons.subWindow.hovered}
+    ${props => props.theme.components.buttons.mainWindowLink.hovered}
   };
 `
 
@@ -27,8 +28,8 @@ const FrontPage = () => {
       <StyledHeader>Welcome to the Magic the Gathering deck building app</StyledHeader>
       <p>Without login or signing up in or you just can explore the program.</p>
       <ButtonContainer>
-        <StyledButton>Press here to login</StyledButton>
-        <StyledButton>Press here to sign up</StyledButton>
+        <StyledLink to='/login'>Press here to login</StyledLink>
+        <StyledLink to='/signup'>Press here to sign up</StyledLink>
       </ButtonContainer>
     </FrontPageContainer>
   )

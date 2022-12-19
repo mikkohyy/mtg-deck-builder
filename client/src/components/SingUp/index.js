@@ -1,24 +1,23 @@
+import styled from 'styled-components'
+import { useContext } from 'react'
+import { LoggedInUserContext } from '../../contexts/loggedInUserContext'
 import ViewWhenLoggedIn from './ViewWhenLoggedIn'
 import ViewWhenNotLoggedIn from './ViewWhenNotLoggedIn'
-import { useContext } from 'react'
-import styled from 'styled-components'
-import { LoggedInUserContext } from '../../contexts/loggedInUserContext'
 
-const LoginContainer = styled.div`
+const Container = styled.div`  
   ${props => props.theme.components.containers.mainWindow.withCenteredItems};
 `
 
-const Login = () => {
+const SignUp = () => {
   const { isUserLoggedIn } = useContext(LoggedInUserContext)
-
   return(
-    <LoginContainer>
-      {isUserLoggedIn() === true
+    <Container>
+      { isUserLoggedIn() === true
         ? <ViewWhenLoggedIn />
         : <ViewWhenNotLoggedIn />
       }
-    </LoginContainer>
+    </Container>
   )
 }
 
-export default Login
+export default SignUp
