@@ -7,43 +7,49 @@ const {
   validateUpdatedDeckObject,
   validateNewDeckObject
 } = require('../utils/validation_middleware')
+const { extractToken, extractUserIdFromToken } = require('../utils/token')
 
 const {
   extractInformationOnUpdatedObject,
   extractFoundDataFromQuery
 } = require('../utils/query_handling')
 
-decksRouter.post('/', validateNewDeckObject, async (request, response, next) => {
-  const newDeck = request.body
+decksRouter.post('/',
+  extractToken,
+  extractUserIdFromToken,
+  validateNewDeckObject,
+  async (request, response, next) => {
+    const newDeck = request.body
+    const userId = request.userId
 
-  try {
-    const { userId, name, notes, cards } = newDeck
-    let addedCards = {
-      added: [],
-      deleted: [],
-      updated: []
+    try {
+      const { name, notes, cards } = newDeck
+      let addedCards = {
+        added: [],
+        deleted: [],
+        updated: []
+      }
+
+      const newDeckObject = {
+        userId: userId,
+        name: name,
+        notes: notes
+      }
+
+      const createdDeck = await Deck.create(newDeckObject)
+
+      if (areThereCardsInModifiedCardsObject(cards) === true) {
+        const deckId = createdDeck.id
+        addedCards = await modifyCardsInDeck(deckId, cards)
+      }
+
+      createdDeck.setDataValue('cards', addedCards)
+
+      return response.status(201).json(createdDeck)
+    } catch(error) {
+      next(error)
     }
-
-    const newDeckObject = {
-      userId: userId,
-      name: name,
-      notes: notes
-    }
-
-    const createdDeck = await Deck.create(newDeckObject)
-
-    if (areThereCardsInModifiedCardsObject(cards) === true) {
-      const deckId = createdDeck.id
-      addedCards = await modifyCardsInDeck(deckId, cards)
-    }
-
-    createdDeck.setDataValue('cards', addedCards)
-
-    return response.status(201).json(createdDeck)
-  } catch(error) {
-    next(error)
-  }
-})
+  })
 
 decksRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next) => {
   const deckId = request.params.id

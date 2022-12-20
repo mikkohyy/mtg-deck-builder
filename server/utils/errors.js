@@ -22,8 +22,16 @@ class RequestParameterError extends Error {
   }
 }
 
+class TokenError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'TokenError'
+  }
+}
+
 module.exports = {
   InvalidDataError,
   InvalidResourceId,
-  RequestParameterError
+  RequestParameterError,
+  TokenError
 }

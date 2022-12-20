@@ -7,6 +7,7 @@ const {
 const { QueryTypes } = require('sequelize')
 const { sequelize } = require('../utils/db')
 const queryInterface = sequelize.getQueryInterface()
+const jwt = require('jsonwebtoken')
 
 const transformKeysFromSnakeCaseToCamelCase = (snakecaseObject) => {
   const camelCaseObject = {}
@@ -171,6 +172,18 @@ const getAllInvalidCardsFromUpdatedCards = (invalidCardsInfo) => {
   return invalidCards
 }
 
+const getTokenFromIdAndUsername = (id, username) => {
+  const userForToken = {
+    username: username,
+    id: id
+  }
+
+  const token = jwt.sign(userForToken, process.env.JWT_SECRET)
+  const bearerToken =  `bearer ${token}`
+
+  return bearerToken
+}
+
 module.exports = {
   transformKeysFromSnakeCaseToCamelCase,
   transformKeysFromCamelCaseToSnakeCase,
@@ -182,5 +195,6 @@ module.exports = {
   removePropertiesFromObject,
   getAllInvalidCardsFromUpdatedCards,
   queryTableContentWithId,
-  queryTableContentWithFieldValue
+  queryTableContentWithFieldValue,
+  getTokenFromIdAndUsername
 }

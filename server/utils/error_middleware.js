@@ -38,6 +38,12 @@ const errorHandler = (error, request, response, next) => {
     }
 
     return response.status(400).json(errorInfo)
+  } else if (error.name === 'TokenError') {
+    const errorInfo = {
+      error: error.message
+    }
+
+    return response.status(401).json(errorInfo)
   } else {
     response.status(500).json({ error: error.errorInfo })
   }

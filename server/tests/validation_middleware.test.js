@@ -718,6 +718,7 @@ describe('\'Deck\' object validation', () => {
         const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
 
         const deckInformation = { ...testDecksWithId[0] }
+        delete deckInformation.user_id
         const validDeckInformation = transformKeysFromSnakeCaseToCamelCase(deckInformation)
 
         const data = {
@@ -779,6 +780,7 @@ describe('\'Deck\' object validation', () => {
         }
 
         const deckInformation = { ...testDecksWithId[0] }
+        delete deckInformation.user_id
         const invalidDeckInformation = transformKeysFromSnakeCaseToCamelCase(deckInformation)
 
         const data = {

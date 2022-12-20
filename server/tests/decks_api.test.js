@@ -1,6 +1,7 @@
 const {
   transformKeysFromSnakeCaseToCamelCase,
   queryTableContent,
+  getTokenFromIdAndUsername
 } = require('./test_helpers')
 
 const {
@@ -156,6 +157,9 @@ describe('/api/decks', () => {
   })
 
   describe('When user adds new deck', () => {
+    const decksUserId = 1
+    const decksUsername = 'zerocool'
+    const userToken = getTokenFromIdAndUsername(decksUserId, decksUsername)
     describe('if successful', () => {
       describe('when no cards', () => {
         let responseData
@@ -180,6 +184,7 @@ describe('/api/decks', () => {
           responseData = await api
             .post('/api/decks')
             .send(newDeckWithoutCards)
+            .set({ Authorization: userToken })
 
           decksTableAfterAdd = await queryTableContent('decks')
           deckCardsTableAfterAdd = await queryTableContent('deck_cards')
@@ -192,9 +197,9 @@ describe('/api/decks', () => {
         test('returns expected object', () => {
           const expectedObject = {
             id: 4,
-            userId: newDeck.userId,
             name: newDeck.name,
             notes: newDeck.notes,
+            userId: decksUserId,
             cards: {
               added: [],
               deleted: [],
@@ -210,7 +215,7 @@ describe('/api/decks', () => {
         describe('in database', () => {
           const expectedDeck = {
             id: 4,
-            user_id: newDeck.userId,
+            user_id: decksUserId,
             name: newDeck.name,
             notes: newDeck.notes
           }
@@ -253,6 +258,7 @@ describe('/api/decks', () => {
           responseData = await api
             .post('/api/decks')
             .send(newDeckWithCards)
+            .set({ Authorization: userToken })
 
           decksTableAfterAdd = await queryTableContent('decks')
           deckCardsTableAfterAdd = await queryTableContent('deck_cards')
@@ -265,7 +271,7 @@ describe('/api/decks', () => {
         test('returns expected object', () => {
           const expectedObject = {
             id: 4,
-            userId: newDeck.userId,
+            userId: decksUserId,
             name: newDeck.name,
             notes: newDeck.notes,
             cards: {
@@ -283,7 +289,7 @@ describe('/api/decks', () => {
         describe('in database', () => {
           const expectedAddedDeck = {
             id: 4,
-            user_id: newDeck.userId,
+            user_id: decksUserId,
             name: newDeck.name,
             notes: newDeck.notes
           }
@@ -320,6 +326,7 @@ describe('/api/decks', () => {
           responseData = await api
             .post('/api/decks')
             .send(invalidDeck)
+            .set({ Authorization: userToken })
         })
 
         test('responds with 400', () => {
@@ -360,6 +367,7 @@ describe('/api/decks', () => {
           responseData = await api
             .post('/api/decks')
             .send(invalidDeck)
+            .set({ Authorization: userToken })
         })
 
         test('responds with 400', () => {
@@ -488,8 +496,7 @@ describe('/api/decks', () => {
         beforeAll(async () => {
           await prepareDatabase()
           receivedData = await api
-            .put('/api/decks/1234?update=information')
-            .send(updatedDeck)
+            .delete('/api/decks/1234?update=information')
         })
 
         test('responds with 404', () => {
@@ -510,10 +517,12 @@ describe('/api/decks', () => {
       const originalDeck = { ...testDecksWithId[deckId - 1] }
       const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
       updatedDeckSnakeCase.name = 'Updated name'
+      const copyOfUpdatedDeck = { ...updatedDeckSnakeCase }
+      delete copyOfUpdatedDeck.user_id
       const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
 
       const updatedDeck = {
-        ...transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase),
+        ...transformKeysFromSnakeCaseToCamelCase(copyOfUpdatedDeck),
         cards: {
           added: added.map(card => ({ ...card })),
           deleted: deleted.map(card => ({ ...card })),
@@ -656,6 +665,7 @@ describe('/api/decks', () => {
         const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
         const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
         updatedDeckSnakeCase.name = 'Updated name'
+        delete updatedDeckSnakeCase.user_id
 
         const updatedDeck = {
           ...transformKeysFromSnakeCaseToCamelCase(updatedDeckSnakeCase),
@@ -685,6 +695,7 @@ describe('/api/decks', () => {
 
         const updatedDeckSnakeCase = { ...testDecksWithId[deckId - 1] }
         updatedDeckSnakeCase.name = 'Updated name'
+        delete updatedDeckSnakeCase.user_id
         const { added, deleted, updated } = testCardUpdatesOnDeckWithIdOne
 
         const updatedDeck = {

@@ -520,7 +520,6 @@ const testDecks = [
 ]
 
 const newDeck = {
-  userId: 1,
   name: 'Green/black dinosaur deck',
   notes: 'Did this because dinosaurs are awesome',
   cards: [
@@ -819,13 +818,11 @@ const testDeckCardsTableRowsWithIdOne = {
 
 const camelCaseTestDeckObjects = {
   withoutId: {
-    userId: 1,
     name: 'Blue/red/green/white draft deck',
     notes: 'Ended up with a deck that has too many colors. Not a winner.'
   },
   withId: {
     id: 1,
-    userId: 1,
     name: 'Blue/red/green/white draft deck',
     notes: 'Ended up with a deck that has too many colors. Not a winner.'
   }

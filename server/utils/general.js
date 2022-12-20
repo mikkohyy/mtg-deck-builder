@@ -6,6 +6,4 @@ const getHashedString = async (string, saltRounds) => {
   return hashedString
 }
 
-
-
 module.exports = { getHashedString }

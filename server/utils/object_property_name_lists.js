@@ -34,7 +34,6 @@ const cardObjectPropertyNames = {
 }
 
 const sharedDeckObjectPropertyNames = [
-  'userId',
   'name',
   'notes'
 ]
