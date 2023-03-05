@@ -767,6 +767,7 @@ describe('/api/decks', () => {
           const receivedObject = receivedData.body
 
           expect(receivedObject).toEqual(expectedObject)
+
         })
         describe('in database', () => {
           test('nothing changes in \'decks\' table', () => {
@@ -775,7 +776,6 @@ describe('/api/decks', () => {
           test('nothing changes in \'deck_cards\' table', () => {
             expect(deckCardsTableAfterUpdate).toEqual(deckCardsTableBeforeUpdate)
           })
-
         })
       })
     })

@@ -1,10 +1,11 @@
 import Notification from '../../Generic/Notification'
 import { notificationContext } from '../../../contexts/notificationContext'
+import { LoggedInUserContext } from '../../../contexts/loggedInUserContext'
 import { useContext, useState } from 'react'
 import { OpenedDeckContext } from '../../../contexts/openedDeckContext'
 import styled from 'styled-components'
 import SubWindowNavigationButton from '../../Generic/SubWindowNavigationButton'
-import { addDeck } from '../../../services/decks'
+import { addDeckToDatabase } from '../../../services/decks'
 
 const SaveDeckContainer = styled.div`
   ${props => props.theme.components.containers.subWindow};
@@ -32,6 +33,7 @@ const StyledHeader = styled.h3`
 
 const SaveDeckWindow = ({ toggleSaveDeck }) => {
   const { openedDeck, getDeckForSavingAsNew } = useContext(OpenedDeckContext)
+  const { token, addDeckToContext } = useContext(LoggedInUserContext)
   const { showNotification } = useContext(notificationContext)
 
   const [name, setName] = useState(openedDeck.name)
@@ -49,7 +51,7 @@ const SaveDeckWindow = ({ toggleSaveDeck }) => {
     toggleSaveDeck()
   }
 
-  const saveAsNew = () => {
+  const saveAsNew = async () => {
     if (name.trim().length === 0) {
       showNotification(<Notification
         header='Name of the deck is missing'
@@ -58,8 +60,10 @@ const SaveDeckWindow = ({ toggleSaveDeck }) => {
     } else {
       try {
         // NOTE: hard coded user id for now (username: cerealkiller, password: password)
-        const newDeck = getDeckForSavingAsNew(3, name, notes)
-        addDeck(newDeck)
+        const newDeck = getDeckForSavingAsNew(name, notes)
+        const response = await addDeckToDatabase(token, newDeck)
+        const addedDeck = response.data
+        addDeckToContext(addedDeck)
       } catch (error) {
         showNotification(<Notification
           header='Adding the deck failed'

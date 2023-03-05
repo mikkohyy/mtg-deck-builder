@@ -34,7 +34,17 @@ const LoggedInUserProvider = ({ children }) => {
   const setContextUserInfo = (name, receivedToken, usersDecks) => {
     setUsername(name)
     setToken(receivedToken)
-    setDecks(JSON.stringify(usersDecks))
+    setDecks(usersDecks)
+  }
+
+  const addDeckToContext = (deck) => {
+    const formattedDeck = {
+      id: deck.id,
+      name: deck.name,
+      notes: deck.notes,
+    }
+
+    setDecks(decks.concat(formattedDeck))
   }
 
   const isUserLoggedIn = () => {
@@ -70,7 +80,8 @@ const LoggedInUserProvider = ({ children }) => {
         setToken,
         decks,
         setDecks,
-        isUserLoggedIn
+        isUserLoggedIn,
+        addDeckToContext
       }}
     >
       {children}

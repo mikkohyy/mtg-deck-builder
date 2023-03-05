@@ -2,6 +2,8 @@ const { POSTGRES_URI } = require('./config')
 const { Umzug, SequelizeStorage } = require('umzug')
 const Sequelize = require('sequelize')
 
+console.log(POSTGRES_URI)
+
 const sequelize = new Sequelize(POSTGRES_URI, {
   dialect: 'postgres'
 })
@@ -32,8 +34,8 @@ const rollbackMigration = async () => {
 
 const connectToDatabase = async () => {
   try {
-    await sequelize.authenticate()
     await runMigrations()
+    await sequelize.authenticate()
     console.log('Connected to database')
   } catch (error) {
     console.log(`Connection to database failed: ${error}`)

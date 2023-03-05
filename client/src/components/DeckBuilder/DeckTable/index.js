@@ -19,15 +19,9 @@ const DeckTable = () => {
     if (openedDeck === undefined) {
       setOpenedDeck({
         id: undefined,
-        userId: undefined,
         name: '',
         notes: '',
-        cards: [],
-        changes: {
-          added: [],
-          deleted: [],
-          updated: []
-        }
+        cards: []
       })
     }
   }, [])

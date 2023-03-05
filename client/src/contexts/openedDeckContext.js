@@ -7,9 +7,17 @@ const OpenedDeckProvider = ({ children }) => {
   const [openedDeck, openedDeckDispatch] = useReducer(openedDeckReducer, undefined)
 
   const setOpenedDeck = useCallback((deck) => {
+    const openedDeck = {
+      ...deck,
+      changes: {
+        added: [],
+        deleted: [],
+        updated: []
+      }
+    }
     openedDeckDispatch({
       type: 'SET_DECK',
-      payload: deck
+      payload: openedDeck
     })
   }, [openedDeckDispatch])
 
@@ -60,18 +68,8 @@ const OpenedDeckProvider = ({ children }) => {
     })
   }, [openedDeckDispatch])
 
-  const setOwnerId = useCallback((userId) => {
-    openedDeckDispatch({
-      type: 'SET_OWNER_ID',
-      payload: {
-        userId
-      }
-    })
-  }, [openedDeckDispatch])
-
-  const getDeckForSavingAsNew = (userId, name, notes) => {
+  const getDeckForSavingAsNew = (name, notes) => {
     const deckForSaving = {
-      userId: userId,
       name: name,
       notes: notes.trim(),
       cards: {
@@ -94,7 +92,6 @@ const OpenedDeckProvider = ({ children }) => {
         setDeckName,
         setDeckNotes,
         setDeckId,
-        setOwnerId,
         getDeckForSavingAsNew
       }}
     >

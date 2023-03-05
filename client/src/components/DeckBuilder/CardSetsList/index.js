@@ -1,4 +1,4 @@
-import useCardSetsRowSelection from '../../../hooks/useCardSetRowSelection'
+import useTableRowSelection from '../../../hooks/useTableRowSelection'
 import CardSetsTable from './CardSetsTable'
 import styled from 'styled-components'
 import { getCardSetWithId, deleteCardSet } from '../../../services/card_sets'
@@ -15,7 +15,7 @@ const CardSetsContainer = styled.div`
 `
 
 const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
-  const { selectThisCardSetRow, selectedCardSet } = useCardSetsRowSelection()
+  const { selectThisTableRow, selectedTableRow } = useTableRowSelection()
   const { setOpenedCardSet } = useContext(OpenedCardSetContext)
   const { showNotification } = useContext(notificationContext)
   const { cardSetsDispatch } = useContext(CardSetsContext)
@@ -26,9 +26,9 @@ const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
   }
 
   const openSelectedCardSet = async() => {
-    if (selectedCardSet !== undefined) {
+    if (selectedTableRow !== undefined) {
       try {
-        const cardSetId = selectedCardSet.id
+        const cardSetId = selectedTableRow.id
         const data = await getCardSetWithId(cardSetId)
         setOpenedCardSet(data)
         closeCardSetsList()
@@ -40,10 +40,10 @@ const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
 
   const removeCardSet = async () => {
     try {
-      await deleteCardSet(selectedCardSet.id)
+      await deleteCardSet(selectedTableRow.id)
       cardSetsDispatch({
         type: 'DELETE_CARD_SET',
-        payload: selectedCardSet
+        payload: selectedTableRow
       })
     } catch(error) {
       const header = 'Was unable to delete the card set'
@@ -54,14 +54,14 @@ const CardSetsList = ({ setSelectCardSetIsOpen, setActiveSubWindow }) => {
   }
 
   const checkIfActive = () => {
-    return selectedCardSet !== undefined
+    return selectedTableRow !== undefined
   }
 
   return(
     <CardSetsContainer>
       <CardSetsTable
-        selectThisCardSetRow={selectThisCardSetRow}
-        selectedCardSet={selectedCardSet}
+        selectThisTableRow={selectThisTableRow}
+        selectedTableRow={selectedTableRow}
       />
       <ButtonGroup>
         <SubWindowNavigationButton

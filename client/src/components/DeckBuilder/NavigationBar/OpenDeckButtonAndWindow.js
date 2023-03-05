@@ -6,7 +6,7 @@ const OpenDeckButtonAndWindow = ({ activeSubWindow, setActiveSubWindow }) => {
   const WINDOW_NAME = 'OPEN_DECK'
   const [openDeckIsOpen, setOpenDeckIsOpen] = useState(false)
 
-  const toggleSaveDeck = () => {
+  const toggleOpenDeck = () => {
     if (activeSubWindow === undefined && openDeckIsOpen === false) {
       setOpenDeckIsOpen(true)
       setActiveSubWindow(WINDOW_NAME)
@@ -18,9 +18,9 @@ const OpenDeckButtonAndWindow = ({ activeSubWindow, setActiveSubWindow }) => {
 
   return(
     <div>
-      <FunctionalityNavButton text='Open deck' onClick={toggleSaveDeck}/>
+      <FunctionalityNavButton text='Open deck' onClick={toggleOpenDeck}/>
       { openDeckIsOpen === true
-        ? <OpenDeckList toggleSaveDeck={toggleSaveDeck} />
+        ? <OpenDeckList toggleOpenDeck={toggleOpenDeck} />
         : null
       }
     </div>

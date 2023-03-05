@@ -1,7 +1,12 @@
 import axios from 'axios'
+import { createBearerToken } from '../utils/general'
 const baseRoute ='/api/decks'
 
-const addDeck = async (deck) => {
+const addDeckToDatabase = async (token, deck) => {
+  const config = {
+    headers: { Authorization: createBearerToken(token) }
+  }
+
   const newDeck = {
     ...deck,
     cards: {
@@ -10,9 +15,19 @@ const addDeck = async (deck) => {
     }
   }
 
-  const requestResponse = await axios.post(baseRoute, newDeck)
+  const requestResponse = await axios.post(baseRoute, newDeck, config)
 
-  console.log(requestResponse)
+  return requestResponse
+}
+
+const getDeckFromDatabase = async (token, deckId) => {
+  const config = {
+    headers: { Authorization: createBearerToken(token) }
+  }
+
+  const requestResponse  = await axios.get(`${baseRoute}/${deckId}`, config)
+
+  return requestResponse
 }
 
 const removeUnnecessaryDataFromCards = (cards) => {
@@ -34,6 +49,8 @@ const filterCardKeys = (card, unnecessaryField) => {
   return filteredCard
 }
 
+
 export {
-  addDeck
+  addDeckToDatabase,
+  getDeckFromDatabase
 }

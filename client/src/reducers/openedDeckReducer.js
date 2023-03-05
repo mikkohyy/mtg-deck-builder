@@ -20,11 +20,6 @@ const createOpenedDeckReducer = (state, action) => {
       ...state,
       id: action.payload.id
     }
-  case 'SET_OWNER_ID':
-    return {
-      ...state,
-      userId: action.payload.userId
-    }
   case 'ADD_CARD': {
     let updatedCards
     let updatedChanges

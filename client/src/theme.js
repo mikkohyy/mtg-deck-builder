@@ -69,10 +69,16 @@ const buttons = {
     }
   },
   popUpBoxButton: {
-    fontSize: '0.8em',
-    background: basicPalette.medium,
-    border: `solid 2px ${basicPalette.darkest}`,
-    borderRadius: '0.3em'
+    active: {
+      fontSize: '0.8em',
+      background: basicPalette.medium,
+      border: `solid 2px ${basicPalette.darkest}`,
+      borderRadius: '0.3em'
+    },
+    hovered: {
+      background: basicPalette.darker,
+      cursor: 'pointer'
+    }
   },
   secondary: {
     passive: {
@@ -195,11 +201,11 @@ const containers = {
   popUpBox: {
     background: basicPalette.lighter,
     border: `2px solid ${basicPalette.darkest}`,
-    padding: '1.5em',
+    padding: '1em',
     position: 'fixed',
     zIndex: 2,
     borderRadius: '0.2em',
-    maxWidth: '28em'
+    maxWidth: '28em',
   },
   popUpTrigger: {
     fontSize: '0.7em',

@@ -8,6 +8,17 @@ const manaSymbolTable = {
 
 const possibleColors = ['black', 'blue', 'green', 'red', 'white']
 
+const getCardsWithCardColorAndManaSymbols = (cards) => {
+  const modifiedCards = cards
+    .map(card => (
+      { ...card,
+        cardColor: getCardColor(card),
+        manaSymbols: getManaSymbols(card)
+      }))
+
+  return modifiedCards
+}
+
 const getCardColor = (card) => {
   const manaCostArray = card.manaCost.split(' ')
   let cardColor
@@ -89,5 +100,6 @@ const transformCardTextToArray = (card) => {
 export {
   getCardColor,
   getManaSymbols,
-  transformCardTextToArray
+  transformCardTextToArray,
+  getCardsWithCardColorAndManaSymbols
 }

@@ -17,7 +17,7 @@ const RadioButtonGroup = styled.div`
 `
 
 const FunctionalityDescriptionText = styled.div`
-  ${props => props.theme.components.texts.cardTableControlsNameText}
+  ${props => props.theme.components.texts.cardTableControlsNameText};
 `
 
 const OrderControls = ({ orderBy, setOrderBy, orderDirection, setOrderDirection }) => {

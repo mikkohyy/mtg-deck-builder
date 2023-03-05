@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import ButtonWithPopUpBox from '../../Generic/ButtonWithPopUpBox'
 
@@ -12,7 +12,7 @@ const TableRow = styled.tr`
     : props.background };
 `
 
-const CardSetsTableRow = ({ cardSet, selectThisTableRow, selectedTableRow, backgroundColor }) => {
+const DeckListTableRow = ({ deck, selectThisTableRow, selectedTableRow, backgroundColor }) => {
   const [isSelected, setIsSelected] = useState(false)
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const CardSetsTableRow = ({ cardSet, selectThisTableRow, selectedTableRow, backg
   const userHasSelectedThisRow = () => {
     let isSelected = false
 
-    if ((selectedTableRow !== undefined && selectedTableRow.id === cardSet.id)) {
+    if ((selectedTableRow !== undefined && selectedTableRow.id === deck.id)) {
       isSelected = true
     }
 
@@ -36,22 +36,22 @@ const CardSetsTableRow = ({ cardSet, selectThisTableRow, selectedTableRow, backg
   }
 
   const selectRow = () => {
-    selectThisTableRow(cardSet)
+    selectThisTableRow(deck)
   }
 
   return(
     <TableRow isSelected={isSelected} background={backgroundColor}>
       <TableCell onClick={selectRow}>
-        {cardSet.name}
+        {deck.name}
       </TableCell>
-      <TableCell onClick={selectRow}>{cardSet.date.toLocaleDateString()}</TableCell>
       <TableCell>
         <div>
           <ButtonWithPopUpBox
             buttonTextWhenHiddenBox='Show'
             buttonTextWhenVisibleBox='Hide'
-            boxText={cardSet.description}
+            boxText={deck.notes}
             buttonWidth='4em'
+            cornerPosition='right'
           />
         </div>
       </TableCell>
@@ -59,4 +59,4 @@ const CardSetsTableRow = ({ cardSet, selectThisTableRow, selectedTableRow, backg
   )
 }
 
-export default CardSetsTableRow
+export default DeckListTableRow

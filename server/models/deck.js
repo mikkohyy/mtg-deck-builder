@@ -22,6 +22,11 @@ Deck.init({
     type: DataTypes.TEXT
   }
 }, {
+  hooks: {
+    afterCreate: (createdDeck) => {
+      delete createdDeck.dataValues.userId
+    }
+  },
   sequelize,
   underscored: true,
   timestamps: false,

@@ -1,8 +1,8 @@
-import styled from 'styled-components'
 import { useContext } from 'react'
-import CardSetsTableHead from './CardSetsTableHead'
-import CardSetsTableRow from './CardSetsTableRow'
-import { CardSetsContext } from '../../../contexts/cardSetsContext'
+import { LoggedInUserContext } from '../../../contexts/loggedInUserContext'
+import styled from 'styled-components'
+import DeckListTableHead from './DeckListTableHead'
+import DeckListTableRow from './DeckListTableRow'
 
 const StyledTable = styled.table`
   border-collapse: collapse;
@@ -12,18 +12,18 @@ const StyledTableBody = styled.tbody`
   border: solid 1px ${props => props.theme.basicPalette.darkest}
 `
 
-const CardSetsTable = ({ selectThisTableRow, selectedTableRow }) => {
-  const { cardSetsState } = useContext(CardSetsContext)
+const DeckListTable = ({ selectThisTableRow, selectedTableRow }) => {
+  const { decks } = useContext(LoggedInUserContext)
 
-  return(
+  return (
     <StyledTable>
-      <CardSetsTableHead />
+      <DeckListTableHead />
       <StyledTableBody>
-        { cardSetsState.map((cardSet, index) => {
+        { decks.map((deck, index) => {
           return(
-            <CardSetsTableRow
-              key={`${cardSet.name}-${cardSet.id}`}
-              cardSet={cardSet}
+            <DeckListTableRow
+              key={`${deck.id}-${deck.description}`}
+              deck={deck}
               selectThisTableRow={selectThisTableRow}
               selectedTableRow={selectedTableRow}
               backgroundColor={
@@ -32,11 +32,11 @@ const CardSetsTable = ({ selectThisTableRow, selectedTableRow }) => {
                   : (props => props.theme.components.tables.rowColors.odd)
               }
             />
-          )
-        })}
+          )})
+        }
       </StyledTableBody>
     </StyledTable>
   )
 }
 
-export default CardSetsTable
+export default DeckListTable

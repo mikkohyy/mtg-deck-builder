@@ -36,7 +36,7 @@ decksRouter.post('/',
         notes: notes
       }
 
-      const createdDeck = await Deck.create(newDeckObject)
+      const createdDeck = await Deck.create(newDeckObject,)
 
       if (areThereCardsInModifiedCardsObject(cards) === true) {
         const deckId = createdDeck.id
@@ -51,38 +51,49 @@ decksRouter.post('/',
     }
   })
 
-decksRouter.get('/:id', validateIdWhichIsInteger, async (request, response, next) => {
-  const deckId = request.params.id
+decksRouter.get('/:id',
+  extractToken,
+  extractUserIdFromToken,
+  validateIdWhichIsInteger,
+  async (request, response, next) => {
+    const deckId = request.params.id
+    const idFromToken = request.userId
 
-  try {
-    const queryResults = await Deck.findByPk(deckId, {
-      include: [
-        {
-          model: Card,
-          attributes: { exclude: ['cardSetId'] },
-          through: {
-            attributes: ['nInDeck', 'sideboard']
-          }
-        },
-      ]
-    })
+    try {
+      const queryResults = await Deck.findByPk(deckId, {
+        include: [
+          {
+            model: Card,
+            attributes: { exclude: ['cardSetId'] },
+            through: {
+              attributes: ['nInDeck', 'sideboard']
+            }
+          },
+        ]
+      })
 
-    if (wasDeckFound(queryResults) === true) {
-      const deckData = extractFoundDataFromQuery(queryResults)
+      if (wasDeckFound(queryResults) !== true) {
+        response.status(404).end()
+      } else if (queryResults.userId !== idFromToken) {
+        response.status(401).end()
+      } else {
+        const deckData = extractFoundDataFromQuery(queryResults)
 
-      const foundDeck = {
-        ...deckData,
-        cards: moveCardDeckPropertiesToCardProperties(deckData.cards)
+        // tee sellainen "get these [in array] keys from a deck" metodi
+
+        delete deckData.userId
+
+        const foundDeck = {
+          ...deckData,
+          cards: moveCardDeckPropertiesToCardProperties(deckData.cards)
+        }
+
+        response.json(foundDeck)
       }
-
-      response.json(foundDeck)
-    } else {
-      response.status(404).end()
+    } catch(error) {
+      next(error)
     }
-  } catch(error) {
-    next(error)
-  }
-})
+  })
 
 decksRouter.delete('/:id', validateIdWhichIsInteger, async (request, response, next) => {
   const deckId = request.params.id
