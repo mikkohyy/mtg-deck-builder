@@ -1,3 +1,4 @@
+const { getHashedString } = require('./general')
 const cardData = require('../data/card_set.json')
 const { connectToDatabase } = require('./db')
 const { CardSet, Card, User, Deck, DeckCard } = require('../models')
@@ -15,9 +16,9 @@ const addDataToDatabase = async () => {
   const formattedCardData = cardData.map(card => {
     return {
       cardSetId: createdSet.id,
-      name: card.name,
       cardNumber: card.card_number,
       manaCost: card.mana_cost,
+      name: card.name,
       price: card.average_price_30_days,
       rulesText: card.rules_text,
       rarity: card.rarity,
@@ -29,11 +30,11 @@ const addDataToDatabase = async () => {
   await User.bulkCreate([
     {
       username: 'zerocool',
-      password: 'password'
+      password: await getHashedString('password', 1)
     },
     {
       username: 'acidburn',
-      password: 'password'
+      password: await getHashedString('password', 1)
     }
   ])
 
